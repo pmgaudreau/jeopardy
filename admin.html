@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivia Night — Host Control Panel</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #060e1f;
+            --bg-card: #0f1a33;
+            --bg-card-alt: #152040;
+            --primary: #1e40af;
+            --primary-hover: #2563eb;
+            --accent: #f59e0b;
+            --accent-hover: #fbbf24;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #1e293b;
+            --radius: 10px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Setup Screen ── */
+        #setup-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .setup-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 3rem;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .setup-card h1 {
+            font-size: 2.2rem;
+            color: var(--accent);
+            margin-bottom: .25rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .setup-card h2 {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: .85rem;
+            color: var(--text-muted);
+            margin-bottom: .4rem;
+            font-weight: 500;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: .75rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        input:focus { border-color: var(--primary-hover); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            padding: .7rem 1.4rem;
+            border: none;
+            border-radius: var(--radius);
+            font-size: .95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s, transform .1s;
+        }
+
+        .btn:active { transform: scale(.97); }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            width: 100%;
+            padding: .9rem;
+            font-size: 1.05rem;
+            margin-top: .5rem;
+        }
+
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        .btn-accent {
+            background: var(--accent);
+            color: #0f172a;
+        }
+
+        .btn-accent:hover { background: var(--accent-hover); }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-outline:hover { background: var(--bg-card-alt); }
+
+        .btn-sm {
+            padding: .45rem .85rem;
+            font-size: .85rem;
+        }
+
+        /* ── Game Screen ── */
+        #game-screen { display: none; }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: .75rem 1.5rem;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: .5rem;
+        }
+
+        .room-badge {
+            background: var(--accent);
+            color: #0f172a;
+            font-weight: 700;
+            padding: .4rem 1rem;
+            border-radius: 20px;
+            font-size: .95rem;
+            letter-spacing: 1px;
+        }
+
+        .top-bar h1 {
+            font-size: 1.3rem;
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .round-tabs {
+            display: flex;
+            gap: .35rem;
+        }
+
+        .round-tab {
+            padding: .45rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: .85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .round-tab:hover { border-color: var(--primary); color: var(--text); }
+
+        .round-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr 280px;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            min-height: calc(100vh - 58px);
+        }
+
+        @media (max-width: 1100px) {
+            .dashboard {
+                grid-template-columns: 1fr 1fr;
+            }
+            .panel-scoreboard { grid-column: 1 / -1; }
+        }
+
+        @media (max-width: 700px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel h2 {
+            font-size: 1rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        /* ── Controls Panel ── */
+        .category-row {
+            display: flex;
+            gap: .5rem;
+            margin-bottom: 1rem;
+        }
+
+        .category-row input { flex: 1; }
+
+        .value-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: .35rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .value-btn {
+            padding: .5rem .25rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--accent);
+            font-weight: 700;
+            font-size: .8rem;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .value-btn:hover { border-color: var(--accent); background: rgba(245, 158, 11, .1); }
+
+        .value-btn.active {
+            background: var(--accent);
+            color: #0f172a;
+            border-color: var(--accent);
+        }
+
+        .big-toggle {
+            width: 100%;
+            padding: .9rem;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all .2s;
+            margin-bottom: .75rem;
+        }
+
+        .big-toggle.open {
+            background: var(--success);
+            color: white;
+        }
+
+        .big-toggle.closed {
+            background: var(--danger);
+            color: white;
+        }
+
+        .status-bar {
+            text-align: center;
+            padding: .5rem;
+            border-radius: 8px;
+            font-size: .85rem;
+            font-weight: 600;
+            margin-bottom: .75rem;
+        }
+
+        .status-waiting { background: rgba(148, 163, 184, .15); color: var(--text-muted); }
+        .status-accepting { background: rgba(34, 197, 94, .15); color: var(--success); }
+        .status-closed { background: rgba(239, 68, 68, .15); color: var(--danger); }
+
+        .timer-display {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+            margin-bottom: .5rem;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: .35rem;
+            margin-bottom: 1rem;
+        }
+
+        .timer-controls .btn { flex: 1; }
+
+        /* ── Answers Panel ── */
+        .question-header {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            margin-bottom: 1rem;
+            padding: .75rem 1rem;
+            background: var(--bg-card-alt);
+            border-radius: var(--radius);
+        }
+
+        .question-header .cat {
+            font-weight: 700;
+            color: var(--text);
+            font-size: 1.05rem;
+        }
+
+        .question-header .val {
+            color: var(--accent);
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        .question-header .round-label {
+            color: var(--text-muted);
+            font-size: .8rem;
+            margin-left: auto;
+        }
+
+        .answer-card {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: .75rem 1rem;
+            background: var(--bg-card-alt);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: .5rem;
+            transition: border-color .2s;
+        }
+
+        .answer-card.graded-correct { border-color: var(--success); }
+        .answer-card.graded-incorrect { border-color: var(--danger); }
+
+        .answer-team {
+            font-weight: 700;
+            min-width: 100px;
+            font-size: .9rem;
+        }
+
+        .answer-text {
+            flex: 1;
+            font-size: 1rem;
+            color: var(--accent-hover);
+        }
+
+        .answer-actions {
+            display: flex;
+            gap: .3rem;
+        }
+
+        .grade-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s;
+        }
+
+        .grade-btn.correct-active {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .grade-btn.incorrect-active {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: white;
+        }
+
+        .no-answers {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 2rem;
+            font-size: .95rem;
+        }
+
+        .apply-bar {
+            margin-top: auto;
+            padding-top: 1rem;
+            display: flex;
+            gap: .5rem;
+        }
+
+        .apply-bar .btn { flex: 1; }
+
+        .answer-count {
+            background: var(--primary);
+            color: white;
+            padding: .15rem .55rem;
+            border-radius: 12px;
+            font-size: .8rem;
+            font-weight: 700;
+        }
+
+        /* ── Scoreboard Panel ── */
+        .score-row {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: .6rem .75rem;
+            border-radius: 8px;
+            margin-bottom: .35rem;
+            transition: background .15s;
+        }
+
+        .score-row:hover { background: var(--bg-card-alt); }
+
+        .score-rank {
+            font-weight: 800;
+            color: var(--text-muted);
+            width: 24px;
+            text-align: center;
+            font-size: .85rem;
+        }
+
+        .score-row:first-child .score-rank { color: var(--accent); }
+
+        .score-name {
+            flex: 1;
+            font-weight: 600;
+            font-size: .95rem;
+        }
+
+        .score-value {
+            font-weight: 800;
+            color: var(--accent);
+            font-size: 1rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .score-adjust {
+            display: flex;
+            gap: .2rem;
+        }
+
+        .adjust-btn {
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: .75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .adjust-btn:hover { border-color: var(--text-muted); color: var(--text); }
+
+        .add-team-row {
+            display: flex;
+            gap: .5rem;
+            margin-top: auto;
+            padding-top: 1rem;
+        }
+
+        .add-team-row input { flex: 1; font-size: .85rem; }
+
+        /* ── Final Jeopardy Wagers ── */
+        .wager-card {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: .6rem .75rem;
+            background: var(--bg-card-alt);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: .4rem;
+        }
+
+        .wager-card .team { font-weight: 700; flex: 1; }
+        .wager-card .wager { color: var(--accent); font-weight: 800; }
+        .wager-card .wager-pending { color: var(--text-muted); font-style: italic; }
+
+        /* ── History Panel ── */
+        #history-panel {
+            grid-column: 1 / -1;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .history-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: .75rem;
+            align-items: center;
+            padding: .5rem .75rem;
+            border-bottom: 1px solid var(--border);
+            font-size: .85rem;
+        }
+
+        .history-row:last-child { border-bottom: none; }
+
+        .h-q { color: var(--text-muted); font-weight: 600; }
+        .h-cat { color: var(--text); }
+        .h-val { color: var(--accent); font-weight: 700; }
+        .h-answers { color: var(--text-muted); }
+
+        /* ── Misc ── */
+        .hidden { display: none !important; }
+
+        .fade-in {
+            animation: fadeIn .3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 1rem 0;
+        }
+
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     SETUP SCREEN
+     ════════════════════════════════════════════ -->
+<div id="setup-screen">
+    <div class="setup-card">
+        <h1>TRIVIA NIGHT</h1>
+        <h2>Host Control Panel</h2>
+
+        <div class="form-group">
+            <label>Room Code (share this with teams)</label>
+            <input type="text" id="room-code-input" placeholder="e.g. TRIVIA" maxlength="12"
+                   style="text-transform:uppercase; text-align:center; font-size:1.3rem; font-weight:700; letter-spacing:2px;">
+        </div>
+
+        <button class="btn btn-primary" onclick="createRoom()">Create Game Room</button>
+
+        <hr class="divider" style="margin:1.5rem 0;">
+
+        <div class="form-group">
+            <label>Or rejoin an existing room</label>
+            <input type="text" id="rejoin-code-input" placeholder="Room code" maxlength="12"
+                   style="text-transform:uppercase; text-align:center;">
+        </div>
+        <button class="btn btn-outline" style="width:100%;" onclick="rejoinRoom()">Rejoin Room</button>
+
+        <p id="setup-error" style="color:var(--danger); margin-top:1rem; font-size:.85rem;"></p>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     GAME SCREEN
+     ════════════════════════════════════════════ -->
+<div id="game-screen">
+    <div class="top-bar">
+        <span class="room-badge" id="room-code-display"></span>
+        <h1>Trivia Night</h1>
+        <div class="round-tabs">
+            <button class="round-tab active" data-round="1" onclick="setRound(1)">Round 1</button>
+            <button class="round-tab" data-round="2" onclick="setRound(2)">Round 2</button>
+            <button class="round-tab" data-round="3" onclick="setRound(3)">Final</button>
+        </div>
+    </div>
+
+    <div class="dashboard">
+
+        <!-- ── Left: Controls ── -->
+        <div class="panel panel-controls">
+            <h2>Question Control</h2>
+
+            <div class="category-row">
+                <input type="text" id="category-input" placeholder="Category name...">
+                <button class="btn btn-accent btn-sm" onclick="updateCategory()">Set</button>
+            </div>
+
+            <div id="value-grid-container">
+                <div class="value-grid" id="value-grid"></div>
+            </div>
+
+            <div class="status-bar status-waiting" id="status-bar">WAITING</div>
+
+            <button class="big-toggle open" id="toggle-btn" onclick="toggleAnswers()">
+                Open for Answers
+            </button>
+
+            <div class="timer-display" id="timer-display">0:30</div>
+            <div class="timer-controls">
+                <button class="btn btn-outline btn-sm" onclick="setTimer(15)">0:15</button>
+                <button class="btn btn-outline btn-sm" onclick="setTimer(30)">0:30</button>
+                <button class="btn btn-outline btn-sm" onclick="setTimer(45)">0:45</button>
+                <button class="btn btn-outline btn-sm" onclick="setTimer(60)">1:00</button>
+            </div>
+
+            <hr class="divider">
+            <button class="btn btn-outline" style="width:100%;" onclick="nextQuestion()">
+                Next Question &rarr;
+            </button>
+        </div>
+
+        <!-- ── Center: Answers ── -->
+        <div class="panel panel-answers">
+            <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:.25rem;">
+                <h2 style="margin:0;">Answers</h2>
+                <span class="answer-count" id="answer-count">0</span>
+            </div>
+
+            <div class="question-header" id="question-header">
+                <span class="cat" id="qh-category">—</span>
+                <span class="val" id="qh-value">—</span>
+                <span class="round-label" id="qh-round">Round 1</span>
+            </div>
+
+            <!-- Final Jeopardy Wagers (shown only during Final round) -->
+            <div id="wager-section" class="hidden">
+                <h2 style="font-size:.85rem; margin-bottom:.5rem;">Team Wagers</h2>
+                <div id="wager-list"></div>
+                <hr class="divider">
+            </div>
+
+            <div id="answers-list" style="flex:1; overflow-y:auto;"></div>
+
+            <div class="apply-bar">
+                <button class="btn btn-success" onclick="applyScores()">Apply Scores</button>
+                <button class="btn btn-outline" onclick="clearGrading()">Reset Grading</button>
+            </div>
+        </div>
+
+        <!-- ── Right: Scoreboard ── -->
+        <div class="panel panel-scoreboard">
+            <h2>Scoreboard</h2>
+            <div id="scoreboard-list" style="flex:1; overflow-y:auto;"></div>
+
+            <hr class="divider">
+            <h2 style="font-size:.8rem;">Add Team Manually</h2>
+            <div class="add-team-row">
+                <input type="text" id="add-team-input" placeholder="Team name">
+                <button class="btn btn-accent btn-sm" onclick="addTeamManually()">Add</button>
+            </div>
+        </div>
+
+        <!-- ── Bottom: History ── -->
+        <div class="panel" id="history-panel">
+            <h2>Question History</h2>
+            <div id="history-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     FIREBASE + APP LOGIC
+     ════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  PASTE YOUR FIREBASE CONFIG BELOW (see README for setup)    ║
+// ╚══════════════════════════════════════════════════════════════╝
+const firebaseConfig = {
+    apiKey: "AIzaSyBQP3uiW84rbcbzSA23bfW5DRUfitCQaVI",
+    authDomain: "pdk-nine-jeopardy.firebaseapp.com",
+    databaseURL: "https://pdk-nine-jeopardy-default-rtdb.firebaseio.com",
+    projectId: "pdk-nine-jeopardy",
+    storageBucket: "pdk-nine-jeopardy.firebasestorage.app",
+    messagingSenderId: "228636489232",
+    appId: "1:228636489232:web:6d76312079db4114eabc95"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ── State ──
+let roomCode = null;
+let roomRef = null;
+let currentState = { round: 1, category: '', value: 0, accepting: false, questionNum: 0 };
+let teams = {};
+let currentAnswers = {};
+let grading = {};    // local grading state: { teamKey: true/false }
+let timerInterval = null;
+let timerSeconds = 30;
+let timerRunning = false;
+
+const ROUND_VALUES = {
+    1: [200, 400, 600, 800, 1000],
+    2: [400, 800, 1200, 1600, 2000],
+    3: []
+};
+
+// ── Setup ──
+
+function createRoom() {
+    const code = document.getElementById('room-code-input').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!code) {
+        document.getElementById('setup-error').textContent = 'Enter a room code.';
+        return;
+    }
+    roomCode = code;
+    roomRef = db.ref('trivia-rooms/' + roomCode);
+    roomRef.set({
+        state: { round: 1, category: '', value: 0, accepting: false, questionNum: 1 },
+        teams: {},
+        currentAnswers: {},
+        history: {}
+    }).then(() => {
+        enterGame();
+    }).catch(err => {
+        document.getElementById('setup-error').textContent = 'Error: ' + err.message;
+    });
+}
+
+function rejoinRoom() {
+    const code = (document.getElementById('rejoin-code-input').value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!code) {
+        document.getElementById('setup-error').textContent = 'Enter a room code.';
+        return;
+    }
+    roomCode = code;
+    roomRef = db.ref('trivia-rooms/' + roomCode);
+    roomRef.child('state').once('value', snap => {
+        if (snap.exists()) {
+            enterGame();
+        } else {
+            document.getElementById('setup-error').textContent = 'Room not found.';
+            roomCode = null;
+            roomRef = null;
+        }
+    });
+}
+
+function enterGame() {
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    document.getElementById('room-code-display').textContent = roomCode;
+    buildValueGrid(1);
+    setupListeners();
+}
+
+// ── Firebase Listeners ──
+
+function setupListeners() {
+    roomRef.child('state').on('value', snap => {
+        const s = snap.val();
+        if (!s) return;
+        currentState = s;
+        renderState();
+    });
+
+    roomRef.child('teams').on('value', snap => {
+        teams = snap.val() || {};
+        renderScoreboard();
+        renderWagers();
+    });
+
+    roomRef.child('currentAnswers').on('value', snap => {
+        currentAnswers = snap.val() || {};
+        renderAnswers();
+    });
+
+    roomRef.child('history').on('value', snap => {
+        renderHistory(snap.val() || {});
+    });
+}
+
+// ── Round / Category / Value Controls ──
+
+function setRound(r) {
+    document.querySelectorAll('.round-tab').forEach(t => t.classList.toggle('active', parseInt(t.dataset.round) === r));
+    buildValueGrid(r);
+    roomRef.child('state/round').set(r);
+    if (r === 3) {
+        roomRef.child('state/value').set(0);
+    }
+}
+
+function buildValueGrid(round) {
+    const grid = document.getElementById('value-grid');
+    const vals = ROUND_VALUES[round] || [];
+    if (vals.length === 0) {
+        document.getElementById('value-grid-container').classList.add('hidden');
+        return;
+    }
+    document.getElementById('value-grid-container').classList.remove('hidden');
+    grid.innerHTML = vals.map(v =>
+        `<button class="value-btn" data-value="${v}" onclick="selectValue(${v})">$${v}</button>`
+    ).join('');
+}
+
+function selectValue(v) {
+    document.querySelectorAll('.value-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.value) === v));
+    roomRef.child('state/value').set(v);
+}
+
+function updateCategory() {
+    const cat = document.getElementById('category-input').value.trim();
+    roomRef.child('state/category').set(cat);
+}
+
+// ── Answer Toggle ──
+
+function toggleAnswers() {
+    const accepting = !currentState.accepting;
+    roomRef.child('state/accepting').set(accepting);
+    if (accepting) {
+        startTimer();
+    } else {
+        stopTimer();
+    }
+}
+
+function renderState() {
+    const { round, category, value, accepting } = currentState;
+
+    document.querySelectorAll('.round-tab').forEach(t => t.classList.toggle('active', parseInt(t.dataset.round) === round));
+    buildValueGrid(round);
+    if (value) {
+        document.querySelectorAll('.value-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.value) === value));
+    }
+    if (category) {
+        document.getElementById('category-input').value = category;
+    }
+
+    const btn = document.getElementById('toggle-btn');
+    const bar = document.getElementById('status-bar');
+
+    if (accepting) {
+        btn.textContent = 'Close Answers';
+        btn.className = 'big-toggle closed';
+        bar.textContent = 'ACCEPTING ANSWERS';
+        bar.className = 'status-bar status-accepting';
+    } else {
+        btn.textContent = 'Open for Answers';
+        btn.className = 'big-toggle open';
+        bar.textContent = Object.keys(currentAnswers).length > 0 ? 'ANSWERS CLOSED — GRADE BELOW' : 'WAITING';
+        bar.className = Object.keys(currentAnswers).length > 0 ? 'status-bar status-closed' : 'status-bar status-waiting';
+    }
+
+    const roundLabels = { 1: 'Round 1', 2: 'Double Jeopardy', 3: 'Final Jeopardy' };
+    document.getElementById('qh-category').textContent = category || '—';
+    document.getElementById('qh-value').textContent = round === 3 ? 'WAGER' : (value ? '$' + value : '—');
+    document.getElementById('qh-round').textContent = roundLabels[round] || '';
+
+    document.getElementById('wager-section').classList.toggle('hidden', round !== 3);
+}
+
+// ── Answers Rendering ──
+
+function renderAnswers() {
+    const list = document.getElementById('answers-list');
+    const keys = Object.keys(currentAnswers);
+    document.getElementById('answer-count').textContent = keys.length;
+
+    if (keys.length === 0) {
+        list.innerHTML = '<div class="no-answers">No answers submitted yet.</div>';
+        return;
+    }
+
+    list.innerHTML = keys.map(tk => {
+        const a = currentAnswers[tk];
+        const teamName = (teams[tk] && teams[tk].name) || tk;
+        const gradedClass = grading[tk] === true ? 'graded-correct' : grading[tk] === false ? 'graded-incorrect' : '';
+        const correctActive = grading[tk] === true ? 'correct-active' : '';
+        const incorrectActive = grading[tk] === false ? 'incorrect-active' : '';
+
+        return `<div class="answer-card ${gradedClass}">
+            <span class="answer-team">${esc(teamName)}</span>
+            <span class="answer-text">${esc(a.answer || '(blank)')}</span>
+            <div class="answer-actions">
+                <button class="grade-btn ${correctActive}" onclick="gradeTeam('${tk}', true)" title="Correct">&#10003;</button>
+                <button class="grade-btn ${incorrectActive}" onclick="gradeTeam('${tk}', false)" title="Incorrect">&#10007;</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function gradeTeam(teamKey, correct) {
+    if (grading[teamKey] === correct) {
+        delete grading[teamKey];
+    } else {
+        grading[teamKey] = correct;
+    }
+    renderAnswers();
+}
+
+function clearGrading() {
+    grading = {};
+    renderAnswers();
+}
+
+function applyScores() {
+    const { round, value, category } = currentState;
+    const updates = {};
+    const historyEntry = {
+        round,
+        category,
+        value: round === 3 ? 'WAGER' : value,
+        answers: {}
+    };
+
+    Object.keys(currentAnswers).forEach(tk => {
+        const correct = grading[tk];
+        if (correct === undefined) return;
+
+        let pointChange;
+        if (round === 3) {
+            const wager = (teams[tk] && teams[tk].wager) || 0;
+            pointChange = correct ? wager : -wager;
+        } else {
+            pointChange = correct ? value : -value;
+        }
+
+        const currentScore = (teams[tk] && teams[tk].score) || 0;
+        updates['teams/' + tk + '/score'] = currentScore + pointChange;
+
+        historyEntry.answers[tk] = {
+            answer: currentAnswers[tk].answer,
+            correct,
+            points: pointChange
+        };
+    });
+
+    const qNum = currentState.questionNum || 1;
+    updates['history/q' + qNum] = historyEntry;
+
+    roomRef.update(updates).then(() => {
+        grading = {};
+        renderAnswers();
+    });
+}
+
+// ── Next Question ──
+
+function nextQuestion() {
+    grading = {};
+    const nextNum = (currentState.questionNum || 1) + 1;
+    roomRef.update({
+        'state/accepting': false,
+        'state/questionNum': nextNum,
+        'state/category': '',
+        'state/value': 0,
+        'currentAnswers': null
+    });
+    document.getElementById('category-input').value = '';
+    stopTimer();
+    resetTimerDisplay();
+}
+
+// ── Scoreboard ──
+
+function renderScoreboard() {
+    const list = document.getElementById('scoreboard-list');
+    const sorted = Object.entries(teams).sort((a, b) => (b[1].score || 0) - (a[1].score || 0));
+
+    if (sorted.length === 0) {
+        list.innerHTML = '<div class="no-answers">No teams yet. Share the room code!</div>';
+        return;
+    }
+
+    list.innerHTML = sorted.map(([key, t], i) => `
+        <div class="score-row">
+            <span class="score-rank">${i + 1}</span>
+            <span class="score-name">${esc(t.name || key)}</span>
+            <span class="score-value">$${(t.score || 0).toLocaleString()}</span>
+            <div class="score-adjust">
+                <button class="adjust-btn" onclick="adjustScore('${key}', 100)" title="+100">+</button>
+                <button class="adjust-btn" onclick="adjustScore('${key}', -100)" title="-100">&minus;</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function adjustScore(teamKey, delta) {
+    const current = (teams[teamKey] && teams[teamKey].score) || 0;
+    const amount = prompt(`Adjust score for ${teams[teamKey]?.name || teamKey}.\nCurrent: $${current}\nEnter amount (positive or negative):`, delta);
+    if (amount === null) return;
+    const parsed = parseInt(amount);
+    if (isNaN(parsed)) return;
+    roomRef.child('teams/' + teamKey + '/score').set(current + parsed);
+}
+
+function addTeamManually() {
+    const name = document.getElementById('add-team-input').value.trim();
+    if (!name) return;
+    const key = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    roomRef.child('teams/' + key).set({ name, score: 0, wager: 0 });
+    document.getElementById('add-team-input').value = '';
+}
+
+// ── Wagers (Final Jeopardy) ──
+
+function renderWagers() {
+    if (currentState.round !== 3) return;
+    const list = document.getElementById('wager-list');
+    const entries = Object.entries(teams);
+
+    list.innerHTML = entries.map(([key, t]) => `
+        <div class="wager-card">
+            <span class="team">${esc(t.name || key)}</span>
+            <span>Score: $${(t.score || 0).toLocaleString()}</span>
+            ${t.wager ? `<span class="wager">Wager: $${t.wager.toLocaleString()}</span>` : '<span class="wager-pending">Wager pending...</span>'}
+        </div>
+    `).join('');
+}
+
+// ── History ──
+
+function renderHistory(history) {
+    const list = document.getElementById('history-list');
+    const entries = Object.entries(history).sort((a, b) => {
+        const na = parseInt(a[0].replace('q', ''));
+        const nb = parseInt(b[0].replace('q', ''));
+        return nb - na;
+    });
+
+    if (entries.length === 0) {
+        list.innerHTML = '<div class="no-answers">No questions graded yet.</div>';
+        return;
+    }
+
+    list.innerHTML = entries.map(([qKey, q]) => {
+        const roundLabel = { 1: 'R1', 2: 'R2', 3: 'FJ' }[q.round] || '';
+        const answerSummary = q.answers ? Object.entries(q.answers).map(([tk, a]) => {
+            const name = (teams[tk] && teams[tk].name) || tk;
+            const icon = a.correct ? '&#10003;' : '&#10007;';
+            const color = a.correct ? 'var(--success)' : 'var(--danger)';
+            return `<span style="color:${color}">${icon} ${esc(name)}: ${esc(a.answer)} (${a.points > 0 ? '+' : ''}${a.points})</span>`;
+        }).join(' &nbsp;|&nbsp; ') : 'No answers';
+
+        return `<div class="history-row">
+            <span class="h-q">${qKey.toUpperCase()}</span>
+            <span class="h-cat">${esc(q.category || '—')}</span>
+            <span class="h-val">${roundLabel} ${q.value === 'WAGER' ? 'WAGER' : '$' + q.value}</span>
+            <span class="h-answers">${answerSummary}</span>
+        </div>`;
+    }).join('');
+}
+
+// ── Timer ──
+
+function setTimer(sec) {
+    timerSeconds = sec;
+    resetTimerDisplay();
+}
+
+function resetTimerDisplay() {
+    const m = Math.floor(timerSeconds / 60);
+    const s = timerSeconds % 60;
+    document.getElementById('timer-display').textContent = m + ':' + String(s).padStart(2, '0');
+    document.getElementById('timer-display').style.color = 'var(--accent)';
+}
+
+function startTimer() {
+    stopTimer();
+    let remaining = timerSeconds;
+    const display = document.getElementById('timer-display');
+
+    timerInterval = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+            remaining = 0;
+            stopTimer();
+            roomRef.child('state/accepting').set(false);
+            display.style.color = 'var(--danger)';
+        } else if (remaining <= 5) {
+            display.style.color = 'var(--danger)';
+        }
+        const m = Math.floor(remaining / 60);
+        const s = remaining % 60;
+        display.textContent = m + ':' + String(s).padStart(2, '0');
+    }, 1000);
+    timerRunning = true;
+}
+
+function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
+    timerRunning = false;
+}
+
+// ── Helpers ──
+
+function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+// ── Init ──
+resetTimerDisplay();
+</script>
+</body>
+</html>

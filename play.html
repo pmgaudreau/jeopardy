@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trivia Night — Team Play</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #060e1f;
+            --bg-card: #0f1a33;
+            --bg-card-alt: #152040;
+            --primary: #1e40af;
+            --primary-hover: #2563eb;
+            --accent: #f59e0b;
+            --accent-hover: #fbbf24;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #1e293b;
+            --radius: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Join Screen ── */
+        .screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem 1.5rem;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        .card h1 {
+            font-size: 2rem;
+            color: var(--accent);
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-bottom: .2rem;
+        }
+
+        .card h2 {
+            font-size: .9rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-bottom: 1.75rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: .8rem;
+            color: var(--text-muted);
+            margin-bottom: .3rem;
+            font-weight: 500;
+        }
+
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: .85rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-size: 1.05rem;
+            outline: none;
+            transition: border-color .2s;
+            -webkit-appearance: none;
+        }
+
+        input:focus, textarea:focus { border-color: var(--primary-hover); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background .2s, transform .1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn:active { transform: scale(.97); }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #16a34a; }
+
+        .btn-accent { background: var(--accent); color: #0f172a; }
+        .btn-accent:hover { background: var(--accent-hover); }
+
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: .85rem;
+            margin-top: .75rem;
+        }
+
+        .hidden { display: none !important; }
+
+        /* ── Game Screen ── */
+        #game-screen {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+        }
+
+        .game-header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: .75rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .team-name-display {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .score-display {
+            background: var(--accent);
+            color: #0f172a;
+            font-weight: 800;
+            padding: .35rem .9rem;
+            border-radius: 20px;
+            font-size: .95rem;
+        }
+
+        .game-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1.25rem;
+            gap: 1rem;
+        }
+
+        /* ── Question Info ── */
+        .question-info {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .round-label {
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: .5rem;
+        }
+
+        .category-display {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: .35rem;
+            line-height: 1.2;
+        }
+
+        .value-display {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        /* ── Answer Section ── */
+        .answer-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .answer-section textarea {
+            flex: 1;
+            min-height: 80px;
+            resize: none;
+            font-size: 1.15rem;
+            padding: 1rem;
+        }
+
+        .submitted-msg {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .submitted-msg .check {
+            font-size: 3rem;
+            margin-bottom: .5rem;
+        }
+
+        .submitted-msg .label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .submitted-msg .answer-echo {
+            color: var(--text-muted);
+            font-size: .9rem;
+            margin-top: .5rem;
+        }
+
+        /* ── Waiting State ── */
+        .waiting-state {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+
+        .waiting-state .dots {
+            font-size: 2rem;
+            color: var(--accent);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .waiting-state .msg {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-top: .75rem;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: .4; }
+            50% { opacity: 1; }
+        }
+
+        /* ── Wager Section (Final Jeopardy) ── */
+        .wager-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .wager-section h3 {
+            color: var(--accent);
+            margin-bottom: .75rem;
+            font-size: 1.1rem;
+        }
+
+        .wager-section .score-note {
+            color: var(--text-muted);
+            font-size: .85rem;
+            margin-bottom: 1rem;
+        }
+
+        .wager-input-row {
+            display: flex;
+            gap: .5rem;
+            margin-bottom: .75rem;
+        }
+
+        .wager-input-row input {
+            flex: 1;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .wager-locked {
+            padding: 1rem;
+            background: rgba(34, 197, 94, .1);
+            border: 1px solid var(--success);
+            border-radius: var(--radius);
+            text-align: center;
+        }
+
+        .wager-locked .amount {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .wager-locked .label {
+            font-size: .85rem;
+            color: var(--success);
+            margin-top: .25rem;
+        }
+
+        /* ── Animations ── */
+        .fade-in {
+            animation: fadeIn .3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     JOIN SCREEN
+     ════════════════════════════════════════════ -->
+<div class="screen" id="join-screen">
+    <div class="card">
+        <h1>TRIVIA NIGHT</h1>
+        <h2>Enter your room code and team name to play</h2>
+
+        <div class="form-group">
+            <label>Room Code</label>
+            <input type="text" id="room-code-input" placeholder="e.g. TRIVIA" maxlength="12"
+                   style="text-transform:uppercase; text-align:center; font-size:1.3rem; font-weight:700; letter-spacing:2px;"
+                   autocomplete="off" autocorrect="off" autocapitalize="characters">
+        </div>
+
+        <div class="form-group">
+            <label>Team Name</label>
+            <input type="text" id="team-name-input" placeholder="Your team name" maxlength="30"
+                   autocomplete="off" autocorrect="off">
+        </div>
+
+        <button class="btn btn-primary" onclick="joinRoom()">Join Game</button>
+        <p class="error-msg" id="join-error"></p>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     GAME SCREEN
+     ════════════════════════════════════════════ -->
+<div id="game-screen">
+    <div class="game-header">
+        <span class="team-name-display" id="team-name-display"></span>
+        <span class="score-display" id="score-display">$0</span>
+    </div>
+
+    <div class="game-body">
+        <!-- Question Info -->
+        <div class="question-info" id="question-info">
+            <div class="round-label" id="round-label">Round 1</div>
+            <div class="category-display" id="category-display">—</div>
+            <div class="value-display" id="value-display">—</div>
+        </div>
+
+        <!-- Waiting State -->
+        <div class="answer-section" id="waiting-section">
+            <div class="waiting-state">
+                <div class="dots">&#x2022; &#x2022; &#x2022;</div>
+                <div class="msg" id="waiting-msg">Waiting for the host to open answers...</div>
+            </div>
+        </div>
+
+        <!-- Wager Section (Final Jeopardy) -->
+        <div class="wager-section hidden" id="wager-section">
+            <h3>Set Your Wager</h3>
+            <div class="score-note" id="wager-score-note">You can wager up to your current score</div>
+            <div id="wager-input-area">
+                <div class="wager-input-row">
+                    <input type="number" id="wager-input" placeholder="$0" min="0" inputmode="numeric">
+                </div>
+                <button class="btn btn-accent" onclick="lockWager()">Lock In Wager</button>
+            </div>
+            <div class="wager-locked hidden" id="wager-locked">
+                <div class="amount" id="wager-locked-amount">$0</div>
+                <div class="label">Wager locked in</div>
+            </div>
+        </div>
+
+        <!-- Answer Input Section -->
+        <div class="answer-section hidden" id="answer-section">
+            <textarea id="answer-input" placeholder="Type your answer..." autocomplete="off" autocorrect="off"></textarea>
+            <button class="btn btn-success" id="submit-btn" onclick="submitAnswer()">Submit Answer</button>
+        </div>
+
+        <!-- Submitted Confirmation -->
+        <div class="answer-section hidden" id="submitted-section">
+            <div class="submitted-msg">
+                <div class="check" style="color:var(--success);">&#10003;</div>
+                <div class="label">Answer Submitted!</div>
+                <div class="answer-echo" id="answer-echo"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     FIREBASE + APP LOGIC
+     ════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  PASTE YOUR FIREBASE CONFIG BELOW (same as admin.html)      ║
+// ╚══════════════════════════════════════════════════════════════╝
+const firebaseConfig = {
+    apiKey: "AIzaSyBQP3uiW84rbcbzSA23bfW5DRUfitCQaVI",
+    authDomain: "pdk-nine-jeopardy.firebaseapp.com",
+    databaseURL: "https://pdk-nine-jeopardy-default-rtdb.firebaseio.com",
+    projectId: "pdk-nine-jeopardy",
+    storageBucket: "pdk-nine-jeopardy.firebasestorage.app",
+    messagingSenderId: "228636489232",
+    appId: "1:228636489232:web:6d76312079db4114eabc95"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ── State ──
+let roomCode = null;
+let roomRef = null;
+let teamKey = null;
+let teamName = null;
+let currentState = {};
+let lastQuestionNum = null;
+let hasSubmitted = false;
+let wagerLocked = false;
+let cachedScore = 0;
+
+// ── Join Room ──
+
+function joinRoom() {
+    const code = document.getElementById('room-code-input').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const name = document.getElementById('team-name-input').value.trim();
+
+    if (!code || !name) {
+        document.getElementById('join-error').textContent = 'Please enter both a room code and team name.';
+        return;
+    }
+
+    roomCode = code;
+    teamName = name;
+    teamKey = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    roomRef = db.ref('trivia-rooms/' + roomCode);
+
+    roomRef.child('state').once('value', snap => {
+        if (!snap.exists()) {
+            document.getElementById('join-error').textContent = 'Room not found. Check the code and try again.';
+            return;
+        }
+
+        roomRef.child('teams/' + teamKey).once('value', teamSnap => {
+            if (teamSnap.exists()) {
+                // Rejoin existing team
+            } else {
+                roomRef.child('teams/' + teamKey).set({
+                    name: teamName,
+                    score: 0,
+                    wager: 0
+                });
+            }
+
+            enterGame();
+        });
+    });
+}
+
+function enterGame() {
+    document.getElementById('join-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    document.getElementById('team-name-display').textContent = teamName;
+    setupListeners();
+}
+
+// ── Listeners ──
+
+function setupListeners() {
+    roomRef.child('state').on('value', snap => {
+        const s = snap.val();
+        if (!s) return;
+
+        currentState = s;
+
+        if (s.questionNum !== lastQuestionNum) {
+            lastQuestionNum = s.questionNum;
+            hasSubmitted = false;
+            wagerLocked = false;
+            document.getElementById('wager-input-area').classList.remove('hidden');
+            document.getElementById('wager-locked').classList.add('hidden');
+            document.getElementById('wager-input').value = '';
+        }
+
+        renderGameState();
+    });
+
+    roomRef.child('teams/' + teamKey).on('value', snap => {
+        const t = snap.val();
+        if (!t) return;
+        cachedScore = t.score || 0;
+        document.getElementById('score-display').textContent = '$' + cachedScore.toLocaleString();
+
+        if (currentState.round === 3) {
+            updateWagerUI(t);
+        }
+    });
+
+    roomRef.child('currentAnswers/' + teamKey).on('value', snap => {
+        if (snap.exists() && snap.val().answer) {
+            hasSubmitted = true;
+            document.getElementById('answer-echo').textContent = 'Your answer: "' + snap.val().answer + '"';
+        }
+        renderGameState();
+    });
+}
+
+// ── Render ──
+
+function renderGameState() {
+    const { round, category, value, accepting } = currentState;
+    const roundLabels = { 1: 'Round 1', 2: 'Double Jeopardy', 3: 'Final Jeopardy' };
+
+    document.getElementById('round-label').textContent = roundLabels[round] || '';
+    document.getElementById('category-display').textContent = category || 'Waiting for category...';
+    document.getElementById('value-display').textContent = round === 3 ? 'WAGER' : (value ? '$' + value.toLocaleString() : '—');
+
+    const waitingSection = document.getElementById('waiting-section');
+    const answerSection = document.getElementById('answer-section');
+    const submittedSection = document.getElementById('submitted-section');
+    const wagerSection = document.getElementById('wager-section');
+
+    waitingSection.classList.add('hidden');
+    answerSection.classList.add('hidden');
+    submittedSection.classList.add('hidden');
+    wagerSection.classList.add('hidden');
+
+    if (round === 3 && !wagerLocked && !accepting) {
+        wagerSection.classList.remove('hidden');
+        wagerSection.classList.add('fade-in');
+        document.getElementById('wager-score-note').textContent =
+            'You can wager up to your current score ($' + getScore().toLocaleString() + ')';
+    } else if (hasSubmitted) {
+        submittedSection.classList.remove('hidden');
+        submittedSection.classList.add('fade-in');
+    } else if (accepting) {
+        answerSection.classList.remove('hidden');
+        answerSection.classList.add('fade-in');
+        document.getElementById('answer-input').value = '';
+        document.getElementById('submit-btn').disabled = false;
+        document.getElementById('submit-btn').textContent = 'Submit Answer';
+    } else {
+        waitingSection.classList.remove('hidden');
+        const msg = document.getElementById('waiting-msg');
+        if (!category) {
+            msg.textContent = 'Waiting for the host to set up the next question...';
+        } else {
+            msg.textContent = 'Waiting for the host to open answers...';
+        }
+    }
+}
+
+function getScore() {
+    return cachedScore;
+}
+
+// ── Wager ──
+
+function lockWager() {
+    const input = document.getElementById('wager-input');
+    const wager = parseInt(input.value);
+
+    if (isNaN(wager) || wager < 0) {
+        alert('Please enter a valid wager amount.');
+        return;
+    }
+
+    roomRef.child('teams/' + teamKey).once('value', snap => {
+        const team = snap.val();
+        const maxWager = Math.max(team.score || 0, 0);
+
+        if (wager > maxWager && maxWager > 0) {
+            alert('Your wager cannot exceed your current score ($' + maxWager.toLocaleString() + ').');
+            return;
+        }
+
+        roomRef.child('teams/' + teamKey + '/wager').set(wager).then(() => {
+            wagerLocked = true;
+            renderGameState();
+        });
+    });
+}
+
+function updateWagerUI(teamData) {
+    if (teamData.wager && teamData.wager > 0) {
+        wagerLocked = true;
+        document.getElementById('wager-input-area').classList.add('hidden');
+        document.getElementById('wager-locked').classList.remove('hidden');
+        document.getElementById('wager-locked-amount').textContent = '$' + teamData.wager.toLocaleString();
+    }
+    document.getElementById('wager-score-note').textContent =
+        'You can wager up to your current score ($' + (teamData.score || 0).toLocaleString() + ')';
+}
+
+// ── Submit Answer ──
+
+function submitAnswer() {
+    const input = document.getElementById('answer-input');
+    const answer = input.value.trim();
+
+    if (!answer) {
+        input.style.borderColor = 'var(--danger)';
+        setTimeout(() => input.style.borderColor = '', 1500);
+        return;
+    }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    roomRef.child('currentAnswers/' + teamKey).set({
+        answer: answer,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    }).then(() => {
+        hasSubmitted = true;
+        document.getElementById('answer-echo').textContent = 'Your answer: "' + answer + '"';
+        renderGameState();
+    }).catch(err => {
+        btn.disabled = false;
+        btn.textContent = 'Submit Answer';
+        alert('Error submitting. Please try again.');
+    });
+}
+
+</script>
+</body>
+</html>
