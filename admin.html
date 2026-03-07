@@ -318,6 +318,7 @@
         <div class="qcard">
             <h3>Question</h3>
             <div class="q-text" id="qv-qtxt"></div>
+            <img id="qv-img" class="hidden" style="max-width:100%;max-height:300px;border-radius:var(--radius);margin-top:.75rem;display:block;margin-left:auto;margin-right:auto;" alt="Question image">
         </div>
         <div class="qcard">
             <div id="dd-team-info" class="hidden" style="text-align:center;margin-bottom:.75rem;">
@@ -336,6 +337,9 @@
             </div>
             <div style="text-align:center;margin-bottom:.5rem;">
                 <span class="status-pill w" id="status-pill">WAITING</span>
+            </div>
+            <div class="toggle-bar" style="margin-bottom:.4rem;">
+                <button class="toggle-accept open hidden" id="wager-toggle-btn" onclick="toggleWagering()">Open for Wagers</button>
             </div>
             <div class="toggle-bar">
                 <button class="toggle-accept open" id="toggle-btn" onclick="toggleAccepting()">Open for Answers</button>
@@ -423,7 +427,7 @@
 <script src="config.js"></script>
 <script>
 let roomCode = null, roomRef = null;
-let GS = { round:1, phase:'board', category:'', value:0, questionText:'', accepting:false, dailyDouble:false, ddTeam:'', questionKey:'', showQR:false, timerEnd:0, timerRunning:false, answerRevealed:false };
+let GS = { round:1, phase:'board', category:'', value:0, questionText:'', accepting:false, dailyDouble:false, ddTeam:'', questionKey:'', showQR:false, timerEnd:0, timerRunning:false, answerRevealed:false, wageringOpen:false, imageUrl:'' };
 let teams = {}, curAnswers = {}, grading = {}, boardQ = {}, parsedCSV = null;
 let timerInterval = null, timerSec = 30;
 const VALS = { 1:[200,400,600,800,1000], 2:[400,800,1200,1600,2000] };
@@ -445,26 +449,28 @@ function parseCSV(text) {
         else if(k.includes('question_text')||k==='questiontext'||k==='question')cm.qt=i;
         else if(k.includes('answer_text')||k==='answertext'||k==='answer')cm.at=i;
         else if(k.includes('daily_double')||k==='dailydouble'||k.includes('dailydoubleflag'))cm.dd=i;
+        else if(k.includes('image')||k==='imageurl'||k==='image_url')cm.img=i;
     });
     const qs=[];
     for(let i=1;i<lines.length;i++){const c=parseCSVLine(lines[i]); if(c.length<4)continue;
         const round=parseInt(c[cm.round]||'0'), cat=(c[cm.cat]||'').trim(), qn=parseInt(c[cm.qn]||'0'),
               qt=(c[cm.qt]||'').trim(), at=(c[cm.at]||'').trim(), ddr=(c[cm.dd]||'').trim().toLowerCase(),
-              dd=ddr==='true'||ddr==='1'||ddr==='yes';
-        if(round&&cat&&qn&&qt)qs.push({round,category:cat,questionNumber:qn,questionText:qt,answerText:at,dailyDouble:dd});
+              dd=ddr==='true'||ddr==='1'||ddr==='yes',
+              img=(cm.img!==undefined?(c[cm.img]||'').trim():'');
+        if(round&&cat&&qn&&qt)qs.push({round,category:cat,questionNumber:qn,questionText:qt,answerText:at,dailyDouble:dd,imageUrl:img});
     }
     return qs;
 }
 function buildBoard(qs) {
     const b={categories:{round1:[],round2:[]},questions:{},final:null};
     const r1c=[],r2c=[];
-    qs.forEach(q=>{if(q.round===3){b.final={category:q.category,questionText:q.questionText,answerText:q.answerText};return;}
+    qs.forEach(q=>{if(q.round===3){b.final={category:q.category,questionText:q.questionText,answerText:q.answerText,imageUrl:q.imageUrl||''};return;}
         const cs=q.round===1?r1c:r2c; if(!cs.includes(q.category))cs.push(q.category);});
     b.categories.round1=r1c.slice(0,5); b.categories.round2=r2c.slice(0,5);
     qs.forEach(q=>{if(q.round===3)return; const cs=q.round===1?b.categories.round1:b.categories.round2;
         const col=cs.indexOf(q.category); if(col===-1)return; const row=q.questionNumber-1;
         const v=(VALS[q.round]||[])[row]||0;
-        b.questions[`r${q.round}_c${col}_r${row}`]={round:q.round,category:q.category,value:v,row,col,questionText:q.questionText,answerText:q.answerText,dailyDouble:q.dailyDouble,completed:false};
+        b.questions[`r${q.round}_c${col}_r${row}`]={round:q.round,category:q.category,value:v,row,col,questionText:q.questionText,answerText:q.answerText,dailyDouble:q.dailyDouble,imageUrl:q.imageUrl||'',completed:false};
     });
     return b;
 }
@@ -481,7 +487,7 @@ function handleCSV(file) {
     }; reader.readAsText(file);
 }
 function downloadTemplate() {
-    const csv=`round,category,question_number,question_text,answer_text,daily_double_flag\n1,History,1,"Who was the first President?","George Washington",FALSE\n1,History,2,"What year did WWII end?","1945",FALSE\n1,History,3,"Which civilization built Machu Picchu?","The Inca",TRUE\n1,History,4,"What document starts with We the People?","The Constitution",FALSE\n1,History,5,"British monarch during the Revolution?","King George III",FALSE\n1,Science,1,"What planet is the Red Planet?","Mars",FALSE\n1,Science,2,"Chemical symbol for gold?","Au",FALSE\n1,Science,3,"Bones in the adult human body?","206",FALSE\n1,Science,4,"Gas plants absorb from the air?","Carbon Dioxide",FALSE\n1,Science,5,"Speed of light in miles per second?","186000",FALSE\n1,Pop Culture,1,"Fictional school in Harry Potter?","Hogwarts",FALSE\n1,Pop Culture,2,"Who played Iron Man in the MCU?","Robert Downey Jr.",FALSE\n1,Pop Culture,3,"Year the first iPhone released?","2007",FALSE\n1,Pop Culture,4,"Best-selling video game ever?","Minecraft",FALSE\n1,Pop Culture,5,"Author of Game of Thrones books?","George R.R. Martin",FALSE\n1,Sports,1,"Players on a basketball court per team?","5",FALSE\n1,Sports,2,"Country with most FIFA World Cups?","Brazil",FALSE\n1,Sports,3,"Sport with a slam dunk?","Basketball",FALSE\n1,Sports,4,"Holes in a standard golf round?","18",FALSE\n1,Sports,5,"NHL regulation period length?","20 minutes",FALSE\n1,Movies,1,"Movie: Here is looking at you kid?","Casablanca",FALSE\n1,Movies,2,"Who directed Jurassic Park?","Steven Spielberg",FALSE\n1,Movies,3,"Highest-grossing film (unadjusted)?","Avatar",FALSE\n1,Movies,4,"Color pill Neo takes in The Matrix?","Red",FALSE\n1,Movies,5,"1994 film set in Shawshank prison?","The Shawshank Redemption",FALSE\n2,Geography,1,"Smallest country in the world?","Vatican City",FALSE\n2,Geography,2,"River through Egypt?","The Nile",FALSE\n2,Geography,3,"Capital of Australia?","Canberra",TRUE\n2,Geography,4,"Tallest mountain in the world?","Mount Everest",FALSE\n2,Geography,5,"US state with the most coastline?","Alaska",FALSE\n2,Music,1,"Known as the King of Pop?","Michael Jackson",FALSE\n2,Music,2,"Instrument with 88 keys?","Piano",FALSE\n2,Music,3,"Band behind Bohemian Rhapsody?","Queen",FALSE\n2,Music,4,"Genre that originated in New Orleans?","Jazz",FALSE\n2,Music,5,"Strings on a standard guitar?","6",FALSE\n2,Food,1,"Country of origin for sushi?","Japan",FALSE\n2,Food,2,"Nut used to make marzipan?","Almond",FALSE\n2,Food,3,"Spice that makes curry yellow?","Turmeric",FALSE\n2,Food,4,"Most consumed fruit in the world?","Banana",FALSE\n2,Food,5,"Country where french fries originated?","Belgium",FALSE\n2,Technology,1,"What does HTTP stand for?","HyperText Transfer Protocol",FALSE\n2,Technology,2,"Co-founded Apple with Steve Jobs?","Steve Wozniak",FALSE\n2,Technology,3,"Year Google was founded?","1998",TRUE\n2,Technology,4,"What does CPU stand for?","Central Processing Unit",FALSE\n2,Technology,5,"Programming language named after an island?","Java",FALSE\n2,Literature,1,"Who wrote Romeo and Juliet?","Shakespeare",FALSE\n2,Literature,2,"First book of the Bible?","Genesis",FALSE\n2,Literature,3,"Who wrote 1984?","George Orwell",FALSE\n2,Literature,4,"Detective at 221B Baker Street?","Sherlock Holmes",FALSE\n2,Literature,5,"Who wrote The Great Gatsby?","F. Scott Fitzgerald",FALSE\n3,Potpourri,1,"What is the rarest blood type?","AB Negative",FALSE`;
+    const csv=`round,category,question_number,question_text,answer_text,daily_double_flag,image_url\n1,History,1,"Who was the first President?","George Washington",FALSE\n1,History,2,"What year did WWII end?","1945",FALSE\n1,History,3,"Which civilization built Machu Picchu?","The Inca",TRUE\n1,History,4,"What document starts with We the People?","The Constitution",FALSE\n1,History,5,"British monarch during the Revolution?","King George III",FALSE\n1,Science,1,"What planet is the Red Planet?","Mars",FALSE\n1,Science,2,"Chemical symbol for gold?","Au",FALSE\n1,Science,3,"Bones in the adult human body?","206",FALSE\n1,Science,4,"Gas plants absorb from the air?","Carbon Dioxide",FALSE\n1,Science,5,"Speed of light in miles per second?","186000",FALSE\n1,Pop Culture,1,"Fictional school in Harry Potter?","Hogwarts",FALSE\n1,Pop Culture,2,"Who played Iron Man in the MCU?","Robert Downey Jr.",FALSE\n1,Pop Culture,3,"Year the first iPhone released?","2007",FALSE\n1,Pop Culture,4,"Best-selling video game ever?","Minecraft",FALSE\n1,Pop Culture,5,"Author of Game of Thrones books?","George R.R. Martin",FALSE\n1,Sports,1,"Players on a basketball court per team?","5",FALSE\n1,Sports,2,"Country with most FIFA World Cups?","Brazil",FALSE\n1,Sports,3,"Sport with a slam dunk?","Basketball",FALSE\n1,Sports,4,"Holes in a standard golf round?","18",FALSE\n1,Sports,5,"NHL regulation period length?","20 minutes",FALSE\n1,Movies,1,"Movie: Here is looking at you kid?","Casablanca",FALSE\n1,Movies,2,"Who directed Jurassic Park?","Steven Spielberg",FALSE\n1,Movies,3,"Highest-grossing film (unadjusted)?","Avatar",FALSE\n1,Movies,4,"Color pill Neo takes in The Matrix?","Red",FALSE\n1,Movies,5,"1994 film set in Shawshank prison?","The Shawshank Redemption",FALSE\n2,Geography,1,"Smallest country in the world?","Vatican City",FALSE\n2,Geography,2,"River through Egypt?","The Nile",FALSE\n2,Geography,3,"Capital of Australia?","Canberra",TRUE\n2,Geography,4,"Tallest mountain in the world?","Mount Everest",FALSE\n2,Geography,5,"US state with the most coastline?","Alaska",FALSE\n2,Music,1,"Known as the King of Pop?","Michael Jackson",FALSE\n2,Music,2,"Instrument with 88 keys?","Piano",FALSE\n2,Music,3,"Band behind Bohemian Rhapsody?","Queen",FALSE\n2,Music,4,"Genre that originated in New Orleans?","Jazz",FALSE\n2,Music,5,"Strings on a standard guitar?","6",FALSE\n2,Food,1,"Country of origin for sushi?","Japan",FALSE\n2,Food,2,"Nut used to make marzipan?","Almond",FALSE\n2,Food,3,"Spice that makes curry yellow?","Turmeric",FALSE\n2,Food,4,"Most consumed fruit in the world?","Banana",FALSE\n2,Food,5,"Country where french fries originated?","Belgium",FALSE\n2,Technology,1,"What does HTTP stand for?","HyperText Transfer Protocol",FALSE\n2,Technology,2,"Co-founded Apple with Steve Jobs?","Steve Wozniak",FALSE\n2,Technology,3,"Year Google was founded?","1998",TRUE\n2,Technology,4,"What does CPU stand for?","Central Processing Unit",FALSE\n2,Technology,5,"Programming language named after an island?","Java",FALSE\n2,Literature,1,"Who wrote Romeo and Juliet?","Shakespeare",FALSE\n2,Literature,2,"First book of the Bible?","Genesis",FALSE\n2,Literature,3,"Who wrote 1984?","George Orwell",FALSE\n2,Literature,4,"Detective at 221B Baker Street?","Sherlock Holmes",FALSE\n2,Literature,5,"Who wrote The Great Gatsby?","F. Scott Fitzgerald",FALSE\n3,Potpourri,1,"What is the rarest blood type?","AB Negative",FALSE`;
     const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
     a.download='trivia_template.csv'; a.click();
 }
@@ -495,7 +501,7 @@ function createRoom() {
     const code=document.getElementById('inp-room').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
     if(!code){document.getElementById('setup-err').textContent='Enter a room code.';return;}
     roomCode=code; roomRef=db.ref('trivia-rooms/'+roomCode);
-    const init={state:{round:1,phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',showQR:false,timerEnd:0,timerRunning:false,answerRevealed:false},teams:{},currentAnswers:{},history:{}};
+    const init={state:{round:1,phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',showQR:false,timerEnd:0,timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''},teams:{},currentAnswers:{},history:{}};
     if(parsedCSV){init.board=parsedCSV.questions;init.categories=parsedCSV.categories;if(parsedCSV.final)init.final=parsedCSV.final;}
     roomRef.set(init).then(()=>enterGame()).catch(e=>{document.getElementById('setup-err').textContent='Error: '+e.message;});
 }
@@ -563,7 +569,7 @@ function confirmEndRound() {
     closeRoundModal();
     const nextRound = GS.round + 1;
     if (nextRound > 3) return;
-    roomRef.child('state').update({round:nextRound,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false});
+    roomRef.child('state').update({round:nextRound,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
     roomRef.child('currentAnswers').remove(); grading={};
     setTimeout(()=>{ roomRef.child('state/phase').set('board'); }, 8000);
 }
@@ -601,8 +607,8 @@ function selQ(key) {
     activateQ(key,q,false,'');
 }
 function activateQ(key,q,isDD,ddTk) {
-    const val=isDD?q.value*2:q.value;
-    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false});
+    const val=q.value;
+    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isDD,imageUrl:q.imageUrl||''});
     roomRef.child('currentAnswers').remove(); grading={};
     showView('question-view');
     const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
@@ -616,13 +622,15 @@ function activateQ(key,q,isDD,ddTk) {
     document.getElementById('qv-dd').classList.toggle('hidden',!isDD);
     document.getElementById('dd-team-info').classList.toggle('hidden',!isDD);
     if(isDD) document.getElementById('dd-team-name').textContent=(teams[ddTk]&&teams[ddTk].name)||ddTk;
+    const imgEl=document.getElementById('qv-img');
+    if(q.imageUrl){imgEl.src=q.imageUrl;imgEl.classList.remove('hidden');}else{imgEl.classList.add('hidden');imgEl.src='';}
     resetTimerDisp(); updateStatus(); showFJRevealButton();
 }
 
 // ── Daily Double ──
 function showDDSelect(key,q) {
     document.getElementById('dd-overlay').classList.remove('hidden');
-    document.getElementById('dd-label').textContent=q.category+' — $'+q.value+' → $'+(q.value*2);
+    document.getElementById('dd-label').textContent=q.category+' — $'+q.value+' (Daily Double — team will wager)';
     const list=document.getElementById('dd-teams');
     list.innerHTML=Object.entries(teams).map(([k,t])=>
         `<button class="dd-tbtn" onclick="confirmDD('${key}','${k}')" title="Select this team to answer the Daily Double">${avatarImg(t.avatar, 24)} ${esc(t.name||k)} <span class="ts">$${(t.score||0).toLocaleString()}</span></button>`
@@ -635,18 +643,27 @@ function toggleAccepting() {
     const a=!GS.accepting;
     if(a){
         const end=Date.now()+timerSec*1000;
-        roomRef.child('state').update({accepting:true,timerEnd:end,timerRunning:true});
+        roomRef.child('state').update({accepting:true,timerEnd:end,timerRunning:true,wageringOpen:false});
         startLocalTimer();
     } else {
         roomRef.child('state').update({accepting:false,timerRunning:false});
         stopLocalTimer();
     }
 }
+function toggleWagering() {
+    const w=!GS.wageringOpen;
+    roomRef.child('state/wageringOpen').set(w);
+}
 function updateStatus() {
     const btn=document.getElementById('toggle-btn'), pill=document.getElementById('status-pill');
+    const wBtn=document.getElementById('wager-toggle-btn');
     if(GS.accepting){btn.textContent='Stop Clock & Close Answers';btn.className='toggle-accept closed';btn.title='Stop the timer and prevent teams from submitting answers';pill.textContent='ACCEPTING';pill.className='status-pill a';}
     else{btn.textContent='Open for Answers';btn.className='toggle-accept open';btn.title='Start the timer and allow teams to submit answers';
         const has=Object.keys(curAnswers).length>0;pill.textContent=has?'CLOSED — GRADE':'WAITING';pill.className=has?'status-pill c':'status-pill w';}
+    if(GS.wageringOpen){wBtn.textContent='Close Wagers';wBtn.className='toggle-accept closed';wBtn.title='Close wagering for teams';}
+    else{wBtn.textContent='Open for Wagers';wBtn.className='toggle-accept open';wBtn.title='Allow teams to set their wager amount';}
+    const showWager=GS.dailyDouble||(GS.round===3&&GS.questionKey==='final');
+    wBtn.classList.toggle('hidden',!showWager);
 }
 
 // ── Answer Reveal ──
@@ -671,10 +688,25 @@ function grade(tk,c){grading[tk]=grading[tk]===c?undefined:c;renderAnswers();}
 function clearGrading(){grading={};renderAnswers();}
 function applyScores() {
     const upd={}, hist={round:GS.round,category:GS.category,value:GS.value,answers:{}};
+    const isDD=GS.dailyDouble, isFJ=GS.round===3&&GS.questionKey==='final';
     Object.keys(curAnswers).forEach(tk=>{const c=grading[tk]; if(c===undefined)return;
-        const pts=c?GS.value:-GS.value, cur=(teams[tk]&&teams[tk].score)||0;
+        let pts;
+        if(isDD||isFJ){
+            const wager=(teams[tk]&&teams[tk].wager)||0;
+            pts=c?wager:-wager;
+        } else {
+            pts=c?GS.value:-GS.value;
+        }
+        const cur=(teams[tk]&&teams[tk].score)||0;
         upd['teams/'+tk+'/score']=cur+pts;
+        const streak=(teams[tk]&&teams[tk].streak)||0;
+        upd['teams/'+tk+'/streak']=c?streak+1:0;
         hist.answers[tk]={answer:curAnswers[tk].answer,correct:c,points:pts};
+    });
+    Object.keys(teams).forEach(tk=>{
+        if(!curAnswers[tk]&&!upd['teams/'+tk+'/streak']){
+            upd['teams/'+tk+'/streak']=0;
+        }
     });
     upd['history/q'+Date.now()]=hist;
     roomRef.update(upd).then(()=>{grading={};renderAnswers();});
@@ -683,14 +715,14 @@ function applyScores() {
 // ── Complete ──
 function completeAndReturn(){const k=GS.questionKey;if(k&&k!=='final')roomRef.child('board/'+k+'/completed').set(true);returnToBoard();}
 function returnToBoard(){
-    roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false});
+    roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
     roomRef.child('currentAnswers').remove();grading={};showView('board-view');stopLocalTimer();
 }
 
 // ── Final ──
 function startFinal(){
     roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
-        roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:f.questionText,accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false});
+        roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:f.questionText,accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:true,imageUrl:f.imageUrl||''});
         showView('question-view');
         document.getElementById('qv-rl').textContent='Final Jeopardy';
         document.getElementById('qv-cat').textContent=f.category;
@@ -712,7 +744,9 @@ function renderScoreboard() {
     if(!sorted.length){el.innerHTML='<div class="no-ans" style="font-size:.8rem;">No teams yet.</div>';return;}
     el.innerHTML=sorted.map(([k,t],i)=>{
         const av=avatarImg(t.avatar), col=avatarColor(t.avatar);
-        return`<div class="score-row"><span class="score-rank">${i+1}</span><span class="score-avatar">${av}</span><span class="score-name" style="color:${col}">${esc(t.name||k)}</span><span class="score-val">$${(t.score||0).toLocaleString()}</span><button class="adj-btn" onclick="adjScore('${k}')" title="Adjust score">±</button><button class="adj-btn" onclick="removeTeam('${k}')" title="Remove team" style="color:var(--red);border-color:var(--red);">✕</button></div>`;
+        const streak=t.streak||0;
+        const streakBadge=streak>=3?`<span title="${streak} correct in a row" style="font-size:.7rem;color:#f97316;">🔥${streak}</span>`:'';
+        return`<div class="score-row"><span class="score-rank">${i+1}</span><span class="score-avatar">${av}</span><span class="score-name" style="color:${col}">${esc(t.name||k)} ${streakBadge}</span><span class="score-val">$${(t.score||0).toLocaleString()}</span><button class="adj-btn" onclick="adjScore('${k}')" title="Adjust score">±</button><button class="adj-btn" onclick="removeTeam('${k}')" title="Remove team" style="color:var(--red);border-color:var(--red);">✕</button></div>`;
     }).join('');
 }
 function adjScore(tk){const cur=(teams[tk]&&teams[tk].score)||0;const a=prompt(`Adjust ${teams[tk]?.name||tk} ($${cur}):`,0);if(a===null)return;const n=parseInt(a);if(!isNaN(n))roomRef.child('teams/'+tk+'/score').set(cur+n);}

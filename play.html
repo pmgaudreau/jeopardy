@@ -257,16 +257,27 @@ function render(){
     const cards=['wait-card','answer-card','submitted-card','dd-spec-card','wager-card','phone-timer'];
     cards.forEach(id=>document.getElementById(id).classList.add('hidden'));
 
+    const wageringOpen=GS.wageringOpen||false;
+    const canWager=wageringOpen && !wagerLocked && (
+        (dailyDouble && ddTeam === teamKey) ||
+        (round === 3 && GS.questionKey === 'final')
+    );
+    const isDDSpectator=dailyDouble && ddTeam && ddTeam !== teamKey;
+
     if(phase==='final-reveal'||phase==='final-rankings'){
         show('wait-card');
         document.getElementById('wait-msg').textContent=phase==='final-rankings'?'Final standings are on the big screen!':'Final scores are being revealed — look at the big screen!';
     } else if(phase==='board'||phase==='round-transition'||!category){
         show('wait-card');
         document.getElementById('wait-msg').textContent=phase==='round-transition'?'Scores are being tallied...':'Waiting for the host to select a question...';
-    } else if(round===3&&!wagerLocked&&!accepting){
+    } else if(canWager){
         show('wager-card');
-        document.getElementById('wager-note').textContent='Wager up to $'+cachedScore.toLocaleString();
-    } else if(dailyDouble&&ddTeam&&ddTeam!==teamKey&&!hasSubmitted){
+        const maxWager=Math.max(cachedScore,0);
+        document.getElementById('wager-note').textContent=maxWager>0?'Wager up to $'+maxWager.toLocaleString():'Set your wager amount';
+    } else if(wagerLocked && wageringOpen && !accepting){
+        show('wait-card');
+        document.getElementById('wait-msg').textContent='Wager locked in. Waiting for the host...';
+    } else if(isDDSpectator&&!hasSubmitted){
         show('dd-spec-card');
         roomRef.child('teams/'+ddTeam+'/name').once('value',s=>{document.getElementById('dd-spec-team').textContent=s.val()||ddTeam;});
     } else if(hasSubmitted){
