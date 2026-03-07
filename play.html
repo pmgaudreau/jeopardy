@@ -292,9 +292,10 @@ function render(){
     cards.forEach(id=>document.getElementById(id).classList.add('hidden'));
 
     const wageringOpen=GS.wageringOpen||false;
+    const isFJ=round===3&&GS.questionKey==='final';
     const canWager=wageringOpen && !wagerLocked && (
         (dailyDouble && ddTeam === teamKey) ||
-        (round === 3 && GS.questionKey === 'final')
+        (isFJ && cachedScore > 0)
     );
     const isDDSpectator=dailyDouble && ddTeam && ddTeam !== teamKey;
 
@@ -314,6 +315,9 @@ function render(){
     } else if(wagerLocked && !accepting && !(GS.fjQuestionRevealed)){
         show('wait-card');
         document.getElementById('wait-msg').textContent='Wager locked in. Waiting for the host to reveal the question...';
+    } else if(isFJ && cachedScore <= 0 && !hasSubmitted){
+        show('wait-card');
+        document.getElementById('wait-msg').textContent='You don\'t have enough points to wager in Final Jeopardy. Watch the big screen!';
     } else if(isDDSpectator&&!hasSubmitted){
         show('dd-spec-card');
         roomRef.child('teams/'+ddTeam+'/name').once('value',s=>{document.getElementById('dd-spec-team').textContent=s.val()||ddTeam;});

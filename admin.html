@@ -742,9 +742,12 @@ function updateStatus() {
 }
 function updateWagerProgress(){
     const wp=document.getElementById('wager-progress');
-    const showWager=GS.dailyDouble||(GS.round===3&&GS.questionKey==='final');
+    const isFJ=GS.round===3&&GS.questionKey==='final';
+    const showWager=GS.dailyDouble||isFJ;
     if(!showWager){wp.classList.add('hidden');return;}
-    const eligible=GS.dailyDouble&&GS.ddTeam?[GS.ddTeam]:Object.keys(teams);
+    const eligible=GS.dailyDouble&&GS.ddTeam?[GS.ddTeam]:
+        isFJ?Object.keys(teams).filter(tk=>(teams[tk].score||0)>0):
+        Object.keys(teams);
     const locked=eligible.filter(tk=>teams[tk]&&teams[tk].wager>0);
     const waiting=eligible.filter(tk=>!teams[tk]||!teams[tk].wager);
     const txt=document.getElementById('wager-count-text');
@@ -795,6 +798,7 @@ function renderAnswers() {
 function getEligibleTeams(){
     const all=Object.keys(teams);
     if(GS.dailyDouble&&GS.ddTeam)return all.filter(tk=>tk===GS.ddTeam);
+    if(GS.round===3&&GS.questionKey==='final')return all.filter(tk=>(teams[tk].score||0)>0);
     return all;
 }
 function grade(tk,c){grading[tk]=grading[tk]===c?undefined:c;renderAnswers();}
@@ -874,6 +878,7 @@ function returnToBoard(){
 function startFinal(){
     roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
         resetWagers(Object.keys(teams));
+        pendingQuestion={questionText:f.questionText,imageUrl:f.imageUrl||''};
         roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:true,imageUrl:'',fjQuestionRevealed:false});
         showView('question-view');
         document.getElementById('qv-rl').textContent='Final Jeopardy';
