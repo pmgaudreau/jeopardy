@@ -620,7 +620,11 @@ function renderFinalBoard(b) {
 // ── Question ──
 function selQ(key) {
     const q=boardQ[key]; if(!q||q.completed)return;
-    if(q.dailyDouble){showDDSelect(key,q);return;}
+    if(q.dailyDouble){
+        const ddTk=GS.boardControl||Object.keys(teams)[0]||'';
+        activateQ(key,q,true,ddTk);
+        return;
+    }
     activateQ(key,q,false,'');
 }
 let pendingQuestion=null;
@@ -630,6 +634,7 @@ function activateQ(key,q,isDD,ddTk) {
     pendingQuestion=hideQ?{questionText:q.questionText,imageUrl:q.imageUrl||''}:null;
     roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD});
     roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false;
+    if(isDD){resetWagers([ddTk]);}
     showView('question-view');
     const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
     document.getElementById('qv-rl').textContent=rl[q.round]||'';
@@ -671,8 +676,12 @@ function toggleAccepting() {
     }
 }
 function toggleWagering() {
-    const w=!GS.wageringOpen;
-    roomRef.child('state/wageringOpen').set(w);
+    roomRef.child('state/wageringOpen').set(false);
+}
+function resetWagers(teamKeys){
+    const upd={};
+    teamKeys.forEach(tk=>{upd['teams/'+tk+'/wager']=0;});
+    if(Object.keys(upd).length)roomRef.update(upd);
 }
 function updateStatus() {
     const btn=document.getElementById('toggle-btn'), pill=document.getElementById('status-pill');
@@ -680,10 +689,7 @@ function updateStatus() {
     if(GS.accepting){btn.textContent='Stop Clock & Close Answers';btn.className='toggle-accept closed';btn.title='Stop the timer and prevent teams from submitting answers';pill.textContent='ACCEPTING';pill.className='status-pill a';}
     else{btn.textContent='Open for Answers';btn.className='toggle-accept open';btn.title='Start the timer and allow teams to submit answers';
         const has=Object.keys(curAnswers).length>0;pill.textContent=has?'CLOSED — GRADE':'WAITING';pill.className=has?'status-pill c':'status-pill w';}
-    if(GS.wageringOpen){wBtn.textContent='Close Wagers';wBtn.className='toggle-accept closed';wBtn.title='Close wagering for teams';}
-    else{wBtn.textContent='Open for Wagers';wBtn.className='toggle-accept open';wBtn.title='Allow teams to set their wager amount';}
-    const showWager=GS.dailyDouble||(GS.round===3&&GS.questionKey==='final');
-    wBtn.classList.toggle('hidden',!showWager);
+    wBtn.classList.add('hidden');
     const isFJ=GS.round===3&&GS.questionKey==='final';
     const isDD=GS.dailyDouble;
     const fjRevealBar=document.getElementById('fj-reveal-q-bar');
@@ -818,6 +824,7 @@ function returnToBoard(){
 // ── Final ──
 function startFinal(){
     roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
+        resetWagers(Object.keys(teams));
         roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:true,imageUrl:'',fjQuestionRevealed:false});
         showView('question-view');
         document.getElementById('qv-rl').textContent='Final Jeopardy';

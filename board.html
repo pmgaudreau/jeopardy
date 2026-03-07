@@ -361,7 +361,7 @@ function startListening(){
     showScreen('lobby');
     generateQR();
     roomRef.child('state').on('value',s=>{const v=s.val();if(!v)return;GS=v;onStateChange();});
-    roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScores();renderLobbyTeams();});
+    roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScores();renderLobbyTeams();renderBoardControl();});
     roomRef.child('currentAnswers').on('value',s=>{answerCount=s.val()?Object.keys(s.val()).length:0;updateAnswerCount();});
     roomRef.child('board').on('value',s=>{boardQ=s.val()||{};if(GS.phase==='board')renderGrid();});
     roomRef.child('categories').on('value',s=>{categories=s.val()||{};if(GS.phase==='board')renderGrid();});
@@ -401,6 +401,7 @@ function onStateChange(){
     } else if(phase==='board'){
         showBoard();
     }
+    renderBoardControl();
 
     if(GS.timerRunning)startTimer();else stopTimer();
 
