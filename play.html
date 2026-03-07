@@ -210,6 +210,7 @@ function joinRoom(){
             } else {
                 roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,avatar:av.id,color:av.color});
             }
+            try{sessionStorage.setItem('trivia_session',JSON.stringify({roomCode,teamName,teamKey,avatar:av.id}));}catch(e){}
             enterGame(av);
         });
     });
@@ -223,21 +224,54 @@ function enterGame(av){
     setupListeners();
 }
 
+// Auto-rejoin on page refresh
+(function(){
+    try{
+        const saved=JSON.parse(sessionStorage.getItem('trivia_session')||'null');
+        if(saved&&saved.roomCode&&saved.teamKey){
+            roomCode=saved.roomCode;teamName=saved.teamName;teamKey=saved.teamKey;selectedAvatar=saved.avatar;
+            roomRef=db.ref('trivia-rooms/'+roomCode);
+            roomRef.child('state').once('value',snap=>{
+                if(!snap.exists())return;
+                roomRef.child('teams/'+teamKey).once('value',ts=>{
+                    if(!ts.exists())return;
+                    const av=AVATARS.find(a=>a.id===saved.avatar);
+                    enterGame(av);
+                });
+            });
+        }
+    }catch(e){}
+})();
+
 // ── Listeners ──
 function setupListeners(){
-    roomRef.child('state').on('value',snap=>{
-        const s=snap.val();if(!s)return;GS=s;
-        if(s.questionKey!==lastQKey){lastQKey=s.questionKey;hasSubmitted=false;wagerLocked=false;resetWagerUI();}
+    Promise.all([
+        roomRef.child('state').once('value'),
+        roomRef.child('teams/'+teamKey).once('value'),
+        roomRef.child('currentAnswers/'+teamKey).once('value')
+    ]).then(([stateSnap, teamSnap, ansSnap])=>{
+        const s=stateSnap.val();
+        if(s){GS=s;lastQKey=s.questionKey||null;}
+        const t=teamSnap.val();
+        if(t){cachedScore=t.score||0;if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}}
+        const a=ansSnap.val();
+        if(a&&a.answer){hasSubmitted=true;document.getElementById('answer-echo').textContent='Your answer: "'+a.answer+'"';}
         render();startPhoneTimer();
-    });
-    roomRef.child('teams/'+teamKey).on('value',snap=>{
-        const t=snap.val();if(!t)return;cachedScore=t.score||0;
-        document.getElementById('my-score').textContent='$'+cachedScore.toLocaleString();
-        if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
-    });
-    roomRef.child('currentAnswers/'+teamKey).on('value',snap=>{
-        if(snap.exists()&&snap.val()&&snap.val().answer){hasSubmitted=true;document.getElementById('answer-echo').textContent='Your answer: "'+snap.val().answer+'"';}
-        render();
+
+        roomRef.child('state').on('value',snap=>{
+            const s=snap.val();if(!s)return;GS=s;
+            if(s.questionKey!==lastQKey){lastQKey=s.questionKey;hasSubmitted=false;wagerLocked=false;resetWagerUI();}
+            render();startPhoneTimer();
+        });
+        roomRef.child('teams/'+teamKey).on('value',snap=>{
+            const t=snap.val();if(!t)return;cachedScore=t.score||0;
+            document.getElementById('my-score').textContent='$'+cachedScore.toLocaleString();
+            if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
+        });
+        roomRef.child('currentAnswers/'+teamKey).on('value',snap=>{
+            if(snap.exists()&&snap.val()&&snap.val().answer){hasSubmitted=true;document.getElementById('answer-echo').textContent='Your answer: "'+snap.val().answer+'"';}
+            render();
+        });
     });
 }
 
@@ -251,7 +285,7 @@ function render(){
     document.getElementById('g-dd').classList.toggle('hidden',!dailyDouble);
 
     const qtc=document.getElementById('q-txt-card');
-    if(questionText&&phase!=='board'&&phase!=='round-transition'&&phase!=='final-reveal'&&phase!=='final-rankings'){qtc.classList.remove('hidden');document.getElementById('g-qtxt').textContent=questionText;}
+    if(questionText&&phase!=='board'&&phase!=='round-transition'&&phase!=='intermission'&&phase!=='final-reveal'&&phase!=='final-rankings'&&phase!=='recap'){qtc.classList.remove('hidden');document.getElementById('g-qtxt').textContent=questionText;}
     else qtc.classList.add('hidden');
 
     const cards=['wait-card','answer-card','submitted-card','dd-spec-card','wager-card','phone-timer'];
@@ -264,9 +298,12 @@ function render(){
     );
     const isDDSpectator=dailyDouble && ddTeam && ddTeam !== teamKey;
 
-    if(phase==='final-reveal'||phase==='final-rankings'){
+    if(phase==='final-reveal'||phase==='final-rankings'||phase==='recap'){
         show('wait-card');
-        document.getElementById('wait-msg').textContent=phase==='final-rankings'?'Final standings are on the big screen!':'Final scores are being revealed — look at the big screen!';
+        document.getElementById('wait-msg').textContent=phase==='recap'?'Check out the game recap on the big screen!':phase==='final-rankings'?'Final standings are on the big screen!':'Final scores are being revealed — look at the big screen!';
+    } else if(phase==='intermission'){
+        show('wait-card');
+        document.getElementById('wait-msg').textContent='Intermission — grab a snack and stretch your legs!';
     } else if(phase==='board'||phase==='round-transition'||!category){
         show('wait-card');
         document.getElementById('wait-msg').textContent=phase==='round-transition'?'Scores are being tallied...':'Waiting for the host to select a question...';
@@ -274,9 +311,9 @@ function render(){
         show('wager-card');
         const maxWager=Math.max(cachedScore,0);
         document.getElementById('wager-note').textContent=maxWager>0?'Wager up to $'+maxWager.toLocaleString():'Set your wager amount';
-    } else if(wagerLocked && wageringOpen && !accepting){
+    } else if(wagerLocked && !accepting && !(GS.fjQuestionRevealed)){
         show('wait-card');
-        document.getElementById('wait-msg').textContent='Wager locked in. Waiting for the host...';
+        document.getElementById('wait-msg').textContent='Wager locked in. Waiting for the host to reveal the question...';
     } else if(isDDSpectator&&!hasSubmitted){
         show('dd-spec-card');
         roomRef.child('teams/'+ddTeam+'/name').once('value',s=>{document.getElementById('dd-spec-team').textContent=s.val()||ddTeam;});

@@ -99,6 +99,16 @@
         .qr-toggle:hover { border-color: var(--gold-dim); color: var(--gold); }
         .qr-toggle.on { background: var(--gold); color: #000; border-color: var(--gold); }
 
+        .btn-intermission {
+            padding: .35rem .7rem; border: 1px solid var(--border); border-radius: var(--radius);
+            background: transparent; color: var(--text-muted); font-size: .85rem; cursor: pointer; transition: all .2s;
+            font-family: var(--fs); font-weight: 600;
+        }
+        .btn-intermission:hover { border-color: var(--gold-dim); color: var(--gold); }
+        .btn-intermission.end { border-color: var(--green); color: var(--green); }
+        .btn-intermission.end:hover { background: var(--green); color: #fff; }
+        .btn-intermission.end #intermission-countdown { font-variant-numeric: tabular-nums; }
+
         /* ═══ BOARD ═══ */
         .board-layout { display: grid; grid-template-columns: 1fr 240px; gap: 1rem; padding: 1rem 1.25rem; min-height: calc(100vh - 52px); }
         @media (max-width: 900px) { .board-layout { grid-template-columns: 1fr; } }
@@ -273,6 +283,8 @@
         <h1>Trivia Night</h1>
         <div class="top-controls">
             <button class="qr-toggle" id="qr-toggle" onclick="toggleQR()" title="Toggle QR on projector">QR</button>
+            <button class="btn-intermission" id="intermission-btn" onclick="promptIntermission()" title="Start a timed intermission break — shows a countdown and scoreboard on all screens">☕ Break</button>
+            <button class="btn-intermission end" id="end-intermission-btn" onclick="endIntermission()" title="End the intermission immediately and return to the board" style="display:none;">■ End Break <span id="intermission-countdown"></span></button>
             <span class="current-round-badge" id="current-round-badge">Round 1</span>
             <button class="btn btn-sm btn-end-round" id="end-round-btn" onclick="promptEndRound()" title="End the current round, show the scoreboard, and advance to the next round">End Round →</button>
         </div>
@@ -418,6 +430,27 @@
     </div>
 </div>
 
+<!-- ═══ INTERMISSION MODAL ═══ -->
+<div class="dd-overlay hidden" id="intermission-modal">
+    <div class="dd-modal fade-in" style="max-width:440px;">
+        <h2>☕ Intermission</h2>
+        <div style="color:var(--text-sec);font-size:.95rem;margin-bottom:1.25rem;">Set a timed break. The countdown and scoreboard will show on all screens.</div>
+        <div style="display:flex;gap:.4rem;justify-content:center;margin-bottom:1rem;">
+            <button class="btn btn-outline btn-sm" onclick="setIntDur(3)" id="int-pre-3" title="3 minute break">3 min</button>
+            <button class="btn btn-outline btn-sm" onclick="setIntDur(5)" id="int-pre-5" title="5 minute break" style="border-color:var(--gold);color:var(--gold);">5 min</button>
+            <button class="btn btn-outline btn-sm" onclick="setIntDur(10)" id="int-pre-10" title="10 minute break">10 min</button>
+        </div>
+        <div class="fg" style="max-width:200px;margin:0 auto 1.25rem;">
+            <label style="text-align:center;">Minutes</label>
+            <input type="number" id="int-duration" value="5" min="1" max="30" style="text-align:center;font-size:1.3rem;font-weight:700;font-family:var(--fh);">
+        </div>
+        <div style="display:flex;gap:.5rem;">
+            <button class="btn btn-outline" style="flex:1;border-radius:var(--radius);" onclick="closeIntModal()" title="Cancel">Cancel</button>
+            <button class="btn btn-gold" style="flex:1;border-radius:var(--radius);" onclick="confirmIntermission()" title="Start the intermission countdown">Start Break</button>
+        </div>
+    </div>
+</div>
+
 <!-- ═══ DD OVERLAY ═══ -->
 <div class="dd-overlay hidden" id="dd-overlay">
     <div class="dd-modal fade-in">
@@ -541,7 +574,18 @@ function syncView() {
     else if(GS.round===2){btn.textContent='End Round → Final Jeopardy';btn.classList.remove('hidden');}
     else{btn.classList.add('hidden');}
     document.getElementById('qr-toggle').classList.toggle('on',!!GS.showQR);
-    if(GS.phase==='final-reveal'||GS.phase==='final-rankings'){
+    const intBtn=document.getElementById('intermission-btn');
+    const endIntBtn=document.getElementById('end-intermission-btn');
+    if(GS.phase==='intermission'){
+        intBtn.style.display='none';
+        endIntBtn.style.display='';
+        startIntCountdown();
+    } else {
+        intBtn.style.display='';
+        endIntBtn.style.display='none';
+        stopIntCountdown();
+    }
+    if(GS.phase==='final-reveal'||GS.phase==='final-rankings'||GS.phase==='recap'){
         if(!revealData){
             roomRef.child('finalReveal').once('value',s=>{
                 const fr=s.val();if(!fr||!fr.teams)return;
@@ -553,7 +597,7 @@ function syncView() {
         } else {
             showView('reveal-view');
         }
-    } else if(GS.phase==='board'||GS.phase==='round-transition'){showView('board-view');document.getElementById('dd-overlay').classList.add('hidden');renderBoard();}
+    } else if(GS.phase==='board'||GS.phase==='round-transition'||GS.phase==='intermission'){showView('board-view');document.getElementById('dd-overlay').classList.add('hidden');renderBoard();}
     renderBoardControl();
 }
 function renderBoardControl(){
@@ -693,7 +737,7 @@ function updateStatus() {
     const isFJ=GS.round===3&&GS.questionKey==='final';
     const isDD=GS.dailyDouble;
     const fjRevealBar=document.getElementById('fj-reveal-q-bar');
-    fjRevealBar.classList.toggle('hidden',!((isFJ||isDD)&&!GS.wageringOpen&&!GS.fjQuestionRevealed));
+    fjRevealBar.classList.toggle('hidden',!((isFJ||isDD)&&!GS.fjQuestionRevealed));
     updateWagerProgress();
 }
 function updateWagerProgress(){
@@ -777,6 +821,11 @@ function applyScores() {
             upd['teams/'+tk+'/streak']=0;
         }
     });
+    const scoreSnap={};
+    Object.keys(teams).forEach(tk=>{
+        scoreSnap[tk]=(upd['teams/'+tk+'/score']!==undefined)?upd['teams/'+tk+'/score']:(teams[tk].score||0);
+    });
+    hist.scores=scoreSnap;
     upd['history/q'+Date.now()]=hist;
     const newControl=determineBoardControl(grading,curAnswers);
     if(newControl)upd['state/boardControl']=newControl;
@@ -842,11 +891,11 @@ function startFinal(){
 }
 function revealFJQuestion(){
     if(pendingQuestion){
-        roomRef.child('state').update({questionText:pendingQuestion.questionText,fjQuestionRevealed:true,imageUrl:pendingQuestion.imageUrl||''});
+        roomRef.child('state').update({questionText:pendingQuestion.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:pendingQuestion.imageUrl||''});
         pendingQuestion=null;
     } else {
         roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
-            roomRef.child('state').update({questionText:f.questionText,fjQuestionRevealed:true,imageUrl:f.imageUrl||''});
+            roomRef.child('state').update({questionText:f.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:f.imageUrl||''});
         });
     }
 }
@@ -945,8 +994,8 @@ function renderRevealAdmin() {
         document.getElementById('rv-avatar').innerHTML = '';
         document.getElementById('rv-stage-label').textContent = 'Scores applied. Final standings shown on projector.';
         document.getElementById('rv-detail').textContent = '';
-        document.querySelector('#reveal-view .btn-gold').textContent = 'Done';
-        document.querySelector('#reveal-view .btn-gold').onclick = () => { showView('board-view'); };
+        document.querySelector('#reveal-view .btn-gold').textContent = 'Show Game Recap';
+        document.querySelector('#reveal-view .btn-gold').onclick = () => { showRecap(); };
         renderRevealStandings();
         return;
     }
@@ -983,6 +1032,45 @@ function renderRevealStandings() {
     }).join('');
 }
 
+// ── Intermission ──
+let intCountdownInterval=null;
+function promptIntermission(){ document.getElementById('intermission-modal').classList.remove('hidden'); setIntDur(5); }
+function closeIntModal(){ document.getElementById('intermission-modal').classList.add('hidden'); }
+function setIntDur(m){
+    document.getElementById('int-duration').value=m;
+    ['3','5','10'].forEach(v=>{const b=document.getElementById('int-pre-'+v);
+        if(b){b.style.borderColor=v==String(m)?'var(--gold)':'';b.style.color=v==String(m)?'var(--gold)':'';}
+    });
+}
+function confirmIntermission(){
+    closeIntModal();
+    const mins=parseInt(document.getElementById('int-duration').value)||5;
+    const durationMs=mins*60*1000;
+    roomRef.child('state').update({
+        phase:'intermission', intermissionEnd:Date.now()+durationMs,
+        category:'',value:0,questionText:'',accepting:false,
+        dailyDouble:false,ddTeam:'',questionKey:'',
+        timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''
+    });
+    roomRef.child('currentAnswers').remove();grading={};
+}
+function endIntermission(){
+    stopIntCountdown();
+    roomRef.child('state').update({phase:'board',intermissionEnd:0});
+}
+function startIntCountdown(){
+    stopIntCountdown();
+    const el=document.getElementById('intermission-countdown');
+    intCountdownInterval=setInterval(()=>{
+        if(!GS.intermissionEnd){el.textContent='';return;}
+        const rem=Math.max(0,Math.ceil((GS.intermissionEnd-Date.now())/1000));
+        const m=Math.floor(rem/60),s=rem%60;
+        el.textContent=m+':'+String(s).padStart(2,'0');
+        if(rem<=0){el.textContent='0:00';stopIntCountdown();}
+    },500);
+}
+function stopIntCountdown(){if(intCountdownInterval)clearInterval(intCountdownInterval);intCountdownInterval=null;}
+
 // ── Timer ──
 function setTimer(s){timerSec=s;resetTimerDisp();}
 function resetTimerDisp(){const m=Math.floor(timerSec/60),s=timerSec%60;const d=document.getElementById('timer-display');d.textContent=m+':'+String(s).padStart(2,'0');d.classList.remove('danger');}
@@ -998,6 +1086,10 @@ function startLocalTimer(){
     },250);
 }
 function stopLocalTimer(){if(timerInterval)clearInterval(timerInterval);timerInterval=null;}
+
+function showRecap(){
+    roomRef.child('state/phase').set('recap');
+}
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 resetTimerDisp();
