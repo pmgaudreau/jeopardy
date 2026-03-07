@@ -81,14 +81,16 @@
         }
         .top-bar h1 { font-family: var(--fh); font-size: 1.2rem; color: var(--gold); letter-spacing: .06em; text-transform: uppercase; }
         .top-controls { display: flex; align-items: center; gap: .5rem; }
-        .round-tabs { display: flex; gap: .3rem; }
-        .round-tab {
-            padding: .4rem .9rem; border: 1px solid var(--border); border-radius: var(--radius);
-            background: transparent; color: var(--text-muted); font-family: var(--fs);
-            font-size: .85rem; font-weight: 600; cursor: pointer; transition: all .2s;
+        .current-round-badge {
+            background: var(--gold); color: #000; font-family: var(--fh); font-weight: 700;
+            padding: .35rem .9rem; border-radius: 20px; font-size: .85rem; letter-spacing: .5px; text-transform: uppercase;
         }
-        .round-tab:hover { border-color: var(--gold-dim); color: var(--text); }
-        .round-tab.active { background: var(--gold); color: #000; border-color: var(--gold); }
+        .btn-end-round {
+            background: transparent; border: 1px solid var(--red); color: var(--red);
+            border-radius: var(--radius); font-family: var(--fs); font-weight: 600;
+            padding: .35rem .9rem; font-size: .8rem; cursor: pointer; transition: all .2s;
+        }
+        .btn-end-round:hover { background: var(--red); color: #fff; }
 
         .qr-toggle {
             padding: .35rem .7rem; border: 1px solid var(--border); border-radius: var(--radius);
@@ -271,11 +273,8 @@
         <h1>Trivia Night</h1>
         <div class="top-controls">
             <button class="qr-toggle" id="qr-toggle" onclick="toggleQR()" title="Toggle QR on projector">QR</button>
-            <div class="round-tabs">
-                <button class="round-tab active" data-round="1" onclick="switchRound(1)">Round 1</button>
-                <button class="round-tab" data-round="2" onclick="switchRound(2)">Round 2</button>
-                <button class="round-tab" data-round="3" onclick="switchRound(3)">Final</button>
-            </div>
+            <span class="current-round-badge" id="current-round-badge">Round 1</span>
+            <button class="btn btn-sm btn-end-round" id="end-round-btn" onclick="promptEndRound()">End Round →</button>
         </div>
     </div>
     <div class="board-layout">
@@ -357,6 +356,18 @@
         </div>
         <div style="text-align:center;margin-top:1rem;">
             <button class="btn btn-gold btn-lg" onclick="completeAndReturn()">Complete &amp; Return to Board →</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ ROUND TRANSITION MODAL ═══ -->
+<div class="dd-overlay hidden" id="round-modal">
+    <div class="dd-modal fade-in" style="max-width:440px;">
+        <h2 id="round-modal-title">End Round?</h2>
+        <div id="round-modal-desc" style="color:var(--text-sec);font-size:.95rem;margin-bottom:1.5rem;"></div>
+        <div style="display:flex;gap:.5rem;">
+            <button class="btn btn-outline" style="flex:1;border-radius:var(--radius);" onclick="closeRoundModal()">Cancel</button>
+            <button class="btn btn-gold" style="flex:1;border-radius:var(--radius);" id="round-modal-confirm" onclick="confirmEndRound()">Confirm</button>
         </div>
     </div>
 </div>
@@ -475,7 +486,12 @@ function setupListeners() {
     roomRef.child('history').on('value',s=>{renderHistory(s.val()||{});});
 }
 function syncView() {
-    document.querySelectorAll('.round-tab').forEach(t=>t.classList.toggle('active',parseInt(t.dataset.round)===GS.round));
+    const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
+    document.getElementById('current-round-badge').textContent=rl[GS.round]||'';
+    const btn=document.getElementById('end-round-btn');
+    if(GS.round===1){btn.textContent='End Round → Double Jeopardy';btn.classList.remove('hidden');}
+    else if(GS.round===2){btn.textContent='End Round → Final Jeopardy';btn.classList.remove('hidden');}
+    else{btn.classList.add('hidden');}
     document.getElementById('qr-toggle').classList.toggle('on',!!GS.showQR);
     if(GS.phase==='board'||GS.phase==='round-transition'){showView('board-view');document.getElementById('dd-overlay').classList.add('hidden');}
 }
@@ -483,17 +499,25 @@ function syncView() {
 // ── QR Toggle ──
 function toggleQR() { roomRef.child('state/showQR').set(!GS.showQR); }
 
-// ── Round ──
-function switchRound(r) {
-    const prevRound = GS.round;
-    if (r !== prevRound && r !== 3) {
-        roomRef.child('state').update({round:r,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false});
-        roomRef.child('currentAnswers').remove(); grading={};
-        setTimeout(()=>{ roomRef.child('state/phase').set('board'); },8000);
-    } else {
-        roomRef.child('state').update({round:r,phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false});
-        roomRef.child('currentAnswers').remove(); grading={};
-    }
+// ── Round Transition ──
+function promptEndRound() {
+    const nextRound = GS.round + 1;
+    if (nextRound > 3) return;
+    const names = {2:'Double Jeopardy', 3:'Final Jeopardy'};
+    const cur = {1:'Round 1', 2:'Double Jeopardy'}[GS.round] || '';
+    document.getElementById('round-modal-title').textContent = 'End ' + cur + '?';
+    document.getElementById('round-modal-desc').innerHTML =
+        'This will show the <strong>scoreboard</strong> on all screens for 8 seconds, then advance to <strong>' + names[nextRound] + '</strong>.<br><br>Make sure all questions are completed first.';
+    document.getElementById('round-modal').classList.remove('hidden');
+}
+function closeRoundModal() { document.getElementById('round-modal').classList.add('hidden'); }
+function confirmEndRound() {
+    closeRoundModal();
+    const nextRound = GS.round + 1;
+    if (nextRound > 3) return;
+    roomRef.child('state').update({round:nextRound,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false});
+    roomRef.child('currentAnswers').remove(); grading={};
+    setTimeout(()=>{ roomRef.child('state/phase').set('board'); }, 8000);
 }
 
 // ── Board ──
@@ -639,10 +663,11 @@ function renderScoreboard() {
     if(!sorted.length){el.innerHTML='<div class="no-ans" style="font-size:.8rem;">No teams yet.</div>';return;}
     el.innerHTML=sorted.map(([k,t],i)=>{
         const av=avatarImg(t.avatar), col=avatarColor(t.avatar);
-        return`<div class="score-row"><span class="score-rank">${i+1}</span><span class="score-avatar">${av}</span><span class="score-name" style="color:${col}">${esc(t.name||k)}</span><span class="score-val">$${(t.score||0).toLocaleString()}</span><button class="adj-btn" onclick="adjScore('${k}')" title="Adjust">±</button></div>`;
+        return`<div class="score-row"><span class="score-rank">${i+1}</span><span class="score-avatar">${av}</span><span class="score-name" style="color:${col}">${esc(t.name||k)}</span><span class="score-val">$${(t.score||0).toLocaleString()}</span><button class="adj-btn" onclick="adjScore('${k}')" title="Adjust score">±</button><button class="adj-btn" onclick="removeTeam('${k}')" title="Remove team" style="color:var(--red);border-color:var(--red);">✕</button></div>`;
     }).join('');
 }
 function adjScore(tk){const cur=(teams[tk]&&teams[tk].score)||0;const a=prompt(`Adjust ${teams[tk]?.name||tk} ($${cur}):`,0);if(a===null)return;const n=parseInt(a);if(!isNaN(n))roomRef.child('teams/'+tk+'/score').set(cur+n);}
+function removeTeam(tk){const name=(teams[tk]&&teams[tk].name)||tk;if(!confirm('Remove "'+name+'" from the game? This cannot be undone.'))return;roomRef.child('teams/'+tk).remove();}
 function addTeamManual(){const n=document.getElementById('add-team').value.trim();if(!n)return;const k=n.toLowerCase().replace(/[^a-z0-9]/g,'_');roomRef.child('teams/'+k).set({name:n,score:0,wager:0,avatar:'',color:''});document.getElementById('add-team').value='';}
 
 // ── History ──

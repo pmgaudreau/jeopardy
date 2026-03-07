@@ -45,11 +45,11 @@
         .bd-cell.done::after{content:"✕";position:absolute;font-size:4vw;color:var(--red);opacity:.7;}
         .bd-cell .dd-star{position:absolute;top:.3vw;right:.5vw;font-size:.9vw;color:var(--gold-bright);opacity:.7;}
 
-        .bd-scores{display:flex;align-items:center;justify-content:center;gap:2vw;flex-wrap:wrap;}
-        .bd-team{display:flex;align-items:center;gap:.5vw;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.4vw 1.2vw;}
-        .bd-team .av img{width:1.8vw;height:1.8vw;border-radius:50%;object-fit:cover;}
-        .bd-team .nm{font-family:var(--fs);font-weight:700;font-size:1.1vw;color:var(--text);}
-        .bd-team .sc{font-family:var(--fh);font-weight:800;font-size:1.3vw;color:var(--gold);margin-left:.5vw;}
+        .bd-scores{display:flex;align-items:center;justify-content:center;gap:.8vw;flex-wrap:wrap;max-height:12vw;overflow-y:auto;}
+        .bd-team{display:flex;align-items:center;gap:.4vw;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:.3vw .8vw;min-width:0;}
+        .bd-team .av img{width:1.4vw;height:1.4vw;border-radius:50%;object-fit:cover;}
+        .bd-team .nm{font-family:var(--fs);font-weight:700;font-size:.9vw;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:8vw;}
+        .bd-team .sc{font-family:var(--fh);font-weight:800;font-size:1vw;color:var(--gold);margin-left:.3vw;white-space:nowrap;}
 
         /* ═══ QUESTION DISPLAY ═══ */
         #question-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:4vw;text-align:center;position:relative;}
@@ -76,30 +76,31 @@
         /* ═══ ROUND TRANSITION ═══ */
         #transition-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:4vw;gap:2vw;}
         .tr-title{font-family:var(--fh);font-size:4vw;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;animation:fadeDown .6s ease;}
-        .tr-scores{display:flex;flex-direction:column;gap:1vw;width:60vw;max-width:700px;}
+        .tr-scores{display:flex;flex-direction:column;gap:.6vw;width:70vw;max-width:900px;max-height:70vh;overflow-y:auto;}
         .tr-row{
-            display:flex;align-items:center;gap:1vw;background:var(--card);border:1px solid var(--border);
-            border-radius:12px;padding:1vw 2vw;animation:slideIn .5s ease;animation-fill-mode:both;
+            display:flex;align-items:center;gap:.8vw;background:var(--card);border:1px solid var(--border);
+            border-radius:10px;padding:.7vw 1.5vw;animation:slideIn .5s ease;animation-fill-mode:both;
         }
-        .tr-row .rank{font-family:var(--fh);font-size:2.2vw;font-weight:800;color:var(--tmut);min-width:3vw;text-align:center;}
+        .tr-row .rank{font-family:var(--fh);font-size:1.8vw;font-weight:800;color:var(--tmut);min-width:2.5vw;text-align:center;}
         .tr-row:first-child .rank{color:var(--gold);}
-        .tr-row .av img{width:2.5vw;height:2.5vw;border-radius:50%;object-fit:cover;}
-        .tr-row .nm{flex:1;font-family:var(--fs);font-weight:700;font-size:1.8vw;}
-        .tr-row .sc{font-family:var(--fh);font-weight:800;font-size:2.2vw;color:var(--gold);}
+        .tr-row .av img{width:2vw;height:2vw;border-radius:50%;object-fit:cover;}
+        .tr-row .nm{flex:1;font-family:var(--fs);font-weight:700;font-size:1.4vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .tr-row .sc{font-family:var(--fh);font-weight:800;font-size:1.8vw;color:var(--gold);}
         .tr-next{font-family:var(--fh);font-size:2.5vw;color:var(--gold-bright);text-transform:uppercase;animation:fadeDown 1s ease 1.5s;animation-fill-mode:both;}
         @keyframes fadeDown{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
         @keyframes slideIn{from{opacity:0;transform:translateX(-30px);}to{opacity:1;transform:translateX(0);}}
 
         /* ═══ QR OVERLAY ═══ */
         #qr-overlay{
-            position:fixed;bottom:2vw;right:2vw;background:var(--card);border:2px solid var(--gold-dim);
-            border-radius:16px;padding:1.5vw;text-align:center;z-index:200;
-            opacity:0;transform:scale(.8);transition:all .3s ease;pointer-events:none;
+            position:fixed;inset:0;background:rgba(0,0,0,.95);
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            z-index:200;opacity:0;transition:opacity .3s ease;pointer-events:none;gap:2vw;
         }
-        #qr-overlay.show{opacity:1;transform:scale(1);pointer-events:auto;}
-        #qr-overlay h3{font-family:var(--fh);font-size:1.3vw;color:var(--gold);margin-bottom:.5vw;text-transform:uppercase;}
-        #qr-overlay canvas{border-radius:8px;}
-        #qr-overlay .url{font-family:var(--fb);font-size:.8vw;color:var(--tsec);margin-top:.4vw;word-break:break-all;}
+        #qr-overlay.show{opacity:1;pointer-events:auto;}
+        #qr-overlay h3{font-family:var(--fh);font-size:4vw;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;}
+        #qr-overlay canvas{border-radius:16px;box-shadow:0 0 60px rgba(255,215,0,.2);}
+        #qr-overlay .url{font-family:var(--fh);font-size:2vw;color:var(--gold-bright);letter-spacing:.05em;}
+        #qr-overlay .room-hint{font-family:var(--fs);font-size:1.5vw;color:var(--tsec);}
 
         /* ═══ CONNECT ═══ */
         #connect-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}
@@ -160,7 +161,12 @@
 </div>
 
 <!-- QR Overlay -->
-<div id="qr-overlay"><h3>Join the Game!</h3><canvas id="qr-canvas"></canvas><div class="url" id="qr-url"></div></div>
+<div id="qr-overlay">
+    <h3>Join the Game!</h3>
+    <canvas id="qr-canvas"></canvas>
+    <div class="url" id="qr-url"></div>
+    <div class="room-hint">Room Code: <span id="qr-room" style="color:var(--gold);font-family:var(--fh);font-weight:700;font-size:1.8vw;letter-spacing:2px;"></span></div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -226,7 +232,8 @@ function generateQR(){
     const base=window.location.href.replace(/\/[^\/]*$/,'/');
     const url=base+'play.html?room='+roomCode;
     document.getElementById('qr-url').textContent=url;
-    try{QRCode.toCanvas(document.getElementById('qr-canvas'),url,{width:200,margin:2,color:{dark:'#FFD700',light:'#111111'}});}catch(e){}
+    document.getElementById('qr-room').textContent=roomCode;
+    try{QRCode.toCanvas(document.getElementById('qr-canvas'),url,{width:500,margin:3,color:{dark:'#000000',light:'#FFFFFF'}},function(err){if(err)console.error('QR error:',err);});}catch(e){console.error('QR init error:',e);}
 }
 function updateQR(){document.getElementById('qr-overlay').classList.toggle('show',!!GS.showQR);}
 
@@ -272,7 +279,7 @@ function renderGrid(){
     cats.forEach(c=>{h+=`<div class="bd-cat">${esc(c)}</div>`;});
     vals.forEach((v,row)=>{cats.forEach((c,col)=>{
         const k=`r${r}_c${col}_r${row}`,q=boardQ[k],done=q&&q.completed,dd=q&&q.dailyDouble;
-        h+=`<div class="bd-cell${done?' done':''}">$${v}${dd&&!done?'<span class="dd-star">★</span>':''}</div>`;
+        h+=`<div class="bd-cell${done?' done':''}">$${v}</div>`;
     });});
     g.innerHTML=h;
 }
