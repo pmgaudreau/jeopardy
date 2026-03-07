@@ -278,6 +278,7 @@
         </div>
     </div>
     <div class="board-layout">
+        <div id="board-control-bar" style="grid-column:1/-1;text-align:center;padding:.4rem .75rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.5rem;font-size:.85rem;color:var(--text-sec);display:none;"><span style="color:var(--text-muted);text-transform:uppercase;font-family:var(--fs);font-size:.7rem;letter-spacing:.05em;">Board Control: </span><span id="board-control-name" style="color:var(--gold);font-weight:700;"></span></div>
         <div class="jeopardy-board" id="jeopardy-board"></div>
         <div class="sidebar">
             <div class="side-panel">
@@ -341,8 +342,9 @@
             <div class="toggle-bar" style="margin-bottom:.4rem;">
                 <button class="toggle-accept open hidden" id="wager-toggle-btn" onclick="toggleWagering()">Open for Wagers</button>
             </div>
+            <div id="wager-progress" class="hidden" style="text-align:center;margin-bottom:.5rem;font-size:.8rem;color:var(--text-sec);"><span id="wager-count-text"></span></div>
             <div class="toggle-bar hidden" id="fj-reveal-q-bar" style="margin-bottom:.4rem;">
-                <button class="btn btn-gold btn-lg" onclick="revealFJQuestion()" title="Send the Final Jeopardy question to all screens — wagers should be locked first" style="width:100%;">Reveal Question to Teams</button>
+                <button class="btn btn-gold btn-lg" onclick="revealFJQuestion()" title="Send the question to all screens — wagers should be locked first" style="width:100%;">Reveal Question to Teams</button>
             </div>
             <div class="toggle-bar">
                 <button class="toggle-accept open" id="toggle-btn" onclick="toggleAccepting()">Open for Answers</button>
@@ -505,7 +507,7 @@ function createRoom() {
     const code=document.getElementById('inp-room').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
     if(!code){document.getElementById('setup-err').textContent='Enter a room code.';return;}
     roomCode=code; roomRef=db.ref('trivia-rooms/'+roomCode);
-    const init={state:{round:1,phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',showQR:false,timerEnd:0,timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''},teams:{},currentAnswers:{},history:{}};
+    const init={state:{round:1,phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',showQR:false,timerEnd:0,timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:'',boardControl:''},teams:{},currentAnswers:{},history:{}};
     if(parsedCSV){init.board=parsedCSV.questions;init.categories=parsedCSV.categories;if(parsedCSV.final)init.final=parsedCSV.final;}
     roomRef.set(init).then(()=>enterGame()).catch(e=>{document.getElementById('setup-err').textContent='Error: '+e.message;});
 }
@@ -526,7 +528,7 @@ function enterGame() {
 // ── Listeners ──
 function setupListeners() {
     roomRef.child('state').on('value',s=>{const v=s.val();if(!v)return;GS=v;syncView();});
-    roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScoreboard();});
+    roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScoreboard();updateWagerProgress();assignInitialControl();});
     roomRef.child('currentAnswers').on('value',s=>{curAnswers=s.val()||{};renderAnswers();});
     roomRef.child('board').on('value',s=>{boardQ=s.val()||{};renderBoard();});
     roomRef.child('history').on('value',s=>{renderHistory(s.val()||{});});
@@ -552,6 +554,17 @@ function syncView() {
             showView('reveal-view');
         }
     } else if(GS.phase==='board'||GS.phase==='round-transition'){showView('board-view');document.getElementById('dd-overlay').classList.add('hidden');renderBoard();}
+    renderBoardControl();
+}
+function renderBoardControl(){
+    const bar=document.getElementById('board-control-bar');
+    const tk=GS.boardControl;
+    if(tk&&teams[tk]){
+        bar.style.display='block';
+        document.getElementById('board-control-name').innerHTML=avatarImg(teams[tk].avatar,18)+' '+esc(teams[tk].name||tk);
+    } else {
+        bar.style.display='none';
+    }
 }
 
 // ── QR Toggle ──
@@ -610,9 +623,12 @@ function selQ(key) {
     if(q.dailyDouble){showDDSelect(key,q);return;}
     activateQ(key,q,false,'');
 }
+let pendingQuestion=null;
 function activateQ(key,q,isDD,ddTk) {
     const val=q.value;
-    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isDD,imageUrl:q.imageUrl||''});
+    const hideQ=isDD;
+    pendingQuestion=hideQ?{questionText:q.questionText,imageUrl:q.imageUrl||''}:null;
+    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD});
     roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false;
     showView('question-view');
     const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
@@ -669,8 +685,24 @@ function updateStatus() {
     const showWager=GS.dailyDouble||(GS.round===3&&GS.questionKey==='final');
     wBtn.classList.toggle('hidden',!showWager);
     const isFJ=GS.round===3&&GS.questionKey==='final';
+    const isDD=GS.dailyDouble;
     const fjRevealBar=document.getElementById('fj-reveal-q-bar');
-    fjRevealBar.classList.toggle('hidden',!(isFJ&&!GS.wageringOpen&&!GS.fjQuestionRevealed));
+    fjRevealBar.classList.toggle('hidden',!((isFJ||isDD)&&!GS.wageringOpen&&!GS.fjQuestionRevealed));
+    updateWagerProgress();
+}
+function updateWagerProgress(){
+    const wp=document.getElementById('wager-progress');
+    const showWager=GS.dailyDouble||(GS.round===3&&GS.questionKey==='final');
+    if(!showWager){wp.classList.add('hidden');return;}
+    const eligible=GS.dailyDouble&&GS.ddTeam?[GS.ddTeam]:Object.keys(teams);
+    const locked=eligible.filter(tk=>teams[tk]&&teams[tk].wager>0);
+    const waiting=eligible.filter(tk=>!teams[tk]||!teams[tk].wager);
+    const txt=document.getElementById('wager-count-text');
+    txt.innerHTML='Wagers: <strong style="color:var(--gold);">'+locked.length+' of '+eligible.length+'</strong> locked in';
+    if(waiting.length>0&&locked.length>0){
+        txt.innerHTML+='<br><span style="color:var(--text-muted);font-size:.75rem;">Waiting: '+waiting.map(tk=>(teams[tk]&&teams[tk].name)||tk).join(', ')+'</span>';
+    }
+    wp.classList.remove('hidden');
 }
 
 // ── Answer Reveal ──
@@ -740,7 +772,30 @@ function applyScores() {
         }
     });
     upd['history/q'+Date.now()]=hist;
+    const newControl=determineBoardControl(grading,curAnswers);
+    if(newControl)upd['state/boardControl']=newControl;
     roomRef.update(upd).then(()=>{grading={};scoresApplied=true;renderAnswers();});
+}
+function determineBoardControl(gradingMap,answers){
+    const current=GS.boardControl;
+    const allTeams=Object.keys(teams);
+    if(allTeams.length===0)return '';
+    const correctTeams=Object.keys(answers).filter(tk=>gradingMap[tk]===true);
+    if(current&&gradingMap[current]===true)return current;
+    if(correctTeams.length>0){
+        const pick=correctTeams[Math.floor(Math.random()*correctTeams.length)];
+        return pick;
+    }
+    const others=allTeams.filter(tk=>tk!==current);
+    if(others.length>0)return others[Math.floor(Math.random()*others.length)];
+    return allTeams[Math.floor(Math.random()*allTeams.length)];
+}
+function assignInitialControl(){
+    const allTeams=Object.keys(teams);
+    if(allTeams.length>0&&!GS.boardControl){
+        const pick=allTeams[Math.floor(Math.random()*allTeams.length)];
+        roomRef.child('state/boardControl').set(pick);
+    }
 }
 
 // ── Complete ──
@@ -779,9 +834,14 @@ function startFinal(){
     });
 }
 function revealFJQuestion(){
-    roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
-        roomRef.child('state').update({questionText:f.questionText,fjQuestionRevealed:true,imageUrl:f.imageUrl||''});
-    });
+    if(pendingQuestion){
+        roomRef.child('state').update({questionText:pendingQuestion.questionText,fjQuestionRevealed:true,imageUrl:pendingQuestion.imageUrl||''});
+        pendingQuestion=null;
+    } else {
+        roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
+            roomRef.child('state').update({questionText:f.questionText,fjQuestionRevealed:true,imageUrl:f.imageUrl||''});
+        });
+    }
 }
 
 // ── Scoreboard ──

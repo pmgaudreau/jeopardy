@@ -25,6 +25,12 @@
         .lobby-team img{width:3.5vw;height:3.5vw;border-radius:50%;object-fit:cover;border:2px solid var(--gold-dim);}
         .lobby-team .lt-name{font-family:var(--fs);font-size:.9vw;font-weight:700;white-space:nowrap;max-width:8vw;overflow:hidden;text-overflow:ellipsis;}
 
+        /* ═══ BOARD CONTROL ═══ */
+        .bd-control{text-align:center;padding:.5vw 1vw;font-family:var(--fs);font-size:1.2vw;}
+        .bd-control-label{color:var(--tmut);text-transform:uppercase;font-size:.9vw;letter-spacing:.06em;}
+        .bd-control img{vertical-align:middle;}
+        #bd-control-name{color:var(--gold);font-weight:700;font-family:var(--fh);font-size:1.4vw;}
+
         /* ═══ BOARD VIEW ═══ */
         #board-display{flex:1;display:none;flex-direction:column;padding:1.5vw;}
         .bd-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1vw;}
@@ -177,6 +183,7 @@
 
 <!-- Board grid -->
 <div id="board-display" class="hidden">
+    <div class="bd-control hidden" id="bd-control"><span class="bd-control-label">Board Control:</span> <span id="bd-control-name"></span></div>
     <div class="bd-header">
         <span class="bd-title">PDK NINE TRIVIA</span>
         <span class="bd-round" id="bd-round">Round 1</span>
@@ -432,6 +439,17 @@ function showBoard(){
     const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
     document.getElementById('bd-round').textContent=rl[GS.round]||'';
     renderGrid();
+    renderBoardControl();
+}
+function renderBoardControl(){
+    const el=document.getElementById('bd-control');
+    const tk=GS.boardControl;
+    if(tk&&teams[tk]){
+        el.classList.remove('hidden');
+        document.getElementById('bd-control-name').innerHTML=avatarImg(tk?teams[tk].avatar:'','1.8vw')+' '+esc(teams[tk].name||tk);
+    } else {
+        el.classList.add('hidden');
+    }
 }
 
 function renderGrid(){
