@@ -3,660 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Trivia Night — Team Play</title>
+    <title>PDK NINE Trivia Night — Play</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        :root{--bg:#000;--card:#111;--elev:#1a1a1a;--inp:#0d0d0d;--gold:#FFD700;--gold-dim:#b8960f;--gold-bright:#ffe44d;--red:#e63946;--green:#2ecc71;--blue:#4a90d9;--text:#fff;--tsec:#b0b0b0;--tmut:#666;--border:#333;--radius:12px;--fh:'Oswald','Impact',sans-serif;--fs:'Rajdhani','Inter',sans-serif;--fb:'Inter',system-ui,sans-serif;}
+        body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;}
+        .hidden{display:none!important;}
+        input[type="text"],input[type="number"],textarea{width:100%;padding:.85rem 1rem;background:var(--inp);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--fb);font-size:1.05rem;outline:none;-webkit-appearance:none;}
+        input:focus,textarea:focus{border-color:var(--gold);}
+        .btn{display:inline-flex;align-items:center;justify-content:center;width:100%;padding:1rem;border:none;border-radius:var(--radius);font-family:var(--fs);font-size:1.1rem;font-weight:700;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+        .btn:active{transform:scale(.97);}.btn:disabled{opacity:.5;cursor:not-allowed;}
+        .btn-gold{background:var(--gold);color:#000;}.btn-green{background:var(--green);color:#fff;}.btn-blue{background:var(--blue);color:#fff;}
 
-        :root {
-            --bg: #060e1f;
-            --bg-card: #0f1a33;
-            --bg-card-alt: #152040;
-            --primary: #1e40af;
-            --primary-hover: #2563eb;
-            --accent: #f59e0b;
-            --accent-hover: #fbbf24;
-            --success: #22c55e;
-            --danger: #ef4444;
-            --text: #f1f5f9;
-            --text-muted: #94a3b8;
-            --border: #1e293b;
-            --radius: 12px;
+        /* ═══ JOIN ═══ */
+        .join{flex:1;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
+        .join-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem 1.5rem;max-width:420px;width:100%;text-align:center;}
+        .join-card h1{font-family:var(--fh);font-size:2.2rem;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.1rem;}
+        .join-card .sub{font-family:var(--fs);font-size:.9rem;color:var(--tsec);margin-bottom:1.5rem;}
+        .fg{margin-bottom:1rem;text-align:left;}
+        .fg label{display:block;font-size:.8rem;color:var(--tmut);margin-bottom:.3rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;}
+        .err{color:var(--red);font-size:.85rem;margin-top:.75rem;}
+
+        /* Avatar Grid */
+        .avatar-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem;margin-bottom:1rem;}
+        .avatar-opt{
+            display:flex;flex-direction:column;align-items:center;gap:.2rem;
+            padding:.6rem .3rem;border:2px solid var(--border);border-radius:10px;
+            background:var(--elev);cursor:pointer;transition:all .15s;
         }
+        .avatar-opt:hover{border-color:var(--gold-dim);}
+        .avatar-opt.selected{border-color:var(--gold);background:rgba(255,215,0,.08);box-shadow:0 0 12px rgba(255,215,0,.2);}
+        .avatar-opt.taken{opacity:.3;cursor:not-allowed;pointer-events:none;}
+        .avatar-img{width:36px;height:36px;border-radius:50%;object-fit:cover;}
+        .avatar-opt .name{font-size:.65rem;color:var(--tsec);font-family:var(--fs);text-transform:uppercase;letter-spacing:.03em;}
+        .avatar-opt.selected .name{color:var(--gold);}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100dvh;
-            display: flex;
-            flex-direction: column;
-        }
+        /* ═══ GAME ═══ */
+        #game{flex:1;display:none;flex-direction:column;}
+        .game-hdr{background:var(--card);border-bottom:1px solid var(--border);padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;}
+        .team-lbl{display:flex;align-items:center;gap:.4rem;font-family:var(--fs);font-weight:700;font-size:.95rem;}
+        .team-lbl .av{display:flex;align-items:center;}.team-lbl .av img{width:28px;height:28px;border-radius:50%;object-fit:cover;}
+        .score-badge{background:var(--gold);color:#000;font-family:var(--fh);font-weight:800;padding:.3rem .85rem;border-radius:20px;font-size:.9rem;}
 
-        /* ── Join Screen ── */
-        .screen {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-        }
+        .game-body{flex:1;display:flex;flex-direction:column;padding:1rem;gap:.75rem;}
 
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 2rem 1.5rem;
-            width: 100%;
-            max-width: 420px;
-            text-align: center;
-        }
+        .q-info{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.25rem;text-align:center;}
+        .q-info .round{font-family:var(--fs);font-size:.75rem;color:var(--tmut);text-transform:uppercase;letter-spacing:2px;margin-bottom:.3rem;}
+        .q-info .cat{font-family:var(--fh);font-size:1.5rem;font-weight:700;color:var(--gold);text-transform:uppercase;line-height:1.2;margin-bottom:.2rem;}
+        .q-info .val{font-family:var(--fh);font-size:1.8rem;font-weight:700;color:var(--gold-bright);}
+        .q-info .dd-lbl{display:inline-block;background:var(--red);color:#fff;font-family:var(--fh);font-size:.75rem;padding:.2rem .7rem;border-radius:999px;margin-top:.4rem;}
 
-        .card h1 {
-            font-size: 2rem;
-            color: var(--accent);
-            font-weight: 800;
-            letter-spacing: 1px;
-            margin-bottom: .2rem;
-        }
+        .q-txt-card{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:var(--radius);padding:1rem 1.25rem;}
+        .q-txt-card .question{font-size:1.1rem;line-height:1.5;}
 
-        .card h2 {
-            font-size: .9rem;
-            color: var(--text-muted);
-            font-weight: 400;
-            margin-bottom: 1.75rem;
-        }
+        .state-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;flex:1;display:flex;flex-direction:column;gap:.75rem;}
 
-        .form-group {
-            margin-bottom: 1rem;
-            text-align: left;
-        }
+        /* Timer on phone */
+        .phone-timer{text-align:center;padding:.5rem 0;}
+        .phone-timer .time{font-family:var(--fh);font-size:2rem;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums;}
+        .phone-timer .time.danger{color:var(--red);}
 
-        .form-group label {
-            display: block;
-            font-size: .8rem;
-            color: var(--text-muted);
-            margin-bottom: .3rem;
-            font-weight: 500;
-        }
+        .wait{text-align:center;padding:2rem .5rem;}
+        .wait .dots{font-size:2rem;color:var(--gold);animation:pulse 1.5s ease-in-out infinite;}
+        .wait .msg{color:var(--tmut);font-size:.95rem;margin-top:.5rem;}
+        @keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
 
-        input[type="text"], input[type="number"], textarea {
-            width: 100%;
-            padding: .85rem 1rem;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            color: var(--text);
-            font-size: 1.05rem;
-            outline: none;
-            transition: border-color .2s;
-            -webkit-appearance: none;
-        }
+        .answer-area textarea{flex:1;min-height:80px;resize:none;font-size:1.1rem;padding:1rem;}
 
-        input:focus, textarea:focus { border-color: var(--primary-hover); }
+        .submitted{text-align:center;padding:2rem .5rem;}
+        .submitted .check{font-size:3rem;color:var(--green);}
+        .submitted .label{font-size:1.1rem;font-weight:600;color:var(--green);}
+        .submitted .echo{color:var(--tmut);font-size:.85rem;margin-top:.5rem;}
 
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 1rem;
-            border: none;
-            border-radius: var(--radius);
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background .2s, transform .1s;
-            -webkit-tap-highlight-color: transparent;
-        }
+        .dd-spec{text-align:center;padding:2rem .5rem;}
+        .dd-spec .star{font-size:2.5rem;}
+        .dd-spec .tn{color:var(--gold);font-weight:700;font-size:1.1rem;}
+        .dd-spec .msg{color:var(--tmut);font-size:.9rem;margin-top:.25rem;}
 
-        .btn:active { transform: scale(.97); }
+        .wager-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;text-align:center;}
+        .wager-card h3{font-family:var(--fh);color:var(--gold);font-size:1.1rem;margin-bottom:.5rem;text-transform:uppercase;}
+        .wager-card .note{color:var(--tmut);font-size:.85rem;margin-bottom:1rem;}
+        .wager-card input[type="number"]{text-align:center;font-size:1.5rem;font-weight:700;font-family:var(--fh);margin-bottom:.75rem;}
+        .wager-locked{padding:.75rem;background:rgba(46,204,113,.1);border:1px solid var(--green);border-radius:var(--radius);}
+        .wager-locked .amt{font-family:var(--fh);font-size:1.5rem;font-weight:800;color:var(--gold);}
+        .wager-locked .lbl{font-size:.8rem;color:var(--green);margin-top:.15rem;}
 
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-hover); }
-
-        .btn-success { background: var(--success); color: white; }
-        .btn-success:hover { background: #16a34a; }
-
-        .btn-accent { background: var(--accent); color: #0f172a; }
-        .btn-accent:hover { background: var(--accent-hover); }
-
-        .btn:disabled {
-            opacity: .5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .error-msg {
-            color: var(--danger);
-            font-size: .85rem;
-            margin-top: .75rem;
-        }
-
-        .hidden { display: none !important; }
-
-        /* ── Game Screen ── */
-        #game-screen {
-            flex: 1;
-            display: none;
-            flex-direction: column;
-        }
-
-        .game-header {
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border);
-            padding: .75rem 1.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .team-name-display {
-            font-weight: 700;
-            font-size: 1rem;
-        }
-
-        .score-display {
-            background: var(--accent);
-            color: #0f172a;
-            font-weight: 800;
-            padding: .35rem .9rem;
-            border-radius: 20px;
-            font-size: .95rem;
-        }
-
-        .game-body {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 1.25rem;
-            gap: 1rem;
-        }
-
-        /* ── Question Info ── */
-        .question-info {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
-        }
-
-        .round-label {
-            font-size: .75rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--text-muted);
-            font-weight: 600;
-            margin-bottom: .5rem;
-        }
-
-        .category-display {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: var(--text);
-            margin-bottom: .35rem;
-            line-height: 1.2;
-        }
-
-        .value-display {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--accent);
-        }
-
-        /* ── Answer Section ── */
-        .answer-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .answer-section textarea {
-            flex: 1;
-            min-height: 80px;
-            resize: none;
-            font-size: 1.15rem;
-            padding: 1rem;
-        }
-
-        .submitted-msg {
-            text-align: center;
-            padding: 1.5rem;
-        }
-
-        .submitted-msg .check {
-            font-size: 3rem;
-            margin-bottom: .5rem;
-        }
-
-        .submitted-msg .label {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--success);
-        }
-
-        .submitted-msg .answer-echo {
-            color: var(--text-muted);
-            font-size: .9rem;
-            margin-top: .5rem;
-        }
-
-        /* ── Waiting State ── */
-        .waiting-state {
-            text-align: center;
-            padding: 3rem 1rem;
-        }
-
-        .waiting-state .dots {
-            font-size: 2rem;
-            color: var(--accent);
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        .waiting-state .msg {
-            color: var(--text-muted);
-            font-size: 1rem;
-            margin-top: .75rem;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: .4; }
-            50% { opacity: 1; }
-        }
-
-        /* ── Wager Section (Final Jeopardy) ── */
-        .wager-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
-        }
-
-        .wager-section h3 {
-            color: var(--accent);
-            margin-bottom: .75rem;
-            font-size: 1.1rem;
-        }
-
-        .wager-section .score-note {
-            color: var(--text-muted);
-            font-size: .85rem;
-            margin-bottom: 1rem;
-        }
-
-        .wager-input-row {
-            display: flex;
-            gap: .5rem;
-            margin-bottom: .75rem;
-        }
-
-        .wager-input-row input {
-            flex: 1;
-            text-align: center;
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
-
-        .wager-locked {
-            padding: 1rem;
-            background: rgba(34, 197, 94, .1);
-            border: 1px solid var(--success);
-            border-radius: var(--radius);
-            text-align: center;
-        }
-
-        .wager-locked .amount {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--accent);
-        }
-
-        .wager-locked .label {
-            font-size: .85rem;
-            color: var(--success);
-            margin-top: .25rem;
-        }
-
-        /* ── Animations ── */
-        .fade-in {
-            animation: fadeIn .3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+        .fade-in{animation:fadeIn .25s ease;}
     </style>
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════
-     JOIN SCREEN
-     ════════════════════════════════════════════ -->
-<div class="screen" id="join-screen">
-    <div class="card">
-        <h1>TRIVIA NIGHT</h1>
-        <h2>Enter your room code and team name to play</h2>
-
-        <div class="form-group">
-            <label>Room Code</label>
-            <input type="text" id="room-code-input" placeholder="e.g. TRIVIA" maxlength="12"
-                   style="text-transform:uppercase; text-align:center; font-size:1.3rem; font-weight:700; letter-spacing:2px;"
-                   autocomplete="off" autocorrect="off" autocapitalize="characters">
-        </div>
-
-        <div class="form-group">
-            <label>Team Name</label>
-            <input type="text" id="team-name-input" placeholder="Your team name" maxlength="30"
-                   autocomplete="off" autocorrect="off">
-        </div>
-
-        <button class="btn btn-primary" onclick="joinRoom()">Join Game</button>
-        <p class="error-msg" id="join-error"></p>
+<!-- ═══ JOIN ═══ -->
+<div class="join" id="join-screen">
+<div class="join-card">
+    <h1>PDK NINE</h1>
+    <div class="sub">Trivia Night — Join the Game</div>
+    <div class="fg">
+        <label>Room Code</label>
+        <input type="text" id="inp-room" placeholder="e.g. TRIVIA" maxlength="12" autocomplete="off" autocorrect="off" autocapitalize="characters"
+               style="text-transform:uppercase;text-align:center;font-size:1.3rem;font-weight:700;letter-spacing:2px;font-family:var(--fh);">
     </div>
+    <div class="fg">
+        <label>Team Name</label>
+        <input type="text" id="inp-name" placeholder="Your team name" maxlength="30" autocomplete="off" autocorrect="off">
+    </div>
+    <div class="fg">
+        <label>Choose Your Avatar</label>
+        <div class="avatar-grid" id="avatar-grid"></div>
+    </div>
+    <button class="btn btn-gold" onclick="joinRoom()">Join Game</button>
+    <p class="err" id="join-err"></p>
+</div>
 </div>
 
-<!-- ════════════════════════════════════════════
-     GAME SCREEN
-     ════════════════════════════════════════════ -->
-<div id="game-screen">
-    <div class="game-header">
-        <span class="team-name-display" id="team-name-display"></span>
-        <span class="score-display" id="score-display">$0</span>
+<!-- ═══ GAME ═══ -->
+<div id="game">
+    <div class="game-hdr">
+        <span class="team-lbl"><span class="av" id="my-avatar"></span><span id="my-name"></span></span>
+        <span class="score-badge" id="my-score">$0</span>
     </div>
-
     <div class="game-body">
-        <!-- Question Info -->
-        <div class="question-info" id="question-info">
-            <div class="round-label" id="round-label">Round 1</div>
-            <div class="category-display" id="category-display">—</div>
-            <div class="value-display" id="value-display">—</div>
+        <div class="q-info" id="q-info">
+            <div class="round" id="g-round">Round 1</div>
+            <div class="cat" id="g-cat">—</div>
+            <div class="val" id="g-val">—</div>
+            <div id="g-dd" class="hidden"><span class="dd-lbl">★ DAILY DOUBLE ★</span></div>
         </div>
+        <div class="q-txt-card hidden" id="q-txt-card"><div class="question" id="g-qtxt"></div></div>
 
-        <!-- Waiting State -->
-        <div class="answer-section" id="waiting-section">
-            <div class="waiting-state">
-                <div class="dots">&#x2022; &#x2022; &#x2022;</div>
-                <div class="msg" id="waiting-msg">Waiting for the host to open answers...</div>
-            </div>
-        </div>
+        <!-- Phone timer -->
+        <div class="phone-timer hidden" id="phone-timer"><div class="time" id="phone-time">0:30</div></div>
 
-        <!-- Wager Section (Final Jeopardy) -->
-        <div class="wager-section hidden" id="wager-section">
+        <div class="state-card" id="wait-card"><div class="wait"><div class="dots">• • •</div><div class="msg" id="wait-msg">Waiting for the host...</div></div></div>
+        <div class="state-card hidden" id="dd-spec-card"><div class="dd-spec"><div class="star">★</div><div class="msg">Daily Double!</div><div class="tn" id="dd-spec-team"></div><div class="msg">is answering this question</div></div></div>
+        <div class="state-card hidden" id="answer-card"><div class="answer-area" style="display:flex;flex-direction:column;gap:.75rem;flex:1;"><textarea id="answer-input" placeholder="Type your answer..." autocomplete="off" autocorrect="off"></textarea><button class="btn btn-green" id="submit-btn" onclick="submitAnswer()">Submit Answer</button></div></div>
+        <div class="state-card hidden" id="submitted-card"><div class="submitted"><div class="check">✓</div><div class="label">Answer Submitted!</div><div class="echo" id="answer-echo"></div></div></div>
+        <div class="wager-card hidden" id="wager-card">
             <h3>Set Your Wager</h3>
-            <div class="score-note" id="wager-score-note">You can wager up to your current score</div>
-            <div id="wager-input-area">
-                <div class="wager-input-row">
-                    <input type="number" id="wager-input" placeholder="$0" min="0" inputmode="numeric">
-                </div>
-                <button class="btn btn-accent" onclick="lockWager()">Lock In Wager</button>
-            </div>
-            <div class="wager-locked hidden" id="wager-locked">
-                <div class="amount" id="wager-locked-amount">$0</div>
-                <div class="label">Wager locked in</div>
-            </div>
-        </div>
-
-        <!-- Answer Input Section -->
-        <div class="answer-section hidden" id="answer-section">
-            <textarea id="answer-input" placeholder="Type your answer..." autocomplete="off" autocorrect="off"></textarea>
-            <button class="btn btn-success" id="submit-btn" onclick="submitAnswer()">Submit Answer</button>
-        </div>
-
-        <!-- Submitted Confirmation -->
-        <div class="answer-section hidden" id="submitted-section">
-            <div class="submitted-msg">
-                <div class="check" style="color:var(--success);">&#10003;</div>
-                <div class="label">Answer Submitted!</div>
-                <div class="answer-echo" id="answer-echo"></div>
-            </div>
+            <div class="note" id="wager-note">You can wager up to your current score</div>
+            <div id="wager-input-area"><input type="number" id="wager-input" placeholder="$0" min="0" inputmode="numeric"><button class="btn btn-gold" onclick="lockWager()" style="margin-top:.5rem;">Lock In Wager</button></div>
+            <div class="wager-locked hidden" id="wager-locked"><div class="amt" id="wager-locked-amt">$0</div><div class="lbl">Wager locked in</div></div>
         </div>
     </div>
 </div>
 
-<!-- ════════════════════════════════════════════
-     FIREBASE + APP LOGIC
-     ════════════════════════════════════════════ -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="config.js"></script>
 <script>
-// ╔══════════════════════════════════════════════════════════════╗
-// ║  PASTE YOUR FIREBASE CONFIG BELOW (same as admin.html)      ║
-// ╚══════════════════════════════════════════════════════════════╝
-const firebaseConfig = {
-    apiKey: "AIzaSyBQP3uiW84rbcbzSA23bfW5DRUfitCQaVI",
-    authDomain: "pdk-nine-jeopardy.firebaseapp.com",
-    databaseURL: "https://pdk-nine-jeopardy-default-rtdb.firebaseio.com",
-    projectId: "pdk-nine-jeopardy",
-    storageBucket: "pdk-nine-jeopardy.firebasestorage.app",
-    messagingSenderId: "228636489232",
-    appId: "1:228636489232:web:6d76312079db4114eabc95"
-};
+let roomCode=null,roomRef=null,teamKey=null,teamName=null,selectedAvatar=null;
+let GS={},cachedScore=0,lastQKey=null,hasSubmitted=false,wagerLocked=false;
+let phoneTimerInterval=null;
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+// ── Avatar Grid ──
+function renderAvatarGrid(takenAvatars) {
+    const grid=document.getElementById('avatar-grid');
+    grid.innerHTML=AVATARS.map(a=>{
+        const taken=takenAvatars.includes(a.id);
+        const sel=selectedAvatar===a.id;
+        return`<div class="avatar-opt${sel?' selected':''}${taken?' taken':''}" onclick="${taken?'':`pickAvatar('${a.id}')`}" style="${sel?`border-color:${a.color};box-shadow:0 0 12px ${a.color}40;`:''}"><img src="avatars/${a.id}.png" class="avatar-img" alt="${a.name}"><span class="name">${a.name}</span></div>`;
+    }).join('');
+}
+function pickAvatar(id){selectedAvatar=id;renderAvatarGrid(getTakenAvatars());}
+function getTakenAvatars(){return[];}
 
-// ── State ──
-let roomCode = null;
-let roomRef = null;
-let teamKey = null;
-let teamName = null;
-let currentState = {};
-let lastQuestionNum = null;
-let hasSubmitted = false;
-let wagerLocked = false;
-let cachedScore = 0;
+// Build initial grid
+renderAvatarGrid([]);
 
-// ── Join Room ──
-
-function joinRoom() {
-    const code = document.getElementById('room-code-input').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const name = document.getElementById('team-name-input').value.trim();
-
-    if (!code || !name) {
-        document.getElementById('join-error').textContent = 'Please enter both a room code and team name.';
-        return;
+// Watch room code to update taken avatars
+let roomWatchRef=null;
+document.getElementById('inp-room').addEventListener('input',function(){
+    const code=this.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(roomWatchRef){roomWatchRef.off();roomWatchRef=null;}
+    if(code.length>=2){
+        roomWatchRef=db.ref('trivia-rooms/'+code+'/teams');
+        roomWatchRef.on('value',snap=>{
+            const ts=snap.val()||{};
+            const taken=Object.values(ts).map(t=>t.avatar).filter(Boolean);
+            renderAvatarGrid(taken);
+            getTakenAvatars=()=>taken;
+        });
     }
+});
 
-    roomCode = code;
-    teamName = name;
-    teamKey = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    roomRef = db.ref('trivia-rooms/' + roomCode);
+// ── Join ──
+function joinRoom(){
+    const code=document.getElementById('inp-room').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    const name=document.getElementById('inp-name').value.trim();
+    if(!code||!name){document.getElementById('join-err').textContent='Enter room code and team name.';return;}
+    if(!selectedAvatar){document.getElementById('join-err').textContent='Choose an avatar.';return;}
 
-    roomRef.child('state').once('value', snap => {
-        if (!snap.exists()) {
-            document.getElementById('join-error').textContent = 'Room not found. Check the code and try again.';
-            return;
-        }
+    roomCode=code;teamName=name;
+    teamKey=name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+    roomRef=db.ref('trivia-rooms/'+roomCode);
+    const av=AVATARS.find(a=>a.id===selectedAvatar);
 
-        roomRef.child('teams/' + teamKey).once('value', teamSnap => {
-            if (teamSnap.exists()) {
-                // Rejoin existing team
+    roomRef.child('state').once('value',snap=>{
+        if(!snap.exists()){document.getElementById('join-err').textContent='Room not found.';return;}
+        roomRef.child('teams/'+teamKey).once('value',ts=>{
+            if(ts.exists()){
+                roomRef.child('teams/'+teamKey).update({avatar:av.id,color:av.color});
             } else {
-                roomRef.child('teams/' + teamKey).set({
-                    name: teamName,
-                    score: 0,
-                    wager: 0
-                });
+                roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,avatar:av.id,color:av.color});
             }
-
-            enterGame();
+            enterGame(av);
         });
     });
 }
 
-function enterGame() {
-    document.getElementById('join-screen').style.display = 'none';
-    document.getElementById('game-screen').style.display = 'flex';
-    document.getElementById('team-name-display').textContent = teamName;
+function enterGame(av){
+    document.getElementById('join-screen').style.display='none';
+    document.getElementById('game').style.display='flex';
+    document.getElementById('my-name').textContent=teamName;
+    document.getElementById('my-avatar').innerHTML=av?'<img src="avatars/'+av.id+'.png" style="width:24px;height:24px;border-radius:50%;object-fit:cover;vertical-align:middle" alt="">':'';
     setupListeners();
 }
 
 // ── Listeners ──
-
-function setupListeners() {
-    roomRef.child('state').on('value', snap => {
-        const s = snap.val();
-        if (!s) return;
-
-        currentState = s;
-
-        if (s.questionNum !== lastQuestionNum) {
-            lastQuestionNum = s.questionNum;
-            hasSubmitted = false;
-            wagerLocked = false;
-            document.getElementById('wager-input-area').classList.remove('hidden');
-            document.getElementById('wager-locked').classList.add('hidden');
-            document.getElementById('wager-input').value = '';
-        }
-
-        renderGameState();
+function setupListeners(){
+    roomRef.child('state').on('value',snap=>{
+        const s=snap.val();if(!s)return;GS=s;
+        if(s.questionKey!==lastQKey){lastQKey=s.questionKey;hasSubmitted=false;wagerLocked=false;resetWagerUI();}
+        render();startPhoneTimer();
     });
-
-    roomRef.child('teams/' + teamKey).on('value', snap => {
-        const t = snap.val();
-        if (!t) return;
-        cachedScore = t.score || 0;
-        document.getElementById('score-display').textContent = '$' + cachedScore.toLocaleString();
-
-        if (currentState.round === 3) {
-            updateWagerUI(t);
-        }
+    roomRef.child('teams/'+teamKey).on('value',snap=>{
+        const t=snap.val();if(!t)return;cachedScore=t.score||0;
+        document.getElementById('my-score').textContent='$'+cachedScore.toLocaleString();
+        if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
     });
-
-    roomRef.child('currentAnswers/' + teamKey).on('value', snap => {
-        if (snap.exists() && snap.val().answer) {
-            hasSubmitted = true;
-            document.getElementById('answer-echo').textContent = 'Your answer: "' + snap.val().answer + '"';
-        }
-        renderGameState();
+    roomRef.child('currentAnswers/'+teamKey).on('value',snap=>{
+        if(snap.exists()&&snap.val()&&snap.val().answer){hasSubmitted=true;document.getElementById('answer-echo').textContent='Your answer: "'+snap.val().answer+'"';}
+        render();
     });
 }
 
 // ── Render ──
+function render(){
+    const{round,phase,category,value,questionText,accepting,dailyDouble,ddTeam}=GS;
+    const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
+    document.getElementById('g-round').textContent=rl[round]||'';
+    document.getElementById('g-cat').textContent=category||'Waiting...';
+    document.getElementById('g-val').textContent=round===3?'WAGER':(value?'$'+value.toLocaleString():'—');
+    document.getElementById('g-dd').classList.toggle('hidden',!dailyDouble);
 
-function renderGameState() {
-    const { round, category, value, accepting } = currentState;
-    const roundLabels = { 1: 'Round 1', 2: 'Double Jeopardy', 3: 'Final Jeopardy' };
+    const qtc=document.getElementById('q-txt-card');
+    if(questionText&&phase!=='board'&&phase!=='round-transition'){qtc.classList.remove('hidden');document.getElementById('g-qtxt').textContent=questionText;}
+    else qtc.classList.add('hidden');
 
-    document.getElementById('round-label').textContent = roundLabels[round] || '';
-    document.getElementById('category-display').textContent = category || 'Waiting for category...';
-    document.getElementById('value-display').textContent = round === 3 ? 'WAGER' : (value ? '$' + value.toLocaleString() : '—');
+    const cards=['wait-card','answer-card','submitted-card','dd-spec-card','wager-card','phone-timer'];
+    cards.forEach(id=>document.getElementById(id).classList.add('hidden'));
 
-    const waitingSection = document.getElementById('waiting-section');
-    const answerSection = document.getElementById('answer-section');
-    const submittedSection = document.getElementById('submitted-section');
-    const wagerSection = document.getElementById('wager-section');
-
-    waitingSection.classList.add('hidden');
-    answerSection.classList.add('hidden');
-    submittedSection.classList.add('hidden');
-    wagerSection.classList.add('hidden');
-
-    if (round === 3 && !wagerLocked && !accepting) {
-        wagerSection.classList.remove('hidden');
-        wagerSection.classList.add('fade-in');
-        document.getElementById('wager-score-note').textContent =
-            'You can wager up to your current score ($' + getScore().toLocaleString() + ')';
-    } else if (hasSubmitted) {
-        submittedSection.classList.remove('hidden');
-        submittedSection.classList.add('fade-in');
-    } else if (accepting) {
-        answerSection.classList.remove('hidden');
-        answerSection.classList.add('fade-in');
-        document.getElementById('answer-input').value = '';
-        document.getElementById('submit-btn').disabled = false;
-        document.getElementById('submit-btn').textContent = 'Submit Answer';
+    if(phase==='board'||phase==='round-transition'||!category){
+        show('wait-card');
+        document.getElementById('wait-msg').textContent=phase==='round-transition'?'Scores are being tallied...':'Waiting for the host to select a question...';
+    } else if(round===3&&!wagerLocked&&!accepting){
+        show('wager-card');
+        document.getElementById('wager-note').textContent='Wager up to $'+cachedScore.toLocaleString();
+    } else if(dailyDouble&&ddTeam&&ddTeam!==teamKey&&!hasSubmitted){
+        show('dd-spec-card');
+        roomRef.child('teams/'+ddTeam+'/name').once('value',s=>{document.getElementById('dd-spec-team').textContent=s.val()||ddTeam;});
+    } else if(hasSubmitted){
+        show('submitted-card');
+    } else if(accepting){
+        show('answer-card'); show('phone-timer');
+        document.getElementById('answer-input').value='';
+        document.getElementById('submit-btn').disabled=false;
+        document.getElementById('submit-btn').textContent='Submit Answer';
+    } else if(phase==='question'){
+        show('wait-card');
+        document.getElementById('wait-msg').textContent='Waiting for the host to open answers...';
     } else {
-        waitingSection.classList.remove('hidden');
-        const msg = document.getElementById('waiting-msg');
-        if (!category) {
-            msg.textContent = 'Waiting for the host to set up the next question...';
-        } else {
-            msg.textContent = 'Waiting for the host to open answers...';
-        }
+        show('wait-card');
+        document.getElementById('wait-msg').textContent='Waiting...';
     }
 }
+function show(id){const el=document.getElementById(id);el.classList.remove('hidden');el.classList.add('fade-in');}
 
-function getScore() {
-    return cachedScore;
+// ── Phone Timer ──
+function startPhoneTimer(){
+    if(phoneTimerInterval)clearInterval(phoneTimerInterval);
+    if(!GS.timerRunning||!GS.timerEnd)return;
+    const d=document.getElementById('phone-time');
+    phoneTimerInterval=setInterval(()=>{
+        const rem=Math.max(0,Math.ceil((GS.timerEnd-Date.now())/1000));
+        const m=Math.floor(rem/60),s=rem%60;
+        d.textContent=m+':'+String(s).padStart(2,'0');
+        d.classList.toggle('danger',rem<=5);
+        if(rem<=0)clearInterval(phoneTimerInterval);
+    },250);
+}
+
+// ── Submit ──
+function submitAnswer(){
+    const inp=document.getElementById('answer-input'),answer=inp.value.trim();
+    if(!answer){inp.style.borderColor='var(--red)';setTimeout(()=>inp.style.borderColor='',1200);return;}
+    const btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='Submitting...';
+    roomRef.child('currentAnswers/'+teamKey).set({answer,timestamp:firebase.database.ServerValue.TIMESTAMP})
+        .then(()=>{hasSubmitted=true;document.getElementById('answer-echo').textContent='Your answer: "'+answer+'"';render();})
+        .catch(()=>{btn.disabled=false;btn.textContent='Submit Answer';alert('Error. Try again.');});
 }
 
 // ── Wager ──
-
-function lockWager() {
-    const input = document.getElementById('wager-input');
-    const wager = parseInt(input.value);
-
-    if (isNaN(wager) || wager < 0) {
-        alert('Please enter a valid wager amount.');
-        return;
-    }
-
-    roomRef.child('teams/' + teamKey).once('value', snap => {
-        const team = snap.val();
-        const maxWager = Math.max(team.score || 0, 0);
-
-        if (wager > maxWager && maxWager > 0) {
-            alert('Your wager cannot exceed your current score ($' + maxWager.toLocaleString() + ').');
-            return;
-        }
-
-        roomRef.child('teams/' + teamKey + '/wager').set(wager).then(() => {
-            wagerLocked = true;
-            renderGameState();
-        });
+function lockWager(){
+    const w=parseInt(document.getElementById('wager-input').value);
+    if(isNaN(w)||w<0){alert('Enter a valid wager.');return;}
+    roomRef.child('teams/'+teamKey).once('value',snap=>{
+        const max=Math.max((snap.val()&&snap.val().score)||0,0);
+        if(w>max&&max>0){alert('Cannot exceed $'+max);return;}
+        roomRef.child('teams/'+teamKey+'/wager').set(w).then(()=>{wagerLocked=true;showLockedWager(w);render();});
     });
 }
-
-function updateWagerUI(teamData) {
-    if (teamData.wager && teamData.wager > 0) {
-        wagerLocked = true;
-        document.getElementById('wager-input-area').classList.add('hidden');
-        document.getElementById('wager-locked').classList.remove('hidden');
-        document.getElementById('wager-locked-amount').textContent = '$' + teamData.wager.toLocaleString();
-    }
-    document.getElementById('wager-score-note').textContent =
-        'You can wager up to your current score ($' + (teamData.score || 0).toLocaleString() + ')';
-}
-
-// ── Submit Answer ──
-
-function submitAnswer() {
-    const input = document.getElementById('answer-input');
-    const answer = input.value.trim();
-
-    if (!answer) {
-        input.style.borderColor = 'var(--danger)';
-        setTimeout(() => input.style.borderColor = '', 1500);
-        return;
-    }
-
-    const btn = document.getElementById('submit-btn');
-    btn.disabled = true;
-    btn.textContent = 'Submitting...';
-
-    roomRef.child('currentAnswers/' + teamKey).set({
-        answer: answer,
-        timestamp: firebase.database.ServerValue.TIMESTAMP
-    }).then(() => {
-        hasSubmitted = true;
-        document.getElementById('answer-echo').textContent = 'Your answer: "' + answer + '"';
-        renderGameState();
-    }).catch(err => {
-        btn.disabled = false;
-        btn.textContent = 'Submit Answer';
-        alert('Error submitting. Please try again.');
-    });
-}
-
+function showLockedWager(amt){document.getElementById('wager-input-area').classList.add('hidden');document.getElementById('wager-locked').classList.remove('hidden');document.getElementById('wager-locked-amt').textContent='$'+amt.toLocaleString();}
+function resetWagerUI(){document.getElementById('wager-input-area').classList.remove('hidden');document.getElementById('wager-locked').classList.add('hidden');document.getElementById('wager-input').value='';}
 </script>
 </body>
 </html>

@@ -1,93 +1,131 @@
-# Trivia Night — Answer Submission System
+# PDK NINE Trivia Night
 
-Two self-contained HTML files that let you run team-based Jeopardy-style trivia at your shop. The host controls rounds, categories, and values from a laptop while teams submit answers from their phones — all synced in real time via Firebase.
+A real-time Jeopardy-style trivia system for team-based game nights. Built with static HTML + Firebase Realtime Database — no server required.
 
 ## Files
 
-- **`admin.html`** — Host control panel (laptop/tablet). Manage rounds, open/close answers, grade submissions, track scores.
-- **`play.html`** — Team submission page (phone). Join with a room code, see the current question, submit answers, wager in Final Jeopardy.
+| File | Purpose |
+|------|---------|
+| `admin.html` | Host control panel — create rooms, load questions, manage game flow, grade answers |
+| `play.html` | Team interface — join room, pick avatar, submit answers (mobile-friendly) |
+| `board.html` | Projector display — show Jeopardy grid, questions, timer, scores on a TV |
 
-## Setup (one-time, ~5 minutes)
+## Quick Start
 
-### 1. Create a Firebase project
-
-1. Go to [console.firebase.google.com](https://console.firebase.google.com/)
-2. Click **Add project** → name it anything (e.g. "trivia-night") → click through the defaults
-3. On the project dashboard, click the **web icon** (`</>`) to add a web app
-4. Name it anything → **do not** check "Firebase Hosting" → click **Register app**
-5. You'll see a config block like this — copy it:
-
-```js
-const firebaseConfig = {
-  apiKey: "AIzaSy...",
-  authDomain: "trivia-night-xxxxx.firebaseapp.com",
-  databaseURL: "https://trivia-night-xxxxx-default-rtdb.firebaseio.com",
-  projectId: "trivia-night-xxxxx",
-  storageBucket: "trivia-night-xxxxx.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
-};
-```
-
-### 2. Enable the Realtime Database
-
-1. In the Firebase console sidebar, click **Build → Realtime Database**
-2. Click **Create Database**
-3. Choose a location (any is fine) → click **Next**
-4. Select **Start in test mode** → click **Enable**
-
-> Test mode allows open read/write for 30 days. For a one-off event this is fine. You can extend it later in **Database → Rules** by updating the expiry timestamp.
-
-### 3. Paste your config into both HTML files
-
-Open `admin.html` and `play.html`. Near the top of each `<script>` section, find:
-
-```js
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    ...
-};
-```
-
-Replace the entire object with your config from step 1. Both files need the **same** config.
-
-### 4. Upload to your website
-
-Upload both HTML files to your website the same way you hosted your March Madness bracket. For example:
-
-- `yoursite.com/trivia/admin.html` (you'll open this on your laptop)
-- `yoursite.com/trivia/play.html` (teams open this on their phones)
-
-## Running the Event
-
-### Before the event
 1. Open `admin.html` on your laptop
-2. Enter a room code (e.g. `TRIVIA` or `GAME42`) and click **Create Game Room**
-3. Write the room code and the `play.html` URL on a whiteboard so teams can join
+2. Enter a room code (e.g. `TRIVIA`), upload your CSV, and click **Create Game Room**
+3. Open `board.html?room=TRIVIA` in a browser connected to your TV/projector
+4. Teams open `play.html` on their phones, enter the room code, pick an avatar, and join
 
-### During each question
-1. **Set the round** using the Round 1 / Round 2 / Final tabs
-2. **Type the category** name and click Set
-3. **Select the dollar value** from the grid
-4. **Open for Answers** — teams can now submit on their phones (optional timer auto-closes)
-5. **Close Answers** when ready (or let the timer close automatically)
-6. **Grade** each team's answer with the checkmark (correct) or X (incorrect)
-7. **Apply Scores** — points are added/subtracted and the scoreboard updates
-8. **Next Question** — clears answers and gets ready for the next one
+## Features
 
-### Final Jeopardy
-1. Switch to the **Final** round tab and set the category
-2. Teams see the category on their phones and **lock in a wager** (up to their current score)
-3. You can see each team's wager on the admin panel
-4. When all wagers are in, click **Open for Answers** (reveal the question on your third-party display)
-5. Grade and apply as usual — correct adds the wager, incorrect subtracts it
+### Jeopardy Board (5x5 Grid)
+- Categories across the top, dollar values down the side
+- Red ✕ marks completed questions
+- ★ indicator on Daily Double cells
+- Round 1 ($200–$1000), Double Jeopardy ($400–$2000), Final Jeopardy
 
-### Score adjustments
-Click the **+/-** buttons next to any team's score on the scoreboard to manually adjust. A prompt lets you enter any positive or negative amount.
+### Projector Display (`board.html`)
+- Full-screen display optimized for TVs
+- Shows the Jeopardy board, active questions, and answers
+- Large countdown timer with progress bar
+- Sound effects: Daily Double reveal, question select, timer ticks, time's up buzzer
+- Between-round scoreboard with animated rankings
+- QR code overlay (toggle from admin) for teams to scan and join
 
-## Tips
+### Team Avatars
+- 12 unique avatars: Dragon, Wizard, Swords, Dice, Castle, Fox, Wolf, Eagle, Target, Crystal, Shield, Masks
+- Each avatar has a unique color
+- Once a team picks an avatar, it's grayed out for other teams
+- Avatars appear on the scoreboard, projector display, and answer cards
 
-- Teams that close their browser can rejoin with the same room code and team name — their score persists.
-- The admin can rejoin an existing room using the "Rejoin Room" option on the setup screen.
-- The question history panel at the bottom of the admin page logs every graded question for reference.
-- No manual refresh needed — Firebase syncs changes to all devices automatically.
+### Timer
+- Configurable presets (15s, 30s, 45s, 60s) in admin
+- Synced to Firebase — visible on team phones AND projector simultaneously
+- Timer bar + countdown on the projector display
+- Turns red in the last 5 seconds with tick sounds
+- Buzzer sound when time expires
+
+### Daily Double
+- Flagged in CSV with `daily_double_flag` column
+- Admin selects which team answers — other teams see a spectator screen
+- Worth double the face value
+
+### QR Code
+- Admin clicks the **QR** button in the top bar to toggle
+- QR overlay appears on the projector display
+- Encodes the `play.html` URL with the room code pre-filled
+
+### Scoring
+- Teams that don't submit an answer receive no point change
+- Correct answers: +value, incorrect answers: −value
+- Admin can manually adjust scores (± button in sidebar)
+- Final Jeopardy: teams set their own wager
+
+## CSV Format
+
+```csv
+round,category,question_number,question_text,answer_text,daily_double_flag
+1,History,1,"Who was the first President?","George Washington",FALSE
+1,History,2,"What year did WWII end?","1945",TRUE
+2,Science,1,"Chemical symbol for gold?","Au",FALSE
+3,Potpourri,1,"What is the rarest blood type?","AB Negative",FALSE
+```
+
+- **round**: 1 (Round 1), 2 (Double Jeopardy), 3 (Final Jeopardy)
+- **category**: Category name (5 per round)
+- **question_number**: 1–5 (maps to dollar value)
+- **question_text / answer_text**: The Q&A content
+- **daily_double_flag**: TRUE/FALSE (or 1/0, yes/no)
+
+Use the **Download Template CSV** button in admin for a full example.
+
+## Firebase Setup
+
+1. Create a project at [console.firebase.google.com](https://console.firebase.google.com)
+2. Enable **Realtime Database** (start in test mode for game night)
+3. Register a Web App and copy your config
+4. Replace the `firebaseConfig` object in all three HTML files
+
+### Recommended Security Rules (Realtime Database)
+
+```json
+{
+  "rules": {
+    "trivia-rooms": {
+      "$room": {
+        ".read": true,
+        ".write": true
+      }
+    }
+  }
+}
+```
+
+## Deployment
+
+Push to GitHub and deploy via Netlify (or any static host):
+
+```bash
+cd /path/to/trivia
+git init
+git add .
+git commit -m "Initial trivia app"
+git remote add origin https://github.com/YOUR_USER/trivia.git
+git push -u origin main
+```
+
+On Netlify: **Add new site → Import existing project → GitHub → select repo → Deploy**.
+
+Point a subdomain (e.g. `trivia.pdknine.com`) via a CNAME record to your Netlify URL.
+
+## Game Day Checklist
+
+1. Upload CSV to admin
+2. Create room
+3. Open `board.html?room=CODE` on the TV
+4. Click **QR** so teams can scan to join
+5. Click any user interaction on the TV page to enable sound (browser policy)
+6. Select questions from the grid, open answers, grade, apply scores
+7. Use round tabs to transition between rounds (auto-shows scoreboard)
+8. Final Jeopardy: teams set wagers, then you open the question

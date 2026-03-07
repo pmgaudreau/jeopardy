@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDK NINE Trivia Night — Board Display</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        :root{--bg:#000;--card:#111;--elev:#1a1a1a;--gold:#FFD700;--gold-dim:#b8960f;--gold-bright:#ffe44d;--red:#e63946;--green:#2ecc71;--blue:#4a90d9;--text:#fff;--tsec:#b0b0b0;--tmut:#666;--border:#333;--cell:#0a1640;--cell-done:#0a0a0a;--fh:'Oswald','Impact',sans-serif;--fs:'Rajdhani','Inter',sans-serif;--fb:'Inter',system-ui,sans-serif;}
+        html,body{height:100%;overflow:hidden;}
+        body{font-family:var(--fb);background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+        .hidden{display:none!important;}
+
+        /* ═══ LOBBY ═══ */
+        #lobby{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}
+        #lobby h1{font-family:var(--fh);font-size:5rem;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;text-shadow:0 0 40px rgba(255,215,0,.3);}
+        #lobby .sub{font-family:var(--fs);font-size:1.8rem;color:var(--tsec);text-transform:uppercase;letter-spacing:.1em;}
+        #lobby .code{font-family:var(--fh);font-size:2.2rem;color:var(--gold-bright);background:var(--card);border:2px solid var(--gold-dim);border-radius:12px;padding:.5rem 2rem;margin-top:1rem;letter-spacing:.1em;}
+
+        /* ═══ BOARD VIEW ═══ */
+        #board-display{flex:1;display:none;flex-direction:column;padding:1.5vw;}
+        .bd-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1vw;}
+        .bd-title{font-family:var(--fh);font-size:2.2vw;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;}
+        .bd-round{font-family:var(--fs);font-size:1.3vw;color:var(--tsec);text-transform:uppercase;letter-spacing:.06em;}
+
+        .jeopardy-board{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;flex:1;margin-bottom:1vw;}
+        .bd-cat{
+            background:var(--elev);padding:1vw .5vw;text-align:center;
+            font-family:var(--fh);font-size:1.6vw;font-weight:700;color:var(--gold);
+            text-transform:uppercase;border-radius:8px 8px 0 0;
+            display:flex;align-items:center;justify-content:center;line-height:1.15;
+        }
+        .bd-cell{
+            background:var(--cell);text-align:center;
+            font-family:var(--fh);font-size:2.5vw;font-weight:700;color:var(--gold);
+            border-radius:4px;position:relative;
+            display:flex;align-items:center;justify-content:center;
+            transition:all .3s;
+        }
+        .bd-cell.done{background:var(--cell-done);color:var(--tmut);opacity:.35;}
+        .bd-cell.done::after{content:"✕";position:absolute;font-size:4vw;color:var(--red);opacity:.7;}
+        .bd-cell .dd-star{position:absolute;top:.3vw;right:.5vw;font-size:.9vw;color:var(--gold-bright);opacity:.7;}
+
+        .bd-scores{display:flex;align-items:center;justify-content:center;gap:2vw;flex-wrap:wrap;}
+        .bd-team{display:flex;align-items:center;gap:.5vw;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.4vw 1.2vw;}
+        .bd-team .av img{width:1.8vw;height:1.8vw;border-radius:50%;object-fit:cover;}
+        .bd-team .nm{font-family:var(--fs);font-weight:700;font-size:1.1vw;color:var(--text);}
+        .bd-team .sc{font-family:var(--fh);font-weight:800;font-size:1.3vw;color:var(--gold);margin-left:.5vw;}
+
+        /* ═══ QUESTION DISPLAY ═══ */
+        #question-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:4vw;text-align:center;position:relative;}
+        .qd-cat{font-family:var(--fh);font-size:3vw;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5vw;}
+        .qd-val{font-family:var(--fh);font-size:4vw;font-weight:700;color:var(--gold-bright);margin-bottom:2vw;}
+        .qd-text{font-size:2.8vw;line-height:1.4;color:var(--text);max-width:80vw;}
+        .qd-answer{font-family:var(--fh);font-size:3.5vw;color:var(--green);margin-top:2vw;opacity:0;transition:opacity .5s;}
+        .qd-answer.show{opacity:1;}
+        .qd-timer{margin-top:2vw;}
+        .qd-timer .time{font-family:var(--fh);font-size:5vw;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums;transition:color .2s;}
+        .qd-timer .time.danger{color:var(--red);}
+        .qd-timer .bar-wrap{width:40vw;height:.6vw;background:var(--elev);border-radius:1vw;margin:.5vw auto 0;overflow:hidden;}
+        .qd-timer .bar{height:100%;background:var(--gold);border-radius:1vw;transition:width .25s linear,background .2s;}
+        .qd-timer .bar.danger{background:var(--red);}
+        .qd-status{font-family:var(--fs);font-size:1.5vw;color:var(--green);margin-top:1vw;letter-spacing:.06em;text-transform:uppercase;}
+
+        /* ═══ DAILY DOUBLE ═══ */
+        #dd-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;}
+        .dd-star-big{font-size:10vw;animation:ddPulse 1s ease-in-out infinite alternate;}
+        .dd-title{font-family:var(--fh);font-size:6vw;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;text-shadow:0 0 60px rgba(255,215,0,.5);}
+        .dd-team-pick{font-family:var(--fs);font-size:2vw;color:var(--tsec);margin-top:1vw;}
+        @keyframes ddPulse{from{transform:scale(.9);opacity:.7;}to{transform:scale(1.1);opacity:1;}}
+
+        /* ═══ ROUND TRANSITION ═══ */
+        #transition-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:4vw;gap:2vw;}
+        .tr-title{font-family:var(--fh);font-size:4vw;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;animation:fadeDown .6s ease;}
+        .tr-scores{display:flex;flex-direction:column;gap:1vw;width:60vw;max-width:700px;}
+        .tr-row{
+            display:flex;align-items:center;gap:1vw;background:var(--card);border:1px solid var(--border);
+            border-radius:12px;padding:1vw 2vw;animation:slideIn .5s ease;animation-fill-mode:both;
+        }
+        .tr-row .rank{font-family:var(--fh);font-size:2.2vw;font-weight:800;color:var(--tmut);min-width:3vw;text-align:center;}
+        .tr-row:first-child .rank{color:var(--gold);}
+        .tr-row .av img{width:2.5vw;height:2.5vw;border-radius:50%;object-fit:cover;}
+        .tr-row .nm{flex:1;font-family:var(--fs);font-weight:700;font-size:1.8vw;}
+        .tr-row .sc{font-family:var(--fh);font-weight:800;font-size:2.2vw;color:var(--gold);}
+        .tr-next{font-family:var(--fh);font-size:2.5vw;color:var(--gold-bright);text-transform:uppercase;animation:fadeDown 1s ease 1.5s;animation-fill-mode:both;}
+        @keyframes fadeDown{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
+        @keyframes slideIn{from{opacity:0;transform:translateX(-30px);}to{opacity:1;transform:translateX(0);}}
+
+        /* ═══ QR OVERLAY ═══ */
+        #qr-overlay{
+            position:fixed;bottom:2vw;right:2vw;background:var(--card);border:2px solid var(--gold-dim);
+            border-radius:16px;padding:1.5vw;text-align:center;z-index:200;
+            opacity:0;transform:scale(.8);transition:all .3s ease;pointer-events:none;
+        }
+        #qr-overlay.show{opacity:1;transform:scale(1);pointer-events:auto;}
+        #qr-overlay h3{font-family:var(--fh);font-size:1.3vw;color:var(--gold);margin-bottom:.5vw;text-transform:uppercase;}
+        #qr-overlay canvas{border-radius:8px;}
+        #qr-overlay .url{font-family:var(--fb);font-size:.8vw;color:var(--tsec);margin-top:.4vw;word-break:break-all;}
+
+        /* ═══ CONNECT ═══ */
+        #connect-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}
+        #connect-screen h2{font-family:var(--fh);font-size:2rem;color:var(--gold);}
+        #connect-screen input{width:300px;padding:.8rem 1rem;background:var(--card);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--fh);font-size:1.5rem;text-align:center;text-transform:uppercase;letter-spacing:2px;outline:none;}
+        #connect-screen input:focus{border-color:var(--gold);}
+        #connect-screen button{padding:.8rem 2rem;background:var(--gold);color:#000;border:none;border-radius:12px;font-family:var(--fh);font-size:1.2rem;font-weight:700;cursor:pointer;}
+    </style>
+</head>
+<body>
+
+<!-- Connect screen (if no room param) -->
+<div id="connect-screen" class="hidden">
+    <h2>Board Display</h2>
+    <input type="text" id="connect-room" placeholder="ROOM CODE" maxlength="12">
+    <button onclick="connectRoom()">Connect</button>
+</div>
+
+<!-- Lobby (before game starts or idle) -->
+<div id="lobby" class="hidden">
+    <h1>PDK NINE</h1>
+    <div class="sub">Trivia Night</div>
+    <div class="code" id="lobby-code"></div>
+</div>
+
+<!-- Board grid -->
+<div id="board-display" class="hidden">
+    <div class="bd-header">
+        <span class="bd-title">PDK NINE TRIVIA</span>
+        <span class="bd-round" id="bd-round">Round 1</span>
+    </div>
+    <div class="jeopardy-board" id="bd-grid"></div>
+    <div class="bd-scores" id="bd-scores"></div>
+</div>
+
+<!-- Active question -->
+<div id="question-display" class="hidden">
+    <div class="qd-cat" id="qd-cat"></div>
+    <div class="qd-val" id="qd-val"></div>
+    <div class="qd-text" id="qd-text"></div>
+    <div class="qd-answer" id="qd-answer"></div>
+    <div class="qd-timer hidden" id="qd-timer"><div class="time" id="qd-time">0:30</div><div class="bar-wrap"><div class="bar" id="qd-bar" style="width:100%"></div></div></div>
+    <div class="qd-status hidden" id="qd-status"></div>
+</div>
+
+<!-- Daily Double reveal -->
+<div id="dd-display" class="hidden">
+    <div class="dd-star-big">★</div>
+    <div class="dd-title">DAILY DOUBLE</div>
+    <div class="dd-team-pick" id="dd-pick"></div>
+</div>
+
+<!-- Round transition scoreboard -->
+<div id="transition-display" class="hidden">
+    <div class="tr-title" id="tr-title">Round Complete</div>
+    <div class="tr-scores" id="tr-scores"></div>
+    <div class="tr-next" id="tr-next">Double Jeopardy Coming Up...</div>
+</div>
+
+<!-- QR Overlay -->
+<div id="qr-overlay"><h3>Join the Game!</h3><canvas id="qr-canvas"></canvas><div class="url" id="qr-url"></div></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="config.js"></script>
+<script>
+let roomCode=null,roomRef=null;
+let GS={},prevPhase=null,prevQKey=null,teams={},boardQ={},categories={};
+let timerInterval=null,timerDuration=30;
+
+// ═══ SOUND EFFECTS ═══
+const SFX=(()=>{
+    let ctx=null;
+    function getCtx(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();return ctx;}
+    function tone(freq,dur,type='sine',vol=0.25,delay=0){
+        const c=getCtx(),o=c.createOscillator(),g=c.createGain();
+        o.type=type;o.frequency.value=freq;g.gain.value=0;
+        g.gain.setValueAtTime(0,c.currentTime+delay);
+        g.gain.linearRampToValueAtTime(vol,c.currentTime+delay+0.02);
+        g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+delay+dur);
+        o.connect(g);g.connect(c.destination);
+        o.start(c.currentTime+delay);o.stop(c.currentTime+delay+dur);
+    }
+    return{
+        dailyDouble(){tone(330,.15,'square',.2,0);tone(440,.15,'square',.2,.12);tone(554,.2,'square',.2,.24);tone(659,.4,'square',.25,.36);},
+        questionReveal(){tone(440,.08,'sine',.15,0);tone(554,.08,'sine',.15,.06);tone(659,.12,'sine',.2,.12);},
+        tick(){tone(1000,.04,'square',.08);},
+        timesUp(){tone(220,.4,'sawtooth',.3,0);tone(185,.5,'sawtooth',.25,.15);},
+        correct(){tone(523,.12,'sine',.25,0);tone(659,.25,'sine',.3,.12);},
+        roundEnd(){[523,587,659,784,1047].forEach((f,i)=>tone(f,.25,'sine',.25,i*.12));},
+        wrong(){tone(196,.3,'sawtooth',.15,0);tone(165,.4,'sawtooth',.12,.15);}
+    };
+})();
+
+// Resume AudioContext on any click (autoplay policy)
+document.addEventListener('click',()=>{try{const c=new(window.AudioContext||window.webkitAudioContext)();c.resume();c.close();}catch(e){}},{once:true});
+
+// ═══ CONNECT ═══
+function init(){
+    const params=new URLSearchParams(window.location.search);
+    const r=params.get('room');
+    if(r){roomCode=r.toUpperCase();startListening();}
+    else{document.getElementById('connect-screen').classList.remove('hidden');}
+}
+function connectRoom(){
+    const r=document.getElementById('connect-room').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(!r)return;roomCode=r;
+    document.getElementById('connect-screen').classList.add('hidden');
+    startListening();
+}
+function startListening(){
+    roomRef=db.ref('trivia-rooms/'+roomCode);
+    document.getElementById('lobby-code').textContent=roomCode;
+    showScreen('lobby');
+    generateQR();
+    roomRef.child('state').on('value',s=>{const v=s.val();if(!v)return;GS=v;onStateChange();});
+    roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScores();});
+    roomRef.child('board').on('value',s=>{boardQ=s.val()||{};if(GS.phase==='board')renderGrid();});
+    roomRef.child('categories').on('value',s=>{categories=s.val()||{};if(GS.phase==='board')renderGrid();});
+}
+
+// ═══ QR CODE ═══
+function generateQR(){
+    const base=window.location.href.replace(/\/[^\/]*$/,'/');
+    const url=base+'play.html?room='+roomCode;
+    document.getElementById('qr-url').textContent=url;
+    try{QRCode.toCanvas(document.getElementById('qr-canvas'),url,{width:200,margin:2,color:{dark:'#FFD700',light:'#111111'}});}catch(e){}
+}
+function updateQR(){document.getElementById('qr-overlay').classList.toggle('show',!!GS.showQR);}
+
+// ═══ STATE MACHINE ═══
+function onStateChange(){
+    updateQR();
+    const{phase,dailyDouble,ddTeam,round}=GS;
+
+    if(phase==='round-transition'&&prevPhase!=='round-transition'){
+        showTransition();SFX.roundEnd();
+    } else if(phase==='question'&&dailyDouble&&GS.questionKey!==prevQKey){
+        showDailyDouble();SFX.dailyDouble();
+        setTimeout(()=>{if(GS.phase==='question')showQuestion();},3000);
+    } else if(phase==='question'&&!dailyDouble&&GS.questionKey!==prevQKey){
+        showQuestion();SFX.questionReveal();
+    } else if(phase==='question'){
+        updateQuestion();
+    } else if(phase==='board'){
+        showBoard();
+    }
+
+    if(GS.timerRunning)startTimer();else stopTimer();
+    prevPhase=phase;prevQKey=GS.questionKey;
+}
+
+// ═══ SCREENS ═══
+function showScreen(id){['lobby','board-display','question-display','dd-display','transition-display'].forEach(s=>document.getElementById(s).style.display='none');document.getElementById(id).style.display='flex';}
+
+function showBoard(){
+    showScreen('board-display');
+    const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
+    document.getElementById('bd-round').textContent=rl[GS.round]||'';
+    renderGrid();
+}
+
+function renderGrid(){
+    const g=document.getElementById('bd-grid'),r=GS.round;
+    if(r===3){g.innerHTML='<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:4vw;color:var(--gold);text-transform:uppercase;">Final Jeopardy</div>';return;}
+    const cats=r===1?(categories.round1||[]):(categories.round2||[]);
+    const vals=r===1?[200,400,600,800,1000]:[400,800,1200,1600,2000];
+    if(!cats.length){g.innerHTML='';return;}
+    let h='';
+    cats.forEach(c=>{h+=`<div class="bd-cat">${esc(c)}</div>`;});
+    vals.forEach((v,row)=>{cats.forEach((c,col)=>{
+        const k=`r${r}_c${col}_r${row}`,q=boardQ[k],done=q&&q.completed,dd=q&&q.dailyDouble;
+        h+=`<div class="bd-cell${done?' done':''}">$${v}${dd&&!done?'<span class="dd-star">★</span>':''}</div>`;
+    });});
+    g.innerHTML=h;
+}
+
+function renderScores(){
+    const sorted=Object.entries(teams).sort((a,b)=>(b[1].score||0)-(a[1].score||0));
+    document.getElementById('bd-scores').innerHTML=sorted.map(([k,t])=>
+        `<div class="bd-team" style="border-color:${avatarColor(t.avatar)}44"><span class="av">${avatarImg(t.avatar,'1.8vw')}</span><span class="nm">${esc(t.name||k)}</span><span class="sc">$${(t.score||0).toLocaleString()}</span></div>`
+    ).join('');
+}
+
+// ═══ DAILY DOUBLE ═══
+function showDailyDouble(){
+    showScreen('dd-display');
+    const tn=GS.ddTeam&&teams[GS.ddTeam]?teams[GS.ddTeam].name:GS.ddTeam;
+    document.getElementById('dd-pick').textContent=tn?`${tn} is answering!`:'';
+}
+
+// ═══ QUESTION ═══
+function showQuestion(){
+    showScreen('question-display');
+    document.getElementById('qd-cat').textContent=GS.category||'';
+    document.getElementById('qd-val').textContent=GS.value?'$'+GS.value.toLocaleString():'WAGER';
+    document.getElementById('qd-text').textContent=GS.questionText||'';
+    document.getElementById('qd-answer').textContent='';
+    document.getElementById('qd-answer').classList.remove('show');
+    document.getElementById('qd-timer').classList.add('hidden');
+    document.getElementById('qd-status').classList.add('hidden');
+    updateQuestion();
+}
+function updateQuestion(){
+    const ans=document.getElementById('qd-answer');
+    if(GS.answerRevealed){
+        roomRef.child(GS.questionKey==='final'?'final/answerText':`board/${GS.questionKey}/answerText`).once('value',s=>{
+            if(s.val()){ans.textContent=s.val();ans.classList.add('show');}
+        });
+    } else {
+        ans.classList.remove('show');
+    }
+    const status=document.getElementById('qd-status');
+    if(GS.accepting){status.textContent='ANSWERS OPEN';status.style.color='var(--green)';status.classList.remove('hidden');}
+    else if(GS.questionKey){status.textContent='ANSWERS CLOSED';status.style.color='var(--red)';status.classList.remove('hidden');}
+}
+
+// ═══ TIMER ═══
+function startTimer(){
+    stopTimer();
+    const td=document.getElementById('qd-timer'),time=document.getElementById('qd-time'),bar=document.getElementById('qd-bar');
+    td.classList.remove('hidden');
+    if(!GS.timerEnd)return;
+    timerDuration=Math.max(1,Math.ceil((GS.timerEnd-Date.now())/1000));
+    const totalDur=timerDuration;
+    let lastSec=-1;
+    timerInterval=setInterval(()=>{
+        const rem=Math.max(0,Math.ceil((GS.timerEnd-Date.now())/1000));
+        const m=Math.floor(rem/60),s=rem%60;
+        time.textContent=m+':'+String(s).padStart(2,'0');
+        const pct=totalDur>0?(rem/totalDur)*100:0;
+        bar.style.width=pct+'%';
+        const danger=rem<=5;
+        time.classList.toggle('danger',danger);
+        bar.classList.toggle('danger',danger);
+        if(danger&&rem>0&&rem!==lastSec&&rem<=5)SFX.tick();
+        if(rem<=0&&lastSec>0)SFX.timesUp();
+        lastSec=rem;
+        if(rem<=0)stopTimer();
+    },200);
+}
+function stopTimer(){if(timerInterval)clearInterval(timerInterval);timerInterval=null;}
+
+// ═══ ROUND TRANSITION ═══
+function showTransition(){
+    showScreen('transition-display');
+    const round=GS.round;
+    const titles={1:'Round 1 Complete',2:'Double Jeopardy Complete',3:'Game Over!'};
+    const nexts={1:'Double Jeopardy Coming Up...',2:'Final Jeopardy Coming Up...',3:'Thanks for Playing!'};
+    document.getElementById('tr-title').textContent=titles[round]||'Round Complete';
+    document.getElementById('tr-next').textContent=nexts[round]||'';
+    const sorted=Object.entries(teams).sort((a,b)=>(b[1].score||0)-(a[1].score||0));
+    document.getElementById('tr-scores').innerHTML=sorted.map(([k,t],i)=>
+        `<div class="tr-row" style="animation-delay:${i*.15}s;border-left:4px solid ${avatarColor(t.avatar)}"><span class="rank">${i+1}</span><span class="av">${avatarImg(t.avatar,'2.5vw')}</span><span class="nm" style="color:${avatarColor(t.avatar)}">${esc(t.name||k)}</span><span class="sc">$${(t.score||0).toLocaleString()}</span></div>`
+    ).join('');
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+init();
+</script>
+</body>
+</html>

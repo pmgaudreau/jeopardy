@@ -3,1145 +3,681 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trivia Night — Host Control Panel</title>
+    <title>PDK NINE Trivia Night — Host</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         :root {
-            --bg: #060e1f;
-            --bg-card: #0f1a33;
-            --bg-card-alt: #152040;
-            --primary: #1e40af;
-            --primary-hover: #2563eb;
-            --accent: #f59e0b;
-            --accent-hover: #fbbf24;
-            --success: #22c55e;
-            --danger: #ef4444;
-            --text: #f1f5f9;
-            --text-muted: #94a3b8;
-            --border: #1e293b;
+            --bg: #000; --bg-card: #111; --bg-elevated: #1a1a1a; --bg-input: #0d0d0d;
+            --gold: #FFD700; --gold-dim: #b8960f; --gold-bright: #ffe44d;
+            --red: #e63946; --green: #2ecc71; --blue: #4a90d9;
+            --text: #fff; --text-sec: #b0b0b0; --text-muted: #666;
+            --border: #333; --cell: #0a1640; --cell-hover: #0e2060;
             --radius: 10px;
+            --fh: 'Oswald', 'Impact', sans-serif;
+            --fs: 'Rajdhani', 'Inter', sans-serif;
+            --fb: 'Inter', system-ui, sans-serif;
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
-
-        /* ── Setup Screen ── */
-        #setup-screen {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 2rem;
-        }
-
-        .setup-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 3rem;
-            max-width: 480px;
-            width: 100%;
-            text-align: center;
-        }
-
-        .setup-card h1 {
-            font-size: 2.2rem;
-            color: var(--accent);
-            margin-bottom: .25rem;
-            font-weight: 800;
-            letter-spacing: 1px;
-        }
-
-        .setup-card h2 {
-            font-size: 1rem;
-            color: var(--text-muted);
-            font-weight: 400;
-            margin-bottom: 2rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.25rem;
-            text-align: left;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: .85rem;
-            color: var(--text-muted);
-            margin-bottom: .4rem;
-            font-weight: 500;
-        }
-
-        input[type="text"], input[type="number"] {
-            width: 100%;
-            padding: .75rem 1rem;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            color: var(--text);
-            font-size: 1rem;
-            outline: none;
-            transition: border-color .2s;
-        }
-
-        input:focus { border-color: var(--primary-hover); }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: .5rem;
-            padding: .7rem 1.4rem;
-            border: none;
-            border-radius: var(--radius);
-            font-size: .95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background .2s, transform .1s;
-        }
-
-        .btn:active { transform: scale(.97); }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            width: 100%;
-            padding: .9rem;
-            font-size: 1.05rem;
-            margin-top: .5rem;
-        }
-
-        .btn-primary:hover { background: var(--primary-hover); }
-
-        .btn-accent {
-            background: var(--accent);
-            color: #0f172a;
-        }
-
-        .btn-accent:hover { background: var(--accent-hover); }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-
-        .btn-outline:hover { background: var(--bg-card-alt); }
-
-        .btn-sm {
-            padding: .45rem .85rem;
-            font-size: .85rem;
-        }
-
-        /* ── Game Screen ── */
-        #game-screen { display: none; }
-
-        .top-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: .75rem 1.5rem;
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border);
-            flex-wrap: wrap;
-            gap: .5rem;
-        }
-
-        .room-badge {
-            background: var(--accent);
-            color: #0f172a;
-            font-weight: 700;
-            padding: .4rem 1rem;
-            border-radius: 20px;
-            font-size: .95rem;
-            letter-spacing: 1px;
-        }
-
-        .top-bar h1 {
-            font-size: 1.3rem;
-            color: var(--text);
-            font-weight: 700;
-        }
-
-        .round-tabs {
-            display: flex;
-            gap: .35rem;
-        }
-
-        .round-tab {
-            padding: .45rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: transparent;
-            color: var(--text-muted);
-            font-size: .85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all .2s;
-        }
-
-        .round-tab:hover { border-color: var(--primary); color: var(--text); }
-
-        .round-tab.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .dashboard {
-            display: grid;
-            grid-template-columns: 300px 1fr 280px;
-            gap: 1rem;
-            padding: 1rem 1.5rem;
-            min-height: calc(100vh - 58px);
-        }
-
-        @media (max-width: 1100px) {
-            .dashboard {
-                grid-template-columns: 1fr 1fr;
-            }
-            .panel-scoreboard { grid-column: 1 / -1; }
-        }
-
-        @media (max-width: 700px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .panel {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 1.25rem;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .panel h2 {
-            font-size: 1rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 1rem;
-            font-weight: 600;
-        }
-
-        /* ── Controls Panel ── */
-        .category-row {
-            display: flex;
-            gap: .5rem;
-            margin-bottom: 1rem;
-        }
-
-        .category-row input { flex: 1; }
-
-        .value-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: .35rem;
-            margin-bottom: 1.25rem;
-        }
-
-        .value-btn {
-            padding: .5rem .25rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: transparent;
-            color: var(--accent);
-            font-weight: 700;
-            font-size: .8rem;
-            cursor: pointer;
-            transition: all .15s;
-        }
-
-        .value-btn:hover { border-color: var(--accent); background: rgba(245, 158, 11, .1); }
-
-        .value-btn.active {
-            background: var(--accent);
-            color: #0f172a;
-            border-color: var(--accent);
-        }
-
-        .big-toggle {
-            width: 100%;
-            padding: .9rem;
-            font-size: 1.05rem;
-            font-weight: 700;
-            border: none;
-            border-radius: var(--radius);
-            cursor: pointer;
-            transition: all .2s;
-            margin-bottom: .75rem;
-        }
-
-        .big-toggle.open {
-            background: var(--success);
-            color: white;
-        }
-
-        .big-toggle.closed {
-            background: var(--danger);
-            color: white;
-        }
-
-        .status-bar {
-            text-align: center;
-            padding: .5rem;
-            border-radius: 8px;
-            font-size: .85rem;
-            font-weight: 600;
-            margin-bottom: .75rem;
-        }
-
-        .status-waiting { background: rgba(148, 163, 184, .15); color: var(--text-muted); }
-        .status-accepting { background: rgba(34, 197, 94, .15); color: var(--success); }
-        .status-closed { background: rgba(239, 68, 68, .15); color: var(--danger); }
-
-        .timer-display {
-            text-align: center;
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--accent);
-            font-variant-numeric: tabular-nums;
-            margin-bottom: .5rem;
-        }
-
-        .timer-controls {
-            display: flex;
-            gap: .35rem;
-            margin-bottom: 1rem;
-        }
-
-        .timer-controls .btn { flex: 1; }
-
-        /* ── Answers Panel ── */
-        .question-header {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-            margin-bottom: 1rem;
-            padding: .75rem 1rem;
-            background: var(--bg-card-alt);
-            border-radius: var(--radius);
-        }
-
-        .question-header .cat {
-            font-weight: 700;
-            color: var(--text);
-            font-size: 1.05rem;
-        }
-
-        .question-header .val {
-            color: var(--accent);
-            font-weight: 800;
-            font-size: 1.1rem;
-        }
-
-        .question-header .round-label {
-            color: var(--text-muted);
-            font-size: .8rem;
-            margin-left: auto;
-        }
-
-        .answer-card {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-            padding: .75rem 1rem;
-            background: var(--bg-card-alt);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            margin-bottom: .5rem;
-            transition: border-color .2s;
-        }
-
-        .answer-card.graded-correct { border-color: var(--success); }
-        .answer-card.graded-incorrect { border-color: var(--danger); }
-
-        .answer-team {
-            font-weight: 700;
-            min-width: 100px;
-            font-size: .9rem;
-        }
-
-        .answer-text {
-            flex: 1;
-            font-size: 1rem;
-            color: var(--accent-hover);
-        }
-
-        .answer-actions {
-            display: flex;
-            gap: .3rem;
-        }
-
-        .grade-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border: 2px solid var(--border);
-            background: transparent;
-            color: var(--text-muted);
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all .15s;
-        }
-
-        .grade-btn.correct-active {
-            background: var(--success);
-            border-color: var(--success);
-            color: white;
-        }
-
-        .grade-btn.incorrect-active {
-            background: var(--danger);
-            border-color: var(--danger);
-            color: white;
-        }
-
-        .no-answers {
-            color: var(--text-muted);
-            text-align: center;
-            padding: 2rem;
-            font-size: .95rem;
-        }
-
-        .apply-bar {
-            margin-top: auto;
-            padding-top: 1rem;
-            display: flex;
-            gap: .5rem;
-        }
-
-        .apply-bar .btn { flex: 1; }
-
-        .answer-count {
-            background: var(--primary);
-            color: white;
-            padding: .15rem .55rem;
-            border-radius: 12px;
-            font-size: .8rem;
-            font-weight: 700;
-        }
-
-        /* ── Scoreboard Panel ── */
-        .score-row {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-            padding: .6rem .75rem;
-            border-radius: 8px;
-            margin-bottom: .35rem;
-            transition: background .15s;
-        }
-
-        .score-row:hover { background: var(--bg-card-alt); }
-
-        .score-rank {
-            font-weight: 800;
-            color: var(--text-muted);
-            width: 24px;
-            text-align: center;
-            font-size: .85rem;
-        }
-
-        .score-row:first-child .score-rank { color: var(--accent); }
-
-        .score-name {
-            flex: 1;
-            font-weight: 600;
-            font-size: .95rem;
-        }
-
-        .score-value {
-            font-weight: 800;
-            color: var(--accent);
-            font-size: 1rem;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .score-adjust {
-            display: flex;
-            gap: .2rem;
-        }
-
-        .adjust-btn {
-            width: 24px;
-            height: 24px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background: transparent;
-            color: var(--text-muted);
-            font-size: .75rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .adjust-btn:hover { border-color: var(--text-muted); color: var(--text); }
-
-        .add-team-row {
-            display: flex;
-            gap: .5rem;
-            margin-top: auto;
-            padding-top: 1rem;
-        }
-
-        .add-team-row input { flex: 1; font-size: .85rem; }
-
-        /* ── Final Jeopardy Wagers ── */
-        .wager-card {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-            padding: .6rem .75rem;
-            background: var(--bg-card-alt);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-bottom: .4rem;
-        }
-
-        .wager-card .team { font-weight: 700; flex: 1; }
-        .wager-card .wager { color: var(--accent); font-weight: 800; }
-        .wager-card .wager-pending { color: var(--text-muted); font-style: italic; }
-
-        /* ── History Panel ── */
-        #history-panel {
-            grid-column: 1 / -1;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .history-row {
-            display: grid;
-            grid-template-columns: auto 1fr auto auto;
-            gap: .75rem;
-            align-items: center;
-            padding: .5rem .75rem;
-            border-bottom: 1px solid var(--border);
-            font-size: .85rem;
-        }
-
-        .history-row:last-child { border-bottom: none; }
-
-        .h-q { color: var(--text-muted); font-weight: 600; }
-        .h-cat { color: var(--text); }
-        .h-val { color: var(--accent); font-weight: 700; }
-        .h-answers { color: var(--text-muted); }
-
-        /* ── Misc ── */
+        body { font-family: var(--fb); background: var(--bg); color: var(--text); min-height: 100vh; }
+        .view { display: none; } .view.active { display: block; }
         .hidden { display: none !important; }
 
-        .fade-in {
-            animation: fadeIn .3s ease;
+        input[type="text"], input[type="number"], select {
+            width: 100%; padding: .7rem .9rem; background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: var(--radius); color: var(--text); font-family: var(--fb); font-size: .95rem; outline: none;
         }
+        input:focus { border-color: var(--gold); }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+            padding: .6rem 1.2rem; border: none; border-radius: 999px;
+            font-family: var(--fs); font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .2s;
         }
+        .btn:active { transform: scale(.97); } .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-gold { background: var(--gold); color: #000; } .btn-gold:hover { background: var(--gold-bright); }
+        .btn-green { background: var(--green); color: #fff; }
+        .btn-red { background: var(--red); color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-sec); }
+        .btn-outline:hover { border-color: var(--gold-dim); color: var(--gold); }
+        .btn-lg { padding: .85rem 1.8rem; font-size: 1.05rem; }
+        .btn-sm { padding: .4rem .8rem; font-size: .8rem; }
+        .btn-block { width: 100%; }
 
-        .divider {
-            border: none;
-            border-top: 1px solid var(--border);
-            margin: 1rem 0;
+        /* ═══ SETUP ═══ */
+        #setup-view { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+        .setup-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 16px; padding: 2.5rem 2rem; max-width: 520px; width: 100%; text-align: center;
         }
+        .setup-card h1 { font-family: var(--fh); font-size: 2.4rem; color: var(--gold); text-transform: uppercase; letter-spacing: .08em; }
+        .setup-card .sub { font-family: var(--fs); font-size: .95rem; color: var(--text-sec); margin-bottom: 2rem; }
+        .fg { margin-bottom: 1.1rem; text-align: left; }
+        .fg label { display: block; font-size: .8rem; color: var(--text-muted); margin-bottom: .3rem; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; }
+        .divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+        .err { color: var(--red); font-size: .85rem; margin-top: .75rem; }
 
-        .flex-center {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .csv-zone {
+            border: 2px dashed var(--border); border-radius: var(--radius); padding: 1.5rem;
+            text-align: center; cursor: pointer; transition: all .2s; margin-bottom: .75rem;
         }
+        .csv-zone:hover, .csv-zone.drag-over { border-color: var(--gold); background: rgba(255,215,0,.04); }
+        .csv-zone .icon { font-size: 1.8rem; }
+        .csv-zone .lbl { font-size: .85rem; color: var(--text-sec); }
+        .csv-zone .lbl strong { color: var(--gold); }
+        .csv-zone.loaded { border-color: var(--green); background: rgba(46,204,113,.06); }
+        .csv-status { font-size: .8rem; color: var(--green); margin-bottom: .75rem; }
+
+        /* ═══ TOP BAR ═══ */
+        .top-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: .6rem 1.25rem; background: var(--bg-card); border-bottom: 1px solid var(--border);
+            flex-wrap: wrap; gap: .5rem;
+        }
+        .room-badge {
+            background: var(--gold); color: #000; font-family: var(--fh); font-weight: 700;
+            padding: .35rem .9rem; border-radius: 20px; font-size: .9rem; letter-spacing: 1px;
+        }
+        .top-bar h1 { font-family: var(--fh); font-size: 1.2rem; color: var(--gold); letter-spacing: .06em; text-transform: uppercase; }
+        .top-controls { display: flex; align-items: center; gap: .5rem; }
+        .round-tabs { display: flex; gap: .3rem; }
+        .round-tab {
+            padding: .4rem .9rem; border: 1px solid var(--border); border-radius: var(--radius);
+            background: transparent; color: var(--text-muted); font-family: var(--fs);
+            font-size: .85rem; font-weight: 600; cursor: pointer; transition: all .2s;
+        }
+        .round-tab:hover { border-color: var(--gold-dim); color: var(--text); }
+        .round-tab.active { background: var(--gold); color: #000; border-color: var(--gold); }
+
+        .qr-toggle {
+            padding: .35rem .7rem; border: 1px solid var(--border); border-radius: var(--radius);
+            background: transparent; color: var(--text-muted); font-size: .85rem; cursor: pointer; transition: all .2s;
+        }
+        .qr-toggle:hover { border-color: var(--gold-dim); color: var(--gold); }
+        .qr-toggle.on { background: var(--gold); color: #000; border-color: var(--gold); }
+
+        /* ═══ BOARD ═══ */
+        .board-layout { display: grid; grid-template-columns: 1fr 240px; gap: 1rem; padding: 1rem 1.25rem; min-height: calc(100vh - 52px); }
+        @media (max-width: 900px) { .board-layout { grid-template-columns: 1fr; } }
+
+        .jeopardy-board {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
+            background: var(--bg-card); border-radius: 12px; padding: 4px; align-self: start;
+        }
+        .board-cat {
+            background: var(--bg-elevated); padding: .6rem .4rem; text-align: center;
+            font-family: var(--fh); font-size: .85rem; font-weight: 600; color: var(--gold);
+            text-transform: uppercase; border-radius: 6px 6px 0 0; min-height: 48px;
+            display: flex; align-items: center; justify-content: center; line-height: 1.2;
+        }
+        .board-cell {
+            background: var(--cell); padding: .8rem .4rem; text-align: center;
+            font-family: var(--fh); font-size: 1.3rem; font-weight: 700; color: var(--gold);
+            cursor: pointer; border-radius: 4px; transition: all .15s; position: relative;
+            min-height: 56px; display: flex; align-items: center; justify-content: center;
+        }
+        .board-cell:hover { background: var(--cell-hover); transform: scale(1.03); z-index: 1; }
+        .board-cell.done { background: #111; color: var(--text-muted); cursor: default; opacity: .4; }
+        .board-cell.done::after { content: "✕"; position: absolute; font-size: 2rem; color: var(--red); opacity: .8; }
+        .board-cell.done:hover { transform: none; }
+        .board-cell .dd-star { position: absolute; top: 3px; right: 5px; font-size: .6rem; color: var(--gold-bright); opacity: .7; }
+
+        /* ═══ SIDEBAR ═══ */
+        .sidebar { display: flex; flex-direction: column; gap: .75rem; }
+        .side-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; }
+        .side-panel h2 { font-family: var(--fh); font-size: .85rem; color: var(--gold); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .75rem; }
+        .score-row { display: flex; align-items: center; gap: .4rem; padding: .35rem .5rem; border-radius: 6px; margin-bottom: .2rem; }
+        .score-row:hover { background: var(--bg-elevated); }
+        .score-rank { font-weight: 800; color: var(--text-muted); width: 18px; text-align: center; font-size: .8rem; }
+        .score-row:first-child .score-rank { color: var(--gold); }
+        .score-avatar { display:flex; align-items:center; }
+        .score-name { flex: 1; font-weight: 600; font-size: .85rem; }
+        .score-val { font-weight: 800; color: var(--gold); font-size: .9rem; font-variant-numeric: tabular-nums; }
+        .adj-btn {
+            width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 4px;
+            background: transparent; color: var(--text-muted); font-size: .7rem;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .adj-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+        .add-row { display: flex; gap: .4rem; margin-top: .5rem; }
+        .add-row input { flex: 1; font-size: .8rem; padding: .4rem .6rem; }
+        .board-url-note { font-size: .75rem; color: var(--text-muted); margin-top: .5rem; word-break: break-all; }
+        .board-url-note code { color: var(--gold-dim); }
+
+        /* ═══ QUESTION VIEW ═══ */
+        #question-view .qc { max-width: 800px; margin: 0 auto; padding: 1.5rem; }
+        .q-back { margin-bottom: 1rem; }
+        .q-header { text-align: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border); }
+        .q-header .rl { font-family: var(--fs); font-size: .8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; }
+        .q-header .cat { font-family: var(--fh); font-size: 1.8rem; color: var(--gold); text-transform: uppercase; }
+        .q-header .val { font-family: var(--fh); font-size: 2.2rem; color: var(--gold-bright); }
+        .dd-badge { display: inline-block; background: var(--red); color: #fff; font-family: var(--fh); font-size: .85rem; padding: .3rem .9rem; border-radius: 999px; margin-top: .5rem; }
+
+        .qcard { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+        .qcard h3 { font-family: var(--fs); font-size: .8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
+        .q-text { font-size: 1.15rem; line-height: 1.5; }
+        .ans-reveal {
+            background: var(--bg-elevated); border: 1px dashed var(--border); border-radius: var(--radius);
+            padding: 1rem; text-align: center; cursor: pointer; transition: all .2s; margin-top: .5rem;
+        }
+        .ans-reveal:hover { border-color: var(--gold-dim); }
+        .ans-reveal .lbl { color: var(--text-muted); font-size: .9rem; }
+        .ans-reveal .atxt { font-size: 1.15rem; color: var(--green); font-weight: 600; }
+
+        .timer-section { text-align: center; margin-bottom: 1rem; }
+        .timer-display { font-family: var(--fh); font-size: 3rem; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
+        .timer-display.danger { color: var(--red); }
+        .timer-presets { display: flex; gap: .3rem; justify-content: center; margin-top: .35rem; }
+        .toggle-bar { text-align: center; margin-bottom: 1rem; }
+        .toggle-accept {
+            width: 100%; padding: .9rem; font-family: var(--fh); font-size: 1.1rem; font-weight: 700;
+            border: none; border-radius: var(--radius); cursor: pointer; transition: all .2s;
+        }
+        .toggle-accept.open { background: var(--green); color: #fff; }
+        .toggle-accept.closed { background: var(--red); color: #fff; }
+        .status-pill { display: inline-block; padding: .3rem .8rem; border-radius: 999px; font-family: var(--fs); font-size: .8rem; font-weight: 600; margin-bottom: .75rem; }
+        .status-pill.w { background: rgba(102,102,102,.2); color: var(--text-muted); }
+        .status-pill.a { background: rgba(46,204,113,.15); color: var(--green); }
+        .status-pill.c { background: rgba(230,57,70,.15); color: var(--red); }
+
+        .ans-header { display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; }
+        .ans-header h3 { font-family: var(--fh); font-size: .9rem; color: var(--gold); text-transform: uppercase; }
+        .cnt-badge { background: var(--blue); color: #fff; padding: .1rem .5rem; border-radius: 10px; font-size: .75rem; font-weight: 700; }
+
+        .acard {
+            display: flex; align-items: center; gap: .6rem; padding: .6rem .8rem;
+            background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px;
+            margin-bottom: .35rem; transition: border-color .2s;
+        }
+        .acard.correct { border-color: var(--green); } .acard.incorrect { border-color: var(--red); }
+        .a-avatar { display:flex; align-items:center; }
+        .a-team { font-weight: 700; min-width: 80px; font-size: .85rem; }
+        .a-text { flex: 1; color: var(--gold-bright); font-size: .95rem; }
+        .gbtn {
+            width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border);
+            background: transparent; color: var(--text-muted); font-size: 1rem;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s;
+        }
+        .gbtn.ca { background: var(--green); border-color: var(--green); color: #fff; }
+        .gbtn.ia { background: var(--red); border-color: var(--red); color: #fff; }
+        .no-ans { color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: .9rem; }
+        .apply-row { display: flex; gap: .5rem; margin-top: 1rem; }
+        .apply-row .btn { flex: 1; }
+
+        /* DD overlay */
+        .dd-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.85);
+            display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem;
+        }
+        .dd-modal {
+            background: var(--bg-card); border: 2px solid var(--gold); border-radius: 16px;
+            padding: 2rem; max-width: 400px; width: 100%; text-align: center;
+        }
+        .dd-modal h2 { font-family: var(--fh); font-size: 1.6rem; color: var(--gold); text-transform: uppercase; margin-bottom: .25rem; }
+        .dd-modal .sub { font-size: .9rem; color: var(--text-sec); margin-bottom: 1.25rem; }
+        .dd-tbtn {
+            display: block; width: 100%; padding: .7rem; margin-bottom: .4rem;
+            background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius);
+            color: var(--text); font-family: var(--fs); font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: all .15s; text-align: left;
+        }
+        .dd-tbtn:hover { border-color: var(--gold); background: rgba(255,215,0,.06); }
+        .dd-tbtn .ts { float: right; color: var(--gold); }
+
+        @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+        .fade-in { animation: fadeIn .25s ease; }
     </style>
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════
-     SETUP SCREEN
-     ════════════════════════════════════════════ -->
-<div id="setup-screen">
-    <div class="setup-card">
-        <h1>TRIVIA NIGHT</h1>
-        <h2>Host Control Panel</h2>
-
-        <div class="form-group">
-            <label>Room Code (share this with teams)</label>
-            <input type="text" id="room-code-input" placeholder="e.g. TRIVIA" maxlength="12"
-                   style="text-transform:uppercase; text-align:center; font-size:1.3rem; font-weight:700; letter-spacing:2px;">
-        </div>
-
-        <button class="btn btn-primary" onclick="createRoom()">Create Game Room</button>
-
-        <hr class="divider" style="margin:1.5rem 0;">
-
-        <div class="form-group">
-            <label>Or rejoin an existing room</label>
-            <input type="text" id="rejoin-code-input" placeholder="Room code" maxlength="12"
-                   style="text-transform:uppercase; text-align:center;">
-        </div>
-        <button class="btn btn-outline" style="width:100%;" onclick="rejoinRoom()">Rejoin Room</button>
-
-        <p id="setup-error" style="color:var(--danger); margin-top:1rem; font-size:.85rem;"></p>
+<!-- ═══ SETUP ═══ -->
+<div class="view active" id="setup-view">
+<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;">
+<div class="setup-card">
+    <h1>PDK NINE</h1>
+    <div class="sub">Trivia Night — Host Control Panel</div>
+    <div class="fg">
+        <label>Room Code</label>
+        <input type="text" id="inp-room" placeholder="e.g. TRIVIA" maxlength="12"
+               style="text-transform:uppercase;text-align:center;font-size:1.3rem;font-weight:700;letter-spacing:2px;font-family:var(--fh);">
     </div>
+    <div class="fg">
+        <label>Load Questions (CSV)</label>
+        <div class="csv-zone" id="csv-zone" onclick="document.getElementById('csv-file').click()">
+            <div class="icon">📄</div>
+            <div class="lbl">Drag &amp; drop a CSV or <strong>click to browse</strong></div>
+        </div>
+        <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSV(this.files[0])">
+        <div class="csv-status hidden" id="csv-status"></div>
+        <div style="text-align:center"><button class="btn btn-outline btn-sm" onclick="downloadTemplate()">Download Template CSV</button></div>
+    </div>
+    <button class="btn btn-gold btn-lg btn-block" onclick="createRoom()">Create Game Room</button>
+    <hr class="divider">
+    <div class="fg">
+        <label>Or rejoin an existing room</label>
+        <input type="text" id="inp-rejoin" placeholder="Room code" maxlength="12" style="text-transform:uppercase;text-align:center;">
+    </div>
+    <button class="btn btn-outline btn-block" onclick="rejoinRoom()">Rejoin Room</button>
+    <p class="err" id="setup-err"></p>
+</div>
+</div>
 </div>
 
-<!-- ════════════════════════════════════════════
-     GAME SCREEN
-     ════════════════════════════════════════════ -->
-<div id="game-screen">
+<!-- ═══ BOARD VIEW ═══ -->
+<div class="view" id="board-view">
     <div class="top-bar">
-        <span class="room-badge" id="room-code-display"></span>
+        <span class="room-badge" id="disp-room"></span>
         <h1>Trivia Night</h1>
-        <div class="round-tabs">
-            <button class="round-tab active" data-round="1" onclick="setRound(1)">Round 1</button>
-            <button class="round-tab" data-round="2" onclick="setRound(2)">Round 2</button>
-            <button class="round-tab" data-round="3" onclick="setRound(3)">Final</button>
+        <div class="top-controls">
+            <button class="qr-toggle" id="qr-toggle" onclick="toggleQR()" title="Toggle QR on projector">QR</button>
+            <div class="round-tabs">
+                <button class="round-tab active" data-round="1" onclick="switchRound(1)">Round 1</button>
+                <button class="round-tab" data-round="2" onclick="switchRound(2)">Round 2</button>
+                <button class="round-tab" data-round="3" onclick="switchRound(3)">Final</button>
+            </div>
         </div>
     </div>
-
-    <div class="dashboard">
-
-        <!-- ── Left: Controls ── -->
-        <div class="panel panel-controls">
-            <h2>Question Control</h2>
-
-            <div class="category-row">
-                <input type="text" id="category-input" placeholder="Category name...">
-                <button class="btn btn-accent btn-sm" onclick="updateCategory()">Set</button>
+    <div class="board-layout">
+        <div class="jeopardy-board" id="jeopardy-board"></div>
+        <div class="sidebar">
+            <div class="side-panel">
+                <h2>Scoreboard</h2>
+                <div id="scoreboard"></div>
+                <div class="add-row">
+                    <input type="text" id="add-team" placeholder="Team name">
+                    <button class="btn btn-gold btn-sm" onclick="addTeamManual()">Add</button>
+                </div>
             </div>
-
-            <div id="value-grid-container">
-                <div class="value-grid" id="value-grid"></div>
+            <div class="side-panel">
+                <h2>History</h2>
+                <div id="history" style="max-height:250px;overflow-y:auto;"></div>
             </div>
-
-            <div class="status-bar status-waiting" id="status-bar">WAITING</div>
-
-            <button class="big-toggle open" id="toggle-btn" onclick="toggleAnswers()">
-                Open for Answers
-            </button>
-
-            <div class="timer-display" id="timer-display">0:30</div>
-            <div class="timer-controls">
-                <button class="btn btn-outline btn-sm" onclick="setTimer(15)">0:15</button>
-                <button class="btn btn-outline btn-sm" onclick="setTimer(30)">0:30</button>
-                <button class="btn btn-outline btn-sm" onclick="setTimer(45)">0:45</button>
-                <button class="btn btn-outline btn-sm" onclick="setTimer(60)">1:00</button>
+            <div class="side-panel">
+                <h2>Projector Display</h2>
+                <div class="board-url-note" id="board-url-note">Open <code>board.html</code> on your projector/TV</div>
             </div>
-
-            <hr class="divider">
-            <button class="btn btn-outline" style="width:100%;" onclick="nextQuestion()">
-                Next Question &rarr;
-            </button>
-        </div>
-
-        <!-- ── Center: Answers ── -->
-        <div class="panel panel-answers">
-            <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:.25rem;">
-                <h2 style="margin:0;">Answers</h2>
-                <span class="answer-count" id="answer-count">0</span>
-            </div>
-
-            <div class="question-header" id="question-header">
-                <span class="cat" id="qh-category">—</span>
-                <span class="val" id="qh-value">—</span>
-                <span class="round-label" id="qh-round">Round 1</span>
-            </div>
-
-            <!-- Final Jeopardy Wagers (shown only during Final round) -->
-            <div id="wager-section" class="hidden">
-                <h2 style="font-size:.85rem; margin-bottom:.5rem;">Team Wagers</h2>
-                <div id="wager-list"></div>
-                <hr class="divider">
-            </div>
-
-            <div id="answers-list" style="flex:1; overflow-y:auto;"></div>
-
-            <div class="apply-bar">
-                <button class="btn btn-success" onclick="applyScores()">Apply Scores</button>
-                <button class="btn btn-outline" onclick="clearGrading()">Reset Grading</button>
-            </div>
-        </div>
-
-        <!-- ── Right: Scoreboard ── -->
-        <div class="panel panel-scoreboard">
-            <h2>Scoreboard</h2>
-            <div id="scoreboard-list" style="flex:1; overflow-y:auto;"></div>
-
-            <hr class="divider">
-            <h2 style="font-size:.8rem;">Add Team Manually</h2>
-            <div class="add-team-row">
-                <input type="text" id="add-team-input" placeholder="Team name">
-                <button class="btn btn-accent btn-sm" onclick="addTeamManually()">Add</button>
-            </div>
-        </div>
-
-        <!-- ── Bottom: History ── -->
-        <div class="panel" id="history-panel">
-            <h2>Question History</h2>
-            <div id="history-list"></div>
         </div>
     </div>
 </div>
 
-<!-- ════════════════════════════════════════════
-     FIREBASE + APP LOGIC
-     ════════════════════════════════════════════ -->
+<!-- ═══ QUESTION VIEW ═══ -->
+<div class="view" id="question-view">
+    <div class="top-bar">
+        <span class="room-badge" id="qv-room"></span>
+        <h1>Trivia Night</h1>
+        <div></div>
+    </div>
+    <div class="qc">
+        <div class="q-back"><button class="btn btn-outline btn-sm" onclick="returnToBoard()">← Back to Board</button></div>
+        <div class="q-header">
+            <div class="rl" id="qv-rl"></div>
+            <div class="cat" id="qv-cat"></div>
+            <div class="val" id="qv-val"></div>
+            <div id="qv-dd" class="hidden"><span class="dd-badge">★ DAILY DOUBLE ★</span></div>
+        </div>
+        <div class="qcard">
+            <h3>Question</h3>
+            <div class="q-text" id="qv-qtxt"></div>
+        </div>
+        <div class="qcard">
+            <h3>Answer</h3>
+            <div class="ans-reveal" id="ans-reveal" onclick="revealAnswer()">
+                <div class="lbl" id="ans-lbl">Click to reveal answer</div>
+                <div class="atxt hidden" id="ans-txt"></div>
+            </div>
+        </div>
+        <div class="qcard">
+            <div id="dd-team-info" class="hidden" style="text-align:center;margin-bottom:.75rem;">
+                <span style="color:var(--text-muted);font-size:.85rem;">Only </span>
+                <span style="color:var(--gold);font-weight:700;" id="dd-team-name"></span>
+                <span style="color:var(--text-muted);font-size:.85rem;"> can answer (Daily Double)</span>
+            </div>
+            <div class="timer-section">
+                <div class="timer-display" id="timer-display">0:30</div>
+                <div class="timer-presets">
+                    <button class="btn btn-outline btn-sm" onclick="setTimer(15)">0:15</button>
+                    <button class="btn btn-outline btn-sm" onclick="setTimer(30)">0:30</button>
+                    <button class="btn btn-outline btn-sm" onclick="setTimer(45)">0:45</button>
+                    <button class="btn btn-outline btn-sm" onclick="setTimer(60)">1:00</button>
+                </div>
+            </div>
+            <div style="text-align:center;margin-bottom:.5rem;">
+                <span class="status-pill w" id="status-pill">WAITING</span>
+            </div>
+            <div class="toggle-bar">
+                <button class="toggle-accept open" id="toggle-btn" onclick="toggleAccepting()">Open for Answers</button>
+            </div>
+            <div class="ans-header"><h3>Team Answers</h3><span class="cnt-badge" id="ans-count">0</span></div>
+            <div id="answers-list"></div>
+            <div class="apply-row">
+                <button class="btn btn-green" onclick="applyScores()">Apply Scores</button>
+                <button class="btn btn-outline" onclick="clearGrading()">Reset</button>
+            </div>
+        </div>
+        <div style="text-align:center;margin-top:1rem;">
+            <button class="btn btn-gold btn-lg" onclick="completeAndReturn()">Complete &amp; Return to Board →</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ DD OVERLAY ═══ -->
+<div class="dd-overlay hidden" id="dd-overlay">
+    <div class="dd-modal fade-in">
+        <h2>★ Daily Double ★</h2>
+        <div class="sub" id="dd-label"></div>
+        <div style="font-size:.9rem;color:var(--text-muted);margin-bottom:1rem;">Select a team:</div>
+        <div id="dd-teams"></div>
+    </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="config.js"></script>
 <script>
-// ╔══════════════════════════════════════════════════════════════╗
-// ║  PASTE YOUR FIREBASE CONFIG BELOW (see README for setup)    ║
-// ╚══════════════════════════════════════════════════════════════╝
-const firebaseConfig = {
-    apiKey: "AIzaSyBQP3uiW84rbcbzSA23bfW5DRUfitCQaVI",
-    authDomain: "pdk-nine-jeopardy.firebaseapp.com",
-    databaseURL: "https://pdk-nine-jeopardy-default-rtdb.firebaseio.com",
-    projectId: "pdk-nine-jeopardy",
-    storageBucket: "pdk-nine-jeopardy.firebasestorage.app",
-    messagingSenderId: "228636489232",
-    appId: "1:228636489232:web:6d76312079db4114eabc95"
-};
+let roomCode = null, roomRef = null;
+let GS = { round:1, phase:'board', category:'', value:0, questionText:'', accepting:false, dailyDouble:false, ddTeam:'', questionKey:'', showQR:false, timerEnd:0, timerRunning:false, answerRevealed:false };
+let teams = {}, curAnswers = {}, grading = {}, boardQ = {}, parsedCSV = null;
+let timerInterval = null, timerSec = 30;
+const VALS = { 1:[200,400,600,800,1000], 2:[400,800,1200,1600,2000] };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+function showView(id) { document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
-// ── State ──
-let roomCode = null;
-let roomRef = null;
-let currentState = { round: 1, category: '', value: 0, accepting: false, questionNum: 0 };
-let teams = {};
-let currentAnswers = {};
-let grading = {};    // local grading state: { teamKey: true/false }
-let timerInterval = null;
-let timerSeconds = 30;
-let timerRunning = false;
+// ── CSV ──
+function parseCSVLine(line) {
+    const r=[]; let cur='', inQ=false;
+    for(let i=0;i<line.length;i++){const c=line[i]; if(inQ){if(c==='"'&&line[i+1]==='"'){cur+='"';i++;}else if(c==='"')inQ=false;else cur+=c;}else{if(c==='"')inQ=true;else if(c===','){r.push(cur.trim());cur='';}else cur+=c;}}
+    r.push(cur.trim()); return r;
+}
+function parseCSV(text) {
+    const lines=text.split(/\r?\n/).filter(l=>l.trim()); if(lines.length<2)return null;
+    const hdr=parseCSVLine(lines[0].toLowerCase()), cm={};
+    hdr.forEach((h,i)=>{const k=h.replace(/[^a-z_]/g,'');
+        if(k.includes('round'))cm.round=i; else if(k.includes('category'))cm.cat=i;
+        else if(k.includes('question_number')||k==='questionnumber')cm.qn=i;
+        else if(k.includes('question_text')||k==='questiontext'||k==='question')cm.qt=i;
+        else if(k.includes('answer_text')||k==='answertext'||k==='answer')cm.at=i;
+        else if(k.includes('daily_double')||k==='dailydouble'||k.includes('dailydoubleflag'))cm.dd=i;
+    });
+    const qs=[];
+    for(let i=1;i<lines.length;i++){const c=parseCSVLine(lines[i]); if(c.length<4)continue;
+        const round=parseInt(c[cm.round]||'0'), cat=(c[cm.cat]||'').trim(), qn=parseInt(c[cm.qn]||'0'),
+              qt=(c[cm.qt]||'').trim(), at=(c[cm.at]||'').trim(), ddr=(c[cm.dd]||'').trim().toLowerCase(),
+              dd=ddr==='true'||ddr==='1'||ddr==='yes';
+        if(round&&cat&&qn&&qt)qs.push({round,category:cat,questionNumber:qn,questionText:qt,answerText:at,dailyDouble:dd});
+    }
+    return qs;
+}
+function buildBoard(qs) {
+    const b={categories:{round1:[],round2:[]},questions:{},final:null};
+    const r1c=[],r2c=[];
+    qs.forEach(q=>{if(q.round===3){b.final={category:q.category,questionText:q.questionText,answerText:q.answerText};return;}
+        const cs=q.round===1?r1c:r2c; if(!cs.includes(q.category))cs.push(q.category);});
+    b.categories.round1=r1c.slice(0,5); b.categories.round2=r2c.slice(0,5);
+    qs.forEach(q=>{if(q.round===3)return; const cs=q.round===1?b.categories.round1:b.categories.round2;
+        const col=cs.indexOf(q.category); if(col===-1)return; const row=q.questionNumber-1;
+        const v=(VALS[q.round]||[])[row]||0;
+        b.questions[`r${q.round}_c${col}_r${row}`]={round:q.round,category:q.category,value:v,row,col,questionText:q.questionText,answerText:q.answerText,dailyDouble:q.dailyDouble,completed:false};
+    });
+    return b;
+}
+function handleCSV(file) {
+    if(!file)return; const reader=new FileReader();
+    reader.onload=e=>{const qs=parseCSV(e.target.result);
+        if(!qs||!qs.length){document.getElementById('setup-err').textContent='Could not parse CSV.';return;}
+        parsedCSV=buildBoard(qs); const z=document.getElementById('csv-zone');
+        z.classList.add('loaded'); z.querySelector('.icon').textContent='✓';
+        z.querySelector('.lbl').innerHTML=`<strong>${file.name}</strong> — ${qs.length} questions`;
+        const s=document.getElementById('csv-status');
+        s.textContent=`R1: ${parsedCSV.categories.round1.join(', ')} | R2: ${parsedCSV.categories.round2.join(', ')}${parsedCSV.final?' | Final ✓':''}`;
+        s.classList.remove('hidden'); document.getElementById('setup-err').textContent='';
+    }; reader.readAsText(file);
+}
+function downloadTemplate() {
+    const csv=`round,category,question_number,question_text,answer_text,daily_double_flag\n1,History,1,"Who was the first President?","George Washington",FALSE\n1,History,2,"What year did WWII end?","1945",FALSE\n1,History,3,"Which civilization built Machu Picchu?","The Inca",TRUE\n1,History,4,"What document starts with We the People?","The Constitution",FALSE\n1,History,5,"British monarch during the Revolution?","King George III",FALSE\n1,Science,1,"What planet is the Red Planet?","Mars",FALSE\n1,Science,2,"Chemical symbol for gold?","Au",FALSE\n1,Science,3,"Bones in the adult human body?","206",FALSE\n1,Science,4,"Gas plants absorb from the air?","Carbon Dioxide",FALSE\n1,Science,5,"Speed of light in miles per second?","186000",FALSE\n1,Pop Culture,1,"Fictional school in Harry Potter?","Hogwarts",FALSE\n1,Pop Culture,2,"Who played Iron Man in the MCU?","Robert Downey Jr.",FALSE\n1,Pop Culture,3,"Year the first iPhone released?","2007",FALSE\n1,Pop Culture,4,"Best-selling video game ever?","Minecraft",FALSE\n1,Pop Culture,5,"Author of Game of Thrones books?","George R.R. Martin",FALSE\n1,Sports,1,"Players on a basketball court per team?","5",FALSE\n1,Sports,2,"Country with most FIFA World Cups?","Brazil",FALSE\n1,Sports,3,"Sport with a slam dunk?","Basketball",FALSE\n1,Sports,4,"Holes in a standard golf round?","18",FALSE\n1,Sports,5,"NHL regulation period length?","20 minutes",FALSE\n1,Movies,1,"Movie: Here is looking at you kid?","Casablanca",FALSE\n1,Movies,2,"Who directed Jurassic Park?","Steven Spielberg",FALSE\n1,Movies,3,"Highest-grossing film (unadjusted)?","Avatar",FALSE\n1,Movies,4,"Color pill Neo takes in The Matrix?","Red",FALSE\n1,Movies,5,"1994 film set in Shawshank prison?","The Shawshank Redemption",FALSE\n2,Geography,1,"Smallest country in the world?","Vatican City",FALSE\n2,Geography,2,"River through Egypt?","The Nile",FALSE\n2,Geography,3,"Capital of Australia?","Canberra",TRUE\n2,Geography,4,"Tallest mountain in the world?","Mount Everest",FALSE\n2,Geography,5,"US state with the most coastline?","Alaska",FALSE\n2,Music,1,"Known as the King of Pop?","Michael Jackson",FALSE\n2,Music,2,"Instrument with 88 keys?","Piano",FALSE\n2,Music,3,"Band behind Bohemian Rhapsody?","Queen",FALSE\n2,Music,4,"Genre that originated in New Orleans?","Jazz",FALSE\n2,Music,5,"Strings on a standard guitar?","6",FALSE\n2,Food,1,"Country of origin for sushi?","Japan",FALSE\n2,Food,2,"Nut used to make marzipan?","Almond",FALSE\n2,Food,3,"Spice that makes curry yellow?","Turmeric",FALSE\n2,Food,4,"Most consumed fruit in the world?","Banana",FALSE\n2,Food,5,"Country where french fries originated?","Belgium",FALSE\n2,Technology,1,"What does HTTP stand for?","HyperText Transfer Protocol",FALSE\n2,Technology,2,"Co-founded Apple with Steve Jobs?","Steve Wozniak",FALSE\n2,Technology,3,"Year Google was founded?","1998",TRUE\n2,Technology,4,"What does CPU stand for?","Central Processing Unit",FALSE\n2,Technology,5,"Programming language named after an island?","Java",FALSE\n2,Literature,1,"Who wrote Romeo and Juliet?","Shakespeare",FALSE\n2,Literature,2,"First book of the Bible?","Genesis",FALSE\n2,Literature,3,"Who wrote 1984?","George Orwell",FALSE\n2,Literature,4,"Detective at 221B Baker Street?","Sherlock Holmes",FALSE\n2,Literature,5,"Who wrote The Great Gatsby?","F. Scott Fitzgerald",FALSE\n3,Potpourri,1,"What is the rarest blood type?","AB Negative",FALSE`;
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download='trivia_template.csv'; a.click();
+}
+const cz=document.getElementById('csv-zone');
+cz.addEventListener('dragover',e=>{e.preventDefault();cz.classList.add('drag-over');});
+cz.addEventListener('dragleave',()=>cz.classList.remove('drag-over'));
+cz.addEventListener('drop',e=>{e.preventDefault();cz.classList.remove('drag-over');if(e.dataTransfer.files[0])handleCSV(e.dataTransfer.files[0]);});
 
-const ROUND_VALUES = {
-    1: [200, 400, 600, 800, 1000],
-    2: [400, 800, 1200, 1600, 2000],
-    3: []
-};
-
-// ── Setup ──
-
+// ── Room ──
 function createRoom() {
-    const code = document.getElementById('room-code-input').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (!code) {
-        document.getElementById('setup-error').textContent = 'Enter a room code.';
-        return;
-    }
-    roomCode = code;
-    roomRef = db.ref('trivia-rooms/' + roomCode);
-    roomRef.set({
-        state: { round: 1, category: '', value: 0, accepting: false, questionNum: 1 },
-        teams: {},
-        currentAnswers: {},
-        history: {}
-    }).then(() => {
-        enterGame();
-    }).catch(err => {
-        document.getElementById('setup-error').textContent = 'Error: ' + err.message;
-    });
+    const code=document.getElementById('inp-room').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(!code){document.getElementById('setup-err').textContent='Enter a room code.';return;}
+    roomCode=code; roomRef=db.ref('trivia-rooms/'+roomCode);
+    const init={state:{round:1,phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',showQR:false,timerEnd:0,timerRunning:false,answerRevealed:false},teams:{},currentAnswers:{},history:{}};
+    if(parsedCSV){init.board=parsedCSV.questions;init.categories=parsedCSV.categories;if(parsedCSV.final)init.final=parsedCSV.final;}
+    roomRef.set(init).then(()=>enterGame()).catch(e=>{document.getElementById('setup-err').textContent='Error: '+e.message;});
 }
-
 function rejoinRoom() {
-    const code = (document.getElementById('rejoin-code-input').value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (!code) {
-        document.getElementById('setup-error').textContent = 'Enter a room code.';
-        return;
-    }
-    roomCode = code;
-    roomRef = db.ref('trivia-rooms/' + roomCode);
-    roomRef.child('state').once('value', snap => {
-        if (snap.exists()) {
-            enterGame();
-        } else {
-            document.getElementById('setup-error').textContent = 'Room not found.';
-            roomCode = null;
-            roomRef = null;
-        }
-    });
+    const code=(document.getElementById('inp-rejoin').value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(!code){document.getElementById('setup-err').textContent='Enter a room code.';return;}
+    roomCode=code; roomRef=db.ref('trivia-rooms/'+roomCode);
+    roomRef.child('state').once('value',s=>{if(s.exists())enterGame();else{document.getElementById('setup-err').textContent='Room not found.';roomCode=null;roomRef=null;}});
 }
-
 function enterGame() {
-    document.getElementById('setup-screen').style.display = 'none';
-    document.getElementById('game-screen').style.display = 'block';
-    document.getElementById('room-code-display').textContent = roomCode;
-    buildValueGrid(1);
-    setupListeners();
+    document.getElementById('disp-room').textContent=roomCode;
+    document.getElementById('qv-room').textContent=roomCode;
+    const base=window.location.href.replace(/\/[^\/]*$/,'/');
+    document.getElementById('board-url-note').innerHTML=`Open on projector:<br><code>${base}board.html?room=${roomCode}</code>`;
+    showView('board-view'); setupListeners();
 }
 
-// ── Firebase Listeners ──
-
+// ── Listeners ──
 function setupListeners() {
-    roomRef.child('state').on('value', snap => {
-        const s = snap.val();
-        if (!s) return;
-        currentState = s;
-        renderState();
-    });
-
-    roomRef.child('teams').on('value', snap => {
-        teams = snap.val() || {};
-        renderScoreboard();
-        renderWagers();
-    });
-
-    roomRef.child('currentAnswers').on('value', snap => {
-        currentAnswers = snap.val() || {};
-        renderAnswers();
-    });
-
-    roomRef.child('history').on('value', snap => {
-        renderHistory(snap.val() || {});
-    });
+    roomRef.child('state').on('value',s=>{const v=s.val();if(!v)return;GS=v;syncView();});
+    roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScoreboard();});
+    roomRef.child('currentAnswers').on('value',s=>{curAnswers=s.val()||{};renderAnswers();});
+    roomRef.child('board').on('value',s=>{boardQ=s.val()||{};renderBoard();});
+    roomRef.child('history').on('value',s=>{renderHistory(s.val()||{});});
+}
+function syncView() {
+    document.querySelectorAll('.round-tab').forEach(t=>t.classList.toggle('active',parseInt(t.dataset.round)===GS.round));
+    document.getElementById('qr-toggle').classList.toggle('on',!!GS.showQR);
+    if(GS.phase==='board'||GS.phase==='round-transition'){showView('board-view');document.getElementById('dd-overlay').classList.add('hidden');}
 }
 
-// ── Round / Category / Value Controls ──
+// ── QR Toggle ──
+function toggleQR() { roomRef.child('state/showQR').set(!GS.showQR); }
 
-function setRound(r) {
-    document.querySelectorAll('.round-tab').forEach(t => t.classList.toggle('active', parseInt(t.dataset.round) === r));
-    buildValueGrid(r);
-    roomRef.child('state/round').set(r);
-    if (r === 3) {
-        roomRef.child('state/value').set(0);
+// ── Round ──
+function switchRound(r) {
+    const prevRound = GS.round;
+    if (r !== prevRound && r !== 3) {
+        roomRef.child('state').update({round:r,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false});
+        roomRef.child('currentAnswers').remove(); grading={};
+        setTimeout(()=>{ roomRef.child('state/phase').set('board'); },8000);
+    } else {
+        roomRef.child('state').update({round:r,phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false});
+        roomRef.child('currentAnswers').remove(); grading={};
     }
 }
 
-function buildValueGrid(round) {
-    const grid = document.getElementById('value-grid');
-    const vals = ROUND_VALUES[round] || [];
-    if (vals.length === 0) {
-        document.getElementById('value-grid-container').classList.add('hidden');
-        return;
-    }
-    document.getElementById('value-grid-container').classList.remove('hidden');
-    grid.innerHTML = vals.map(v =>
-        `<button class="value-btn" data-value="${v}" onclick="selectValue(${v})">$${v}</button>`
+// ── Board ──
+function renderBoard() {
+    const b=document.getElementById('jeopardy-board'), r=GS.round;
+    if(r===3){renderFinalBoard(b);return;}
+    roomRef.child('categories').once('value',s=>{
+        const cats=s.val(); if(!cats){b.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-muted);">No questions loaded. Upload a CSV.</div>';return;}
+        const rc=r===1?(cats.round1||[]):(cats.round2||[]), vs=VALS[r]||[];
+        let h='';
+        rc.forEach(c=>{h+=`<div class="board-cat">${esc(c)}</div>`;});
+        vs.forEach((v,row)=>{rc.forEach((c,col)=>{
+            const k=`r${r}_c${col}_r${row}`, q=boardQ[k], done=q&&q.completed, dd=q&&q.dailyDouble;
+            h+=`<div class="board-cell${done?' done':''}" onclick="${done?'':`selQ('${k}')`}">$${v}${dd&&!done?'<span class="dd-star">★</span>':''}</div>`;
+        });});
+        b.innerHTML=h;
+    });
+}
+function renderFinalBoard(b) {
+    roomRef.child('final').once('value',s=>{const f=s.val();
+        if(!f){b.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-muted);">No Final Jeopardy loaded.</div>';return;}
+        b.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:3rem;">
+            <div style="font-family:var(--fh);font-size:1.6rem;color:var(--gold);text-transform:uppercase;margin-bottom:1rem;">Final Jeopardy</div>
+            <div style="font-size:1.1rem;color:var(--text-sec);margin-bottom:1.5rem;">Category: <strong style="color:var(--gold);">${esc(f.category)}</strong></div>
+            <button class="btn btn-gold btn-lg" onclick="startFinal()">Start Final Jeopardy</button></div>`;
+    });
+}
+
+// ── Question ──
+function selQ(key) {
+    const q=boardQ[key]; if(!q||q.completed)return;
+    if(q.dailyDouble){showDDSelect(key,q);return;}
+    activateQ(key,q,false,'');
+}
+function activateQ(key,q,isDD,ddTk) {
+    const val=isDD?q.value*2:q.value;
+    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false});
+    roomRef.child('currentAnswers').remove(); grading={};
+    showView('question-view');
+    const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
+    document.getElementById('qv-rl').textContent=rl[q.round]||'';
+    document.getElementById('qv-cat').textContent=q.category;
+    document.getElementById('qv-val').textContent='$'+val.toLocaleString();
+    document.getElementById('qv-qtxt').textContent=q.questionText;
+    document.getElementById('ans-txt').textContent=q.answerText;
+    document.getElementById('ans-txt').classList.add('hidden');
+    document.getElementById('ans-lbl').classList.remove('hidden');
+    document.getElementById('qv-dd').classList.toggle('hidden',!isDD);
+    document.getElementById('dd-team-info').classList.toggle('hidden',!isDD);
+    if(isDD) document.getElementById('dd-team-name').textContent=(teams[ddTk]&&teams[ddTk].name)||ddTk;
+    resetTimerDisp(); updateStatus();
+}
+
+// ── Daily Double ──
+function showDDSelect(key,q) {
+    document.getElementById('dd-overlay').classList.remove('hidden');
+    document.getElementById('dd-label').textContent=q.category+' — $'+q.value+' → $'+(q.value*2);
+    const list=document.getElementById('dd-teams');
+    list.innerHTML=Object.entries(teams).map(([k,t])=>
+        `<button class="dd-tbtn" onclick="confirmDD('${key}','${k}')">${avatarImg(t.avatar, 24)} ${esc(t.name||k)} <span class="ts">$${(t.score||0).toLocaleString()}</span></button>`
     ).join('');
 }
+function confirmDD(key,tk) { document.getElementById('dd-overlay').classList.add('hidden'); activateQ(key,boardQ[key],true,tk); }
 
-function selectValue(v) {
-    document.querySelectorAll('.value-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.value) === v));
-    roomRef.child('state/value').set(v);
-}
-
-function updateCategory() {
-    const cat = document.getElementById('category-input').value.trim();
-    roomRef.child('state/category').set(cat);
-}
-
-// ── Answer Toggle ──
-
-function toggleAnswers() {
-    const accepting = !currentState.accepting;
-    roomRef.child('state/accepting').set(accepting);
-    if (accepting) {
-        startTimer();
+// ── Accepting ──
+function toggleAccepting() {
+    const a=!GS.accepting;
+    if(a){
+        const end=Date.now()+timerSec*1000;
+        roomRef.child('state').update({accepting:true,timerEnd:end,timerRunning:true});
+        startLocalTimer();
     } else {
-        stopTimer();
+        roomRef.child('state').update({accepting:false,timerRunning:false});
+        stopLocalTimer();
     }
 }
-
-function renderState() {
-    const { round, category, value, accepting } = currentState;
-
-    document.querySelectorAll('.round-tab').forEach(t => t.classList.toggle('active', parseInt(t.dataset.round) === round));
-    buildValueGrid(round);
-    if (value) {
-        document.querySelectorAll('.value-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.value) === value));
-    }
-    if (category) {
-        document.getElementById('category-input').value = category;
-    }
-
-    const btn = document.getElementById('toggle-btn');
-    const bar = document.getElementById('status-bar');
-
-    if (accepting) {
-        btn.textContent = 'Close Answers';
-        btn.className = 'big-toggle closed';
-        bar.textContent = 'ACCEPTING ANSWERS';
-        bar.className = 'status-bar status-accepting';
-    } else {
-        btn.textContent = 'Open for Answers';
-        btn.className = 'big-toggle open';
-        bar.textContent = Object.keys(currentAnswers).length > 0 ? 'ANSWERS CLOSED — GRADE BELOW' : 'WAITING';
-        bar.className = Object.keys(currentAnswers).length > 0 ? 'status-bar status-closed' : 'status-bar status-waiting';
-    }
-
-    const roundLabels = { 1: 'Round 1', 2: 'Double Jeopardy', 3: 'Final Jeopardy' };
-    document.getElementById('qh-category').textContent = category || '—';
-    document.getElementById('qh-value').textContent = round === 3 ? 'WAGER' : (value ? '$' + value : '—');
-    document.getElementById('qh-round').textContent = roundLabels[round] || '';
-
-    document.getElementById('wager-section').classList.toggle('hidden', round !== 3);
+function updateStatus() {
+    const btn=document.getElementById('toggle-btn'), pill=document.getElementById('status-pill');
+    if(GS.accepting){btn.textContent='Close Answers';btn.className='toggle-accept closed';pill.textContent='ACCEPTING';pill.className='status-pill a';}
+    else{btn.textContent='Open for Answers';btn.className='toggle-accept open';
+        const has=Object.keys(curAnswers).length>0;pill.textContent=has?'CLOSED — GRADE':'WAITING';pill.className=has?'status-pill c':'status-pill w';}
 }
 
-// ── Answers Rendering ──
+// ── Answer Reveal ──
+function revealAnswer() {
+    document.getElementById('ans-txt').classList.toggle('hidden');
+    document.getElementById('ans-lbl').classList.toggle('hidden');
+    const revealed=!document.getElementById('ans-txt').classList.contains('hidden');
+    roomRef.child('state/answerRevealed').set(revealed);
+}
 
+// ── Answers ──
 function renderAnswers() {
-    const list = document.getElementById('answers-list');
-    const keys = Object.keys(currentAnswers);
-    document.getElementById('answer-count').textContent = keys.length;
-
-    if (keys.length === 0) {
-        list.innerHTML = '<div class="no-answers">No answers submitted yet.</div>';
-        return;
-    }
-
-    list.innerHTML = keys.map(tk => {
-        const a = currentAnswers[tk];
-        const teamName = (teams[tk] && teams[tk].name) || tk;
-        const gradedClass = grading[tk] === true ? 'graded-correct' : grading[tk] === false ? 'graded-incorrect' : '';
-        const correctActive = grading[tk] === true ? 'correct-active' : '';
-        const incorrectActive = grading[tk] === false ? 'incorrect-active' : '';
-
-        return `<div class="answer-card ${gradedClass}">
-            <span class="answer-team">${esc(teamName)}</span>
-            <span class="answer-text">${esc(a.answer || '(blank)')}</span>
-            <div class="answer-actions">
-                <button class="grade-btn ${correctActive}" onclick="gradeTeam('${tk}', true)" title="Correct">&#10003;</button>
-                <button class="grade-btn ${incorrectActive}" onclick="gradeTeam('${tk}', false)" title="Incorrect">&#10007;</button>
-            </div>
-        </div>`;
-    }).join('');
+    const list=document.getElementById('answers-list'), keys=Object.keys(curAnswers);
+    document.getElementById('ans-count').textContent=keys.length;
+    if(!keys.length){list.innerHTML='<div class="no-ans">No answers yet.</div>';updateStatus();return;}
+    list.innerHTML=keys.map(tk=>{const a=curAnswers[tk],nm=(teams[tk]&&teams[tk].name)||tk,av=teams[tk]&&teams[tk].avatar;
+        const gc=grading[tk]===true?'correct':grading[tk]===false?'incorrect':'';
+        return`<div class="acard ${gc}"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text">${esc(a.answer||'(blank)')}</span><button class="gbtn ${grading[tk]===true?'ca':''}" onclick="grade('${tk}',true)">✓</button><button class="gbtn ${grading[tk]===false?'ia':''}" onclick="grade('${tk}',false)">✕</button></div>`;
+    }).join(''); updateStatus();
 }
-
-function gradeTeam(teamKey, correct) {
-    if (grading[teamKey] === correct) {
-        delete grading[teamKey];
-    } else {
-        grading[teamKey] = correct;
-    }
-    renderAnswers();
-}
-
-function clearGrading() {
-    grading = {};
-    renderAnswers();
-}
-
+function grade(tk,c){grading[tk]=grading[tk]===c?undefined:c;renderAnswers();}
+function clearGrading(){grading={};renderAnswers();}
 function applyScores() {
-    const { round, value, category } = currentState;
-    const updates = {};
-    const historyEntry = {
-        round,
-        category,
-        value: round === 3 ? 'WAGER' : value,
-        answers: {}
-    };
-
-    Object.keys(currentAnswers).forEach(tk => {
-        const correct = grading[tk];
-        if (correct === undefined) return;
-
-        let pointChange;
-        if (round === 3) {
-            const wager = (teams[tk] && teams[tk].wager) || 0;
-            pointChange = correct ? wager : -wager;
-        } else {
-            pointChange = correct ? value : -value;
-        }
-
-        const currentScore = (teams[tk] && teams[tk].score) || 0;
-        updates['teams/' + tk + '/score'] = currentScore + pointChange;
-
-        historyEntry.answers[tk] = {
-            answer: currentAnswers[tk].answer,
-            correct,
-            points: pointChange
-        };
+    const upd={}, hist={round:GS.round,category:GS.category,value:GS.value,answers:{}};
+    Object.keys(curAnswers).forEach(tk=>{const c=grading[tk]; if(c===undefined)return;
+        const pts=c?GS.value:-GS.value, cur=(teams[tk]&&teams[tk].score)||0;
+        upd['teams/'+tk+'/score']=cur+pts;
+        hist.answers[tk]={answer:curAnswers[tk].answer,correct:c,points:pts};
     });
-
-    const qNum = currentState.questionNum || 1;
-    updates['history/q' + qNum] = historyEntry;
-
-    roomRef.update(updates).then(() => {
-        grading = {};
-        renderAnswers();
-    });
+    upd['history/q'+Date.now()]=hist;
+    roomRef.update(upd).then(()=>{grading={};renderAnswers();});
 }
 
-// ── Next Question ──
+// ── Complete ──
+function completeAndReturn(){const k=GS.questionKey;if(k&&k!=='final')roomRef.child('board/'+k+'/completed').set(true);returnToBoard();}
+function returnToBoard(){
+    roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false});
+    roomRef.child('currentAnswers').remove();grading={};showView('board-view');stopLocalTimer();
+}
 
-function nextQuestion() {
-    grading = {};
-    const nextNum = (currentState.questionNum || 1) + 1;
-    roomRef.update({
-        'state/accepting': false,
-        'state/questionNum': nextNum,
-        'state/category': '',
-        'state/value': 0,
-        'currentAnswers': null
+// ── Final ──
+function startFinal(){
+    roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
+        roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:f.questionText,accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false});
+        showView('question-view');
+        document.getElementById('qv-rl').textContent='Final Jeopardy';
+        document.getElementById('qv-cat').textContent=f.category;
+        document.getElementById('qv-val').textContent='WAGER';
+        document.getElementById('qv-qtxt').textContent=f.questionText;
+        document.getElementById('ans-txt').textContent=f.answerText;
+        document.getElementById('ans-txt').classList.add('hidden');
+        document.getElementById('ans-lbl').classList.remove('hidden');
+        document.getElementById('qv-dd').classList.add('hidden');
+        document.getElementById('dd-team-info').classList.add('hidden');
     });
-    document.getElementById('category-input').value = '';
-    stopTimer();
-    resetTimerDisplay();
 }
 
 // ── Scoreboard ──
-
 function renderScoreboard() {
-    const list = document.getElementById('scoreboard-list');
-    const sorted = Object.entries(teams).sort((a, b) => (b[1].score || 0) - (a[1].score || 0));
-
-    if (sorted.length === 0) {
-        list.innerHTML = '<div class="no-answers">No teams yet. Share the room code!</div>';
-        return;
-    }
-
-    list.innerHTML = sorted.map(([key, t], i) => `
-        <div class="score-row">
-            <span class="score-rank">${i + 1}</span>
-            <span class="score-name">${esc(t.name || key)}</span>
-            <span class="score-value">$${(t.score || 0).toLocaleString()}</span>
-            <div class="score-adjust">
-                <button class="adjust-btn" onclick="adjustScore('${key}', 100)" title="+100">+</button>
-                <button class="adjust-btn" onclick="adjustScore('${key}', -100)" title="-100">&minus;</button>
-            </div>
-        </div>
-    `).join('');
+    const el=document.getElementById('scoreboard');
+    const sorted=Object.entries(teams).sort((a,b)=>(b[1].score||0)-(a[1].score||0));
+    if(!sorted.length){el.innerHTML='<div class="no-ans" style="font-size:.8rem;">No teams yet.</div>';return;}
+    el.innerHTML=sorted.map(([k,t],i)=>{
+        const av=avatarImg(t.avatar), col=avatarColor(t.avatar);
+        return`<div class="score-row"><span class="score-rank">${i+1}</span><span class="score-avatar">${av}</span><span class="score-name" style="color:${col}">${esc(t.name||k)}</span><span class="score-val">$${(t.score||0).toLocaleString()}</span><button class="adj-btn" onclick="adjScore('${k}')" title="Adjust">±</button></div>`;
+    }).join('');
 }
-
-function adjustScore(teamKey, delta) {
-    const current = (teams[teamKey] && teams[teamKey].score) || 0;
-    const amount = prompt(`Adjust score for ${teams[teamKey]?.name || teamKey}.\nCurrent: $${current}\nEnter amount (positive or negative):`, delta);
-    if (amount === null) return;
-    const parsed = parseInt(amount);
-    if (isNaN(parsed)) return;
-    roomRef.child('teams/' + teamKey + '/score').set(current + parsed);
-}
-
-function addTeamManually() {
-    const name = document.getElementById('add-team-input').value.trim();
-    if (!name) return;
-    const key = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    roomRef.child('teams/' + key).set({ name, score: 0, wager: 0 });
-    document.getElementById('add-team-input').value = '';
-}
-
-// ── Wagers (Final Jeopardy) ──
-
-function renderWagers() {
-    if (currentState.round !== 3) return;
-    const list = document.getElementById('wager-list');
-    const entries = Object.entries(teams);
-
-    list.innerHTML = entries.map(([key, t]) => `
-        <div class="wager-card">
-            <span class="team">${esc(t.name || key)}</span>
-            <span>Score: $${(t.score || 0).toLocaleString()}</span>
-            ${t.wager ? `<span class="wager">Wager: $${t.wager.toLocaleString()}</span>` : '<span class="wager-pending">Wager pending...</span>'}
-        </div>
-    `).join('');
-}
+function adjScore(tk){const cur=(teams[tk]&&teams[tk].score)||0;const a=prompt(`Adjust ${teams[tk]?.name||tk} ($${cur}):`,0);if(a===null)return;const n=parseInt(a);if(!isNaN(n))roomRef.child('teams/'+tk+'/score').set(cur+n);}
+function addTeamManual(){const n=document.getElementById('add-team').value.trim();if(!n)return;const k=n.toLowerCase().replace(/[^a-z0-9]/g,'_');roomRef.child('teams/'+k).set({name:n,score:0,wager:0,avatar:'',color:''});document.getElementById('add-team').value='';}
 
 // ── History ──
-
-function renderHistory(history) {
-    const list = document.getElementById('history-list');
-    const entries = Object.entries(history).sort((a, b) => {
-        const na = parseInt(a[0].replace('q', ''));
-        const nb = parseInt(b[0].replace('q', ''));
-        return nb - na;
-    });
-
-    if (entries.length === 0) {
-        list.innerHTML = '<div class="no-answers">No questions graded yet.</div>';
-        return;
-    }
-
-    list.innerHTML = entries.map(([qKey, q]) => {
-        const roundLabel = { 1: 'R1', 2: 'R2', 3: 'FJ' }[q.round] || '';
-        const answerSummary = q.answers ? Object.entries(q.answers).map(([tk, a]) => {
-            const name = (teams[tk] && teams[tk].name) || tk;
-            const icon = a.correct ? '&#10003;' : '&#10007;';
-            const color = a.correct ? 'var(--success)' : 'var(--danger)';
-            return `<span style="color:${color}">${icon} ${esc(name)}: ${esc(a.answer)} (${a.points > 0 ? '+' : ''}${a.points})</span>`;
-        }).join(' &nbsp;|&nbsp; ') : 'No answers';
-
-        return `<div class="history-row">
-            <span class="h-q">${qKey.toUpperCase()}</span>
-            <span class="h-cat">${esc(q.category || '—')}</span>
-            <span class="h-val">${roundLabel} ${q.value === 'WAGER' ? 'WAGER' : '$' + q.value}</span>
-            <span class="h-answers">${answerSummary}</span>
-        </div>`;
+function renderHistory(h) {
+    const el=document.getElementById('history');
+    const entries=Object.entries(h).sort((a,b)=>b[0].localeCompare(a[0]));
+    if(!entries.length){el.innerHTML='<div class="no-ans" style="font-size:.75rem;">No history.</div>';return;}
+    el.innerHTML=entries.map(([,q])=>{
+        const rl={1:'R1',2:'R2',3:'FJ'}[q.round]||'';
+        const ans=q.answers?Object.entries(q.answers).map(([tk,a])=>{
+            const nm=(teams[tk]&&teams[tk].name)||tk,col=a.correct?'var(--green)':'var(--red)';
+            return`<span style="color:${col};font-size:.7rem;">${a.correct?'✓':'✕'}${esc(nm)}(${a.points>0?'+':''}${a.points})</span>`;
+        }).join(' '):'';
+        return`<div style="padding:.3rem 0;border-bottom:1px solid var(--border);font-size:.75rem;"><span style="color:var(--text-muted)">${rl}</span> <span>${esc(q.category||'')}</span> <span style="color:var(--gold)">$${q.value}</span><br>${ans}</div>`;
     }).join('');
 }
 
 // ── Timer ──
-
-function setTimer(sec) {
-    timerSeconds = sec;
-    resetTimerDisplay();
+function setTimer(s){timerSec=s;resetTimerDisp();}
+function resetTimerDisp(){const m=Math.floor(timerSec/60),s=timerSec%60;const d=document.getElementById('timer-display');d.textContent=m+':'+String(s).padStart(2,'0');d.classList.remove('danger');}
+function startLocalTimer(){
+    stopLocalTimer(); const d=document.getElementById('timer-display');
+    timerInterval=setInterval(()=>{
+        if(!GS.timerEnd)return;
+        const rem=Math.max(0,Math.ceil((GS.timerEnd-Date.now())/1000));
+        const m=Math.floor(rem/60),s=rem%60;
+        d.textContent=m+':'+String(s).padStart(2,'0');
+        if(rem<=5)d.classList.add('danger');else d.classList.remove('danger');
+        if(rem<=0){stopLocalTimer();roomRef.child('state').update({accepting:false,timerRunning:false});}
+    },250);
 }
+function stopLocalTimer(){if(timerInterval)clearInterval(timerInterval);timerInterval=null;}
 
-function resetTimerDisplay() {
-    const m = Math.floor(timerSeconds / 60);
-    const s = timerSeconds % 60;
-    document.getElementById('timer-display').textContent = m + ':' + String(s).padStart(2, '0');
-    document.getElementById('timer-display').style.color = 'var(--accent)';
-}
-
-function startTimer() {
-    stopTimer();
-    let remaining = timerSeconds;
-    const display = document.getElementById('timer-display');
-
-    timerInterval = setInterval(() => {
-        remaining--;
-        if (remaining <= 0) {
-            remaining = 0;
-            stopTimer();
-            roomRef.child('state/accepting').set(false);
-            display.style.color = 'var(--danger)';
-        } else if (remaining <= 5) {
-            display.style.color = 'var(--danger)';
-        }
-        const m = Math.floor(remaining / 60);
-        const s = remaining % 60;
-        display.textContent = m + ':' + String(s).padStart(2, '0');
-    }, 1000);
-    timerRunning = true;
-}
-
-function stopTimer() {
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = null;
-    timerRunning = false;
-}
-
-// ── Helpers ──
-
-function esc(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-}
-
-// ── Init ──
-resetTimerDisplay();
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+resetTimerDisp();
 </script>
 </body>
 </html>
