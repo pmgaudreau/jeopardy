@@ -738,7 +738,23 @@ function applyScores() {
 }
 
 // ── Complete ──
-function completeAndReturn(){const k=GS.questionKey;if(k&&k!=='final')roomRef.child('board/'+k+'/completed').set(true);returnToBoard();}
+function completeAndReturn(){
+    const answered=Object.keys(curAnswers);
+    if(answered.length>0){
+        const ungraded=answered.filter(tk=>grading[tk]===undefined);
+        const graded=Object.keys(grading).length;
+        if(ungraded.length>0&&graded===0){
+            alert('You have '+answered.length+' answer(s) that haven\'t been graded or scored yet. Grade and apply scores before completing.');return;
+        }
+        if(ungraded.length>0){
+            alert(ungraded.length+' answer(s) still ungraded. Grade all answers and apply scores before completing.');return;
+        }
+        if(graded>0){
+            alert('Scores haven\'t been applied yet. Click "Apply Scores" before completing.');return;
+        }
+    }
+    const k=GS.questionKey;if(k&&k!=='final')roomRef.child('board/'+k+'/completed').set(true);returnToBoard();
+}
 function returnToBoard(){
     roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
     roomRef.child('currentAnswers').remove();grading={};showView('board-view');stopLocalTimer();
