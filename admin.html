@@ -252,15 +252,15 @@
         </div>
         <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSV(this.files[0])">
         <div class="csv-status hidden" id="csv-status"></div>
-        <div style="text-align:center"><button class="btn btn-outline btn-sm" onclick="downloadTemplate()">Download Template CSV</button></div>
+        <div style="text-align:center"><button class="btn btn-outline btn-sm" onclick="downloadTemplate()" title="Download a blank CSV template with the correct column headers for importing questions">Download Template CSV</button></div>
     </div>
-    <button class="btn btn-gold btn-lg btn-block" onclick="createRoom()">Create Game Room</button>
+    <button class="btn btn-gold btn-lg btn-block" onclick="createRoom()" title="Generate a new room code and start a fresh game session">Create Game Room</button>
     <hr class="divider">
     <div class="fg">
         <label>Or rejoin an existing room</label>
         <input type="text" id="inp-rejoin" placeholder="Room code" maxlength="12" style="text-transform:uppercase;text-align:center;">
     </div>
-    <button class="btn btn-outline btn-block" onclick="rejoinRoom()">Rejoin Room</button>
+    <button class="btn btn-outline btn-block" onclick="rejoinRoom()" title="Reconnect to an existing game room using its code">Rejoin Room</button>
     <p class="err" id="setup-err"></p>
 </div>
 </div>
@@ -274,7 +274,7 @@
         <div class="top-controls">
             <button class="qr-toggle" id="qr-toggle" onclick="toggleQR()" title="Toggle QR on projector">QR</button>
             <span class="current-round-badge" id="current-round-badge">Round 1</span>
-            <button class="btn btn-sm btn-end-round" id="end-round-btn" onclick="promptEndRound()">End Round →</button>
+            <button class="btn btn-sm btn-end-round" id="end-round-btn" onclick="promptEndRound()" title="End the current round, show the scoreboard, and advance to the next round">End Round →</button>
         </div>
     </div>
     <div class="board-layout">
@@ -285,7 +285,7 @@
                 <div id="scoreboard"></div>
                 <div class="add-row">
                     <input type="text" id="add-team" placeholder="Team name">
-                    <button class="btn btn-gold btn-sm" onclick="addTeamManual()">Add</button>
+                    <button class="btn btn-gold btn-sm" onclick="addTeamManual()" title="Manually add a team to the game">Add</button>
                 </div>
             </div>
             <div class="side-panel">
@@ -308,7 +308,7 @@
         <div></div>
     </div>
     <div class="qc">
-        <div class="q-back"><button class="btn btn-outline btn-sm" onclick="returnToBoard()">← Back to Board</button></div>
+        <div class="q-back"><button class="btn btn-outline btn-sm" onclick="returnToBoard()" title="Return to the board without completing this question">← Back to Board</button></div>
         <div class="q-header">
             <div class="rl" id="qv-rl"></div>
             <div class="cat" id="qv-cat"></div>
@@ -320,13 +320,6 @@
             <div class="q-text" id="qv-qtxt"></div>
         </div>
         <div class="qcard">
-            <h3>Answer</h3>
-            <div class="ans-reveal" id="ans-reveal" onclick="revealAnswer()">
-                <div class="lbl" id="ans-lbl">Click to reveal answer</div>
-                <div class="atxt hidden" id="ans-txt"></div>
-            </div>
-        </div>
-        <div class="qcard">
             <div id="dd-team-info" class="hidden" style="text-align:center;margin-bottom:.75rem;">
                 <span style="color:var(--text-muted);font-size:.85rem;">Only </span>
                 <span style="color:var(--gold);font-weight:700;" id="dd-team-name"></span>
@@ -335,10 +328,10 @@
             <div class="timer-section">
                 <div class="timer-display" id="timer-display">0:30</div>
                 <div class="timer-presets">
-                    <button class="btn btn-outline btn-sm" onclick="setTimer(15)">0:15</button>
-                    <button class="btn btn-outline btn-sm" onclick="setTimer(30)">0:30</button>
-                    <button class="btn btn-outline btn-sm" onclick="setTimer(45)">0:45</button>
-                    <button class="btn btn-outline btn-sm" onclick="setTimer(60)">1:00</button>
+                    <button class="btn btn-outline btn-sm" onclick="setTimer(15)" title="Set timer to 15 seconds">0:15</button>
+                    <button class="btn btn-outline btn-sm" onclick="setTimer(30)" title="Set timer to 30 seconds">0:30</button>
+                    <button class="btn btn-outline btn-sm" onclick="setTimer(45)" title="Set timer to 45 seconds">0:45</button>
+                    <button class="btn btn-outline btn-sm" onclick="setTimer(60)" title="Set timer to 60 seconds">1:00</button>
                 </div>
             </div>
             <div style="text-align:center;margin-bottom:.5rem;">
@@ -347,21 +340,30 @@
             <div class="toggle-bar">
                 <button class="toggle-accept open" id="toggle-btn" onclick="toggleAccepting()">Open for Answers</button>
             </div>
+        </div>
+        <div class="qcard">
+            <h3>Answer</h3>
+            <div class="ans-reveal" id="ans-reveal" onclick="revealAnswer()">
+                <div class="lbl" id="ans-lbl">Click to reveal answer</div>
+                <div class="atxt hidden" id="ans-txt"></div>
+            </div>
+        </div>
+        <div class="qcard">
             <div class="ans-header"><h3>Team Answers</h3><span class="cnt-badge" id="ans-count">0</span></div>
             <div id="answers-list"></div>
             <div class="apply-row">
-                <button class="btn btn-green" onclick="applyScores()">Apply Scores</button>
-                <button class="btn btn-outline" onclick="clearGrading()">Reset</button>
+                <button class="btn btn-green" onclick="applyScores()" title="Apply all graded scores — correct answers earn points, incorrect answers lose points">Apply Scores</button>
+                <button class="btn btn-outline" onclick="clearGrading()" title="Clear all correct/incorrect markings without applying scores">Reset</button>
             </div>
         </div>
         <div style="text-align:center;margin-top:1rem;" id="q-bottom-btns">
-            <button class="btn btn-gold btn-lg" onclick="completeAndReturn()">Complete &amp; Return to Board →</button>
+            <button class="btn btn-gold btn-lg" onclick="completeAndReturn()" title="Mark this question as completed and return to the board grid">Complete &amp; Return to Board →</button>
         </div>
         <div style="text-align:center;margin-top:1rem;" id="fj-reveal-start" class="hidden">
             <div style="border:2px solid var(--gold);border-radius:var(--radius);padding:1.25rem;background:rgba(255,215,0,.04);margin-bottom:.75rem;">
                 <div style="font-family:var(--fh);color:var(--gold);font-size:1rem;text-transform:uppercase;margin-bottom:.4rem;">Ready for the Reveal?</div>
                 <div style="font-size:.85rem;color:var(--text-sec);margin-bottom:1rem;">Grade all answers above first. Then start the ceremony — scores will be revealed team-by-team on the projector.</div>
-                <button class="btn btn-gold btn-lg" onclick="startFinalReveal()">Start End of Game Reveal →</button>
+                <button class="btn btn-gold btn-lg" onclick="startFinalReveal()" title="Begin the team-by-team Final Jeopardy score reveal ceremony on the projector">Start End of Game Reveal →</button>
             </div>
         </div>
     </div>
@@ -384,7 +386,7 @@
             <div id="rv-stage-label" style="font-size:1rem;color:var(--text-sec);margin-bottom:.75rem;"></div>
             <div id="rv-detail" style="font-family:var(--fh);font-size:2rem;color:var(--gold-bright);margin-bottom:1rem;"></div>
             <div style="display:flex;gap:.5rem;justify-content:center;">
-                <button class="btn btn-gold btn-lg" style="width:auto;padding:.85rem 3rem;" onclick="advanceReveal()">Next →</button>
+                <button class="btn btn-gold btn-lg" style="width:auto;padding:.85rem 3rem;" onclick="advanceReveal()" title="Advance to the next reveal stage on the projector">Next →</button>
             </div>
         </div>
         <div class="qcard" style="margin-top:1rem;">
@@ -400,8 +402,8 @@
         <h2 id="round-modal-title">End Round?</h2>
         <div id="round-modal-desc" style="color:var(--text-sec);font-size:.95rem;margin-bottom:1.5rem;"></div>
         <div style="display:flex;gap:.5rem;">
-            <button class="btn btn-outline" style="flex:1;border-radius:var(--radius);" onclick="closeRoundModal()">Cancel</button>
-            <button class="btn btn-gold" style="flex:1;border-radius:var(--radius);" id="round-modal-confirm" onclick="confirmEndRound()">Confirm</button>
+            <button class="btn btn-outline" style="flex:1;border-radius:var(--radius);" onclick="closeRoundModal()" title="Cancel and stay in the current round">Cancel</button>
+            <button class="btn btn-gold" style="flex:1;border-radius:var(--radius);" id="round-modal-confirm" onclick="confirmEndRound()" title="Show the scoreboard for 8 seconds then advance to the next round">Confirm</button>
         </div>
     </div>
 </div>
@@ -539,7 +541,7 @@ function syncView() {
         } else {
             showView('reveal-view');
         }
-    } else if(GS.phase==='board'||GS.phase==='round-transition'){showView('board-view');document.getElementById('dd-overlay').classList.add('hidden');}
+    } else if(GS.phase==='board'||GS.phase==='round-transition'){showView('board-view');document.getElementById('dd-overlay').classList.add('hidden');renderBoard();}
 }
 
 // ── QR Toggle ──
@@ -588,7 +590,7 @@ function renderFinalBoard(b) {
         b.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:3rem;">
             <div style="font-family:var(--fh);font-size:1.6rem;color:var(--gold);text-transform:uppercase;margin-bottom:1rem;">Final Jeopardy</div>
             <div style="font-size:1.1rem;color:var(--text-sec);margin-bottom:1.5rem;">Category: <strong style="color:var(--gold);">${esc(f.category)}</strong></div>
-            <button class="btn btn-gold btn-lg" onclick="startFinal()">Start Final Jeopardy</button></div>`;
+            <button class="btn btn-gold btn-lg" onclick="startFinal()" title="Begin Final Jeopardy — teams will set wagers and answer one question">Start Final Jeopardy</button></div>`;
     });
 }
 
@@ -623,7 +625,7 @@ function showDDSelect(key,q) {
     document.getElementById('dd-label').textContent=q.category+' — $'+q.value+' → $'+(q.value*2);
     const list=document.getElementById('dd-teams');
     list.innerHTML=Object.entries(teams).map(([k,t])=>
-        `<button class="dd-tbtn" onclick="confirmDD('${key}','${k}')">${avatarImg(t.avatar, 24)} ${esc(t.name||k)} <span class="ts">$${(t.score||0).toLocaleString()}</span></button>`
+        `<button class="dd-tbtn" onclick="confirmDD('${key}','${k}')" title="Select this team to answer the Daily Double">${avatarImg(t.avatar, 24)} ${esc(t.name||k)} <span class="ts">$${(t.score||0).toLocaleString()}</span></button>`
     ).join('');
 }
 function confirmDD(key,tk) { document.getElementById('dd-overlay').classList.add('hidden'); activateQ(key,boardQ[key],true,tk); }
@@ -642,8 +644,8 @@ function toggleAccepting() {
 }
 function updateStatus() {
     const btn=document.getElementById('toggle-btn'), pill=document.getElementById('status-pill');
-    if(GS.accepting){btn.textContent='Close Answers';btn.className='toggle-accept closed';pill.textContent='ACCEPTING';pill.className='status-pill a';}
-    else{btn.textContent='Open for Answers';btn.className='toggle-accept open';
+    if(GS.accepting){btn.textContent='Stop Clock & Close Answers';btn.className='toggle-accept closed';btn.title='Stop the timer and prevent teams from submitting answers';pill.textContent='ACCEPTING';pill.className='status-pill a';}
+    else{btn.textContent='Open for Answers';btn.className='toggle-accept open';btn.title='Start the timer and allow teams to submit answers';
         const has=Object.keys(curAnswers).length>0;pill.textContent=has?'CLOSED — GRADE':'WAITING';pill.className=has?'status-pill c':'status-pill w';}
 }
 
@@ -662,7 +664,7 @@ function renderAnswers() {
     if(!keys.length){list.innerHTML='<div class="no-ans">No answers yet.</div>';updateStatus();return;}
     list.innerHTML=keys.map(tk=>{const a=curAnswers[tk],nm=(teams[tk]&&teams[tk].name)||tk,av=teams[tk]&&teams[tk].avatar;
         const gc=grading[tk]===true?'correct':grading[tk]===false?'incorrect':'';
-        return`<div class="acard ${gc}"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text">${esc(a.answer||'(blank)')}</span><button class="gbtn ${grading[tk]===true?'ca':''}" onclick="grade('${tk}',true)">✓</button><button class="gbtn ${grading[tk]===false?'ia':''}" onclick="grade('${tk}',false)">✕</button></div>`;
+        return`<div class="acard ${gc}"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text">${esc(a.answer||'(blank)')}</span><button class="gbtn ${grading[tk]===true?'ca':''}" onclick="grade('${tk}',true)" title="Mark as correct — team earns points">✓</button><button class="gbtn ${grading[tk]===false?'ia':''}" onclick="grade('${tk}',false)" title="Mark as incorrect — team loses points">✕</button></div>`;
     }).join(''); updateStatus();
 }
 function grade(tk,c){grading[tk]=grading[tk]===c?undefined:c;renderAnswers();}

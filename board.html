@@ -489,9 +489,10 @@ function stopTimer(){if(timerInterval)clearInterval(timerInterval);timerInterval
 function showTransition(){
     showScreen('transition-display');
     const round=GS.round;
-    const titles={1:'Round 1 Complete',2:'Double Jeopardy Complete',3:'Game Over!'};
-    const nexts={1:'Double Jeopardy Coming Up...',2:'Final Jeopardy Coming Up...',3:'Thanks for Playing!'};
-    document.getElementById('tr-title').textContent=titles[round]||'Round Complete';
+    const prev=round-1;
+    const titles={1:'Round 1 Complete',2:'Double Jeopardy Complete'};
+    const nexts={2:'Double Jeopardy Coming Up...',3:'Final Jeopardy Coming Up...'};
+    document.getElementById('tr-title').textContent=titles[prev]||'Round Complete';
     document.getElementById('tr-next').textContent=nexts[round]||'';
     const sorted=Object.entries(teams).sort((a,b)=>(b[1].score||0)-(a[1].score||0));
     document.getElementById('tr-scores').innerHTML=sorted.map(([k,t],i)=>
