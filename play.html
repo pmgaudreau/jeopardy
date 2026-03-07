@@ -310,8 +310,9 @@ function render(){
         document.getElementById('wait-msg').textContent=phase==='round-transition'?'Scores are being tallied...':'Waiting for the host to select a question...';
     } else if(canWager){
         show('wager-card');
-        const maxWager=Math.max(cachedScore,0);
-        document.getElementById('wager-note').textContent=maxWager>0?'Wager up to $'+maxWager.toLocaleString():'Set your wager amount';
+        const boardMax=round===1?1000:2000;
+        const maxWager=isFJ?Math.max(cachedScore,0):Math.max(cachedScore,boardMax);
+        document.getElementById('wager-note').textContent='Wager up to $'+maxWager.toLocaleString();
     } else if(wagerLocked && !accepting && !(GS.fjQuestionRevealed)){
         show('wait-card');
         document.getElementById('wait-msg').textContent='Wager locked in. Waiting for the host to reveal the question...';
@@ -365,10 +366,14 @@ function submitAnswer(){
 // ── Wager ──
 function lockWager(){
     const w=parseInt(document.getElementById('wager-input').value);
-    if(isNaN(w)||w<0){alert('Enter a valid wager.');return;}
+    if(isNaN(w)||w<5){alert('Minimum wager is $5.');return;}
     roomRef.child('teams/'+teamKey).once('value',snap=>{
-        const max=Math.max((snap.val()&&snap.val().score)||0,0);
-        if(w>max&&max>0){alert('Cannot exceed $'+max);return;}
+        const score=(snap.val()&&snap.val().score)||0;
+        const round=GS.round||1;
+        const isFJ=round===3&&GS.questionKey==='final';
+        const boardMax=round===1?1000:2000;
+        const max=isFJ?Math.max(score,0):Math.max(score,boardMax);
+        if(w>max){alert('Maximum wager is $'+max.toLocaleString());return;}
         roomRef.child('teams/'+teamKey+'/wager').set(w).then(()=>{wagerLocked=true;showLockedWager(w);render();});
     });
 }

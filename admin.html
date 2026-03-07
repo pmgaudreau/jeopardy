@@ -947,14 +947,18 @@ function showFJRevealButton() {
 
 function startFinalReveal() {
     const sorted = Object.entries(teams).sort((a,b) => (a[1].score||0) - (b[1].score||0));
-    const revealTeams = sorted.map(([k,t]) => ({
-        key: k, name: t.name||k, avatar: t.avatar||'',
-        preFinalScore: t.score||0, wager: t.wager||0,
-        answer: (curAnswers[k] && curAnswers[k].answer) || '(no answer)',
-        correct: grading[k] === true
-    }));
-    revealTeams.forEach(t => {
-        t.finalScore = t.correct ? t.preFinalScore + t.wager : t.preFinalScore - t.wager;
+    const revealTeams = sorted.map(([k,t]) => {
+        const currentScore = t.score||0;
+        const wager = t.wager||0;
+        const correct = grading[k] === true;
+        const answered = curAnswers[k] && curAnswers[k].answer;
+        const preFJ = scoresApplied && answered ? (correct ? currentScore - wager : currentScore + wager) : currentScore;
+        return {
+            key: k, name: t.name||k, avatar: t.avatar||'',
+            preFinalScore: preFJ, wager: wager,
+            answer: (curAnswers[k] && curAnswers[k].answer) || '(no answer)',
+            correct: correct, finalScore: currentScore
+        };
     });
     revealData = { teams: revealTeams, index: 0, stage: 1 };
     roomRef.child('finalReveal').set({
