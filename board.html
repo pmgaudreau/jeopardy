@@ -162,14 +162,26 @@
         .rk-crown{font-size:2.5vw;margin-right:.3vw;}
 
         /* ═══ GAME RECAP ═══ */
-        #recap-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:2vw 3vw;background:var(--bg);}
-        .recap-title{font-family:var(--fh);font-size:3vw;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;text-shadow:0 0 40px rgba(255,215,0,.3);margin-bottom:1.5vw;}
-        .recap-graph-wrap{width:90%;height:50vh;border:1px solid var(--border);border-radius:12px;background:var(--card);padding:1vw;position:relative;}
-        .recap-graph-wrap canvas{width:100%;height:100%;}
-        .recap-stats{display:flex;flex-wrap:wrap;gap:1vw;justify-content:center;margin-top:1.5vw;width:90%;}
-        .recap-stat-card{background:var(--elev);border-left:3px solid var(--gold);border-radius:8px;padding:.8vw 1.2vw;min-width:14vw;max-width:22vw;flex:1 1 14vw;}
-        .recap-stat-card .stat-label{font-family:var(--fs);font-size:.7vw;color:var(--tmut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.2vw;}
-        .recap-stat-card .stat-value{font-family:var(--fh);font-size:1.1vw;color:var(--gold);font-weight:700;}
+        #recap-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:2.5vw 3vw;background:var(--bg);overflow-y:auto;}
+        .recap-title{font-family:var(--fh);font-size:3.5vw;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;text-shadow:0 0 50px rgba(255,215,0,.35);margin-bottom:2vw;}
+        .recap-highlights{display:flex;flex-direction:column;gap:1.5vw;width:85%;max-width:1200px;}
+        .recap-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5vw 2vw;display:flex;align-items:center;gap:1.5vw;animation:recapSlide .6s ease both;position:relative;overflow:hidden;}
+        .recap-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;}
+        .recap-card.gold-accent::before{background:var(--gold);}
+        .recap-card.green-accent::before{background:var(--green);}
+        .recap-card.red-accent::before{background:var(--red);}
+        .recap-card.blue-accent::before{background:var(--blue);}
+        .recap-icon{font-size:3vw;flex-shrink:0;width:4vw;text-align:center;}
+        .recap-body{flex:1;}
+        .recap-label{font-family:var(--fs);font-size:1vw;color:var(--tmut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3vw;}
+        .recap-value{font-family:var(--fh);font-size:1.8vw;color:var(--text);font-weight:700;}
+        .recap-value .hl{color:var(--gold);}
+        .recap-value .hl-green{color:var(--green);}
+        .recap-value .hl-red{color:var(--red);}
+        .recap-sub{font-family:var(--fb);font-size:.9vw;color:var(--tsec);margin-top:.2vw;}
+        .recap-avatar{flex-shrink:0;}
+        .recap-avatar img{width:4vw;height:4vw;border-radius:50%;object-fit:cover;border:3px solid var(--gold-dim);}
+        @keyframes recapSlide{from{opacity:0;transform:translateX(-40px);}to{opacity:1;transform:translateX(0);}}
 
         /* ═══ QR OVERLAY ═══ */
         #qr-overlay{
@@ -280,11 +292,8 @@
 
 <!-- Game Recap -->
 <div id="recap-display" class="hidden">
-    <div class="recap-title">Game Recap</div>
-    <div class="recap-graph-wrap">
-        <canvas id="recap-graph"></canvas>
-    </div>
-    <div class="recap-stats" id="recap-stats"></div>
+    <div class="recap-title">Game Highlights</div>
+    <div class="recap-highlights" id="recap-highlights"></div>
 </div>
 
 <!-- QR Overlay -->
@@ -669,10 +678,10 @@ function renderFinalReveal(){
         if(isNew){if(t.correct)SFX.correct();else SFX.wrongBuzz();}
     } else if(stage===4){
         lbl.textContent='Final Score';
-        const diff=t.correct?t.wager:-t.wager;
-        const sign=diff>=0?'+':'';
-        math.textContent='$'+t.preFinalScore.toLocaleString()+' '+sign+' $'+Math.abs(diff).toLocaleString();
+        const sign=t.correct?'+':'−';
+        math.textContent='$'+t.preFinalScore.toLocaleString()+' '+sign+' $'+t.wager.toLocaleString()+' = $'+t.finalScore.toLocaleString();
         detail.textContent='$'+t.finalScore.toLocaleString();
+        detail.classList.add(t.correct?'correct':'incorrect');
         if(isNew)SFX.revealScore();
     }
 
@@ -714,245 +723,127 @@ function showFinalRankings(){
     SFX.winner();
 }
 
-// ═══ GAME RECAP ═══
+// ═══ GAME HIGHLIGHTS ═══
 function showRecap(){
     showScreen('recap-display');
     roomRef.child('history').once('value',snap=>{
         const historyData=snap.val();
-        if(!historyData){document.getElementById('recap-stats').innerHTML='<div style="color:var(--tmut);font-size:1.2vw;">No game history available.</div>';return;}
+        const el=document.getElementById('recap-highlights');
+        if(!historyData){el.innerHTML='<div style="color:var(--tmut);font-size:1.5vw;text-align:center;">No game history available.</div>';return;}
         const entries=Object.entries(historyData).sort((a,b)=>parseInt(a[0].slice(1))-parseInt(b[0].slice(1)));
-        computeAndShowStats(entries);
-        drawRecapGraph(entries);
+        buildHighlights(entries,el);
     });
 }
 
-function computeAndShowStats(entries){
-    let hardest=null,hardestWrong=-1;
-    let easiest=null,easiestRight=-1;
-    let streaks={},longestStreak='',longestStreakLen=0;
-    let totalAnswered={};
-    let biggestGain='',biggestGainPts=0;
-
-    const teamScoresOverTime={};
+function buildHighlights(entries,el){
     const teamKeys=Object.keys(teams);
+    const getName=tk=>(teams[tk]&&teams[tk].name)||tk;
+    const getAvatar=tk=>teams[tk]?avatarImg(teams[tk].avatar,'4vw'):'';
+    const getColor=tk=>teams[tk]?avatarColor(teams[tk].avatar):'var(--gold)';
 
-    teamKeys.forEach(tk=>{
-        streaks[tk]=0;totalAnswered[tk]=0;teamScoresOverTime[tk]=[0];
-    });
+    let hardest=null,hardestWrong=-1,hardestTotal=0;
+    let easiest=null,easiestRight=-1,easiestTotal=0;
+    let streaks={},longestStreak='',longestStreakLen=0;
+    let totalAnswered={},totalCorrect={};
+    let biggestGain='',biggestGainPts=0,biggestGainCat='',biggestGainVal=0;
+    let biggestLoss='',biggestLossPts=0,biggestLossCat='',biggestLossVal=0;
+    let totalQuestions=0;
+
+    teamKeys.forEach(tk=>{streaks[tk]=0;totalAnswered[tk]=0;totalCorrect[tk]=0;});
 
     entries.forEach(([key,entry])=>{
         if(!entry.answers)return;
+        totalQuestions++;
         const ansKeys=Object.keys(entry.answers);
         let wrong=0,right=0;
         ansKeys.forEach(tk=>{
             const a=entry.answers[tk];
-            if(a.correct){right++;streaks[tk]=(streaks[tk]||0)+1;if(streaks[tk]>longestStreakLen){longestStreakLen=streaks[tk];longestStreak=tk;}}
-            else{wrong++;streaks[tk]=0;}
+            if(a.correct){
+                right++;totalCorrect[tk]=(totalCorrect[tk]||0)+1;
+                streaks[tk]=(streaks[tk]||0)+1;
+                if(streaks[tk]>longestStreakLen){longestStreakLen=streaks[tk];longestStreak=tk;}
+            } else {wrong++;streaks[tk]=0;}
             totalAnswered[tk]=(totalAnswered[tk]||0)+1;
-            if(a.points>biggestGainPts){biggestGainPts=a.points;biggestGain=tk;}
+            if(a.points>biggestGainPts){biggestGainPts=a.points;biggestGain=tk;biggestGainCat=entry.category;biggestGainVal=entry.value;}
+            if(a.points<biggestLossPts){biggestLossPts=a.points;biggestLoss=tk;biggestLossCat=entry.category;biggestLossVal=entry.value;}
         });
         teamKeys.forEach(tk=>{if(!entry.answers[tk])streaks[tk]=0;});
-        if(wrong>hardestWrong){hardestWrong=wrong;hardest=entry;}
-        if(right>easiestRight){easiestRight=right;easiest=entry;}
+        if(ansKeys.length>0&&wrong>hardestWrong){hardestWrong=wrong;hardest=entry;hardestTotal=ansKeys.length;}
+        if(ansKeys.length>0&&right>easiestRight){easiestRight=right;easiest=entry;easiestTotal=ansKeys.length;}
     });
 
-    let biggestComeback='',biggestComebackAmt=0;
+    let biggestComeback='',biggestComebackAmt=0,comebackLow=0;
     teamKeys.forEach(tk=>{
-        let minScore=0,scores=[0];
+        let scores=[0];
         entries.forEach(([,entry])=>{if(entry.scores&&entry.scores[tk]!==undefined)scores.push(entry.scores[tk]);});
-        minScore=Math.min(...scores);
+        const minScore=Math.min(...scores);
         const finalScore=scores[scores.length-1];
         const comeback=finalScore-minScore;
-        if(comeback>biggestComebackAmt){biggestComebackAmt=comeback;biggestComeback=tk;}
+        if(comeback>biggestComebackAmt){biggestComebackAmt=comeback;biggestComeback=tk;comebackLow=minScore;}
     });
 
     let mostAnswered='',mostAnsweredCount=0;
     Object.entries(totalAnswered).forEach(([tk,cnt])=>{if(cnt>mostAnsweredCount){mostAnsweredCount=cnt;mostAnswered=tk;}});
 
-    const getName=tk=>(teams[tk]&&teams[tk].name)||tk;
-    const stats=[];
-    if(hardest)stats.push({label:'Hardest Question',value:hardest.category+' $'+hardest.value});
-    if(easiest)stats.push({label:'Easiest Question',value:easiest.category+' $'+easiest.value});
-    if(biggestComeback)stats.push({label:'Biggest Comeback',value:getName(biggestComeback)+' (+$'+biggestComebackAmt.toLocaleString()+')'});
-    if(longestStreak)stats.push({label:'Longest Streak',value:getName(longestStreak)+' ('+longestStreakLen+' in a row)'});
-    if(mostAnswered)stats.push({label:'Most Answers',value:getName(mostAnswered)+' ('+mostAnsweredCount+')'});
-    if(biggestGain)stats.push({label:'Biggest Single Gain',value:getName(biggestGain)+' (+$'+biggestGainPts.toLocaleString()+')'});
-
-    document.getElementById('recap-stats').innerHTML=stats.map(s=>
-        '<div class="recap-stat-card"><div class="stat-label">'+esc(s.label)+'</div><div class="stat-value">'+esc(s.value)+'</div></div>'
-    ).join('');
-}
-
-function drawRecapGraph(entries){
-    const canvas=document.getElementById('recap-graph');
-    const wrap=canvas.parentElement;
-    const dpr=window.devicePixelRatio||1;
-    const w=wrap.offsetWidth-20;
-    const h=wrap.offsetHeight-20;
-    canvas.width=w*dpr;
-    canvas.height=h*dpr;
-    canvas.style.width=w+'px';
-    canvas.style.height=h+'px';
-    const ctx=canvas.getContext('2d');
-    ctx.scale(dpr,dpr);
-
-    const teamKeys=Object.keys(teams);
-    if(!teamKeys.length)return;
-
-    const dataPoints=[{scores:Object.fromEntries(teamKeys.map(k=>[k,0])),round:1}];
-    entries.forEach(([key,entry])=>{if(entry.scores)dataPoints.push(entry);});
-
-    const numPoints=dataPoints.length;
-    if(numPoints<2)return;
-
-    let minScore=0,maxScore=0;
-    dataPoints.forEach(dp=>{
-        teamKeys.forEach(tk=>{
-            const s=dp.scores&&dp.scores[tk]!==undefined?dp.scores[tk]:0;
-            if(s<minScore)minScore=s;
-            if(s>maxScore)maxScore=s;
-        });
-    });
-    const scorePad=Math.max(Math.abs(maxScore-minScore)*0.1,100);
-    minScore=Math.floor((minScore-scorePad)/100)*100;
-    maxScore=Math.ceil((maxScore+scorePad)/100)*100;
-    if(maxScore===minScore)maxScore=minScore+1000;
-
-    const pad={top:30,right:100,bottom:50,left:70};
-    const gw=w-pad.left-pad.right;
-    const gh=h-pad.top-pad.bottom;
-
-    function xPos(i){return pad.left+(i/(numPoints-1))*gw;}
-    function yPos(score){return pad.top+gh-(((score-minScore)/(maxScore-minScore))*gh);}
-
-    // Grid + axes
-    ctx.strokeStyle='#222';ctx.lineWidth=1;
-    const ySteps=5;
-    const yRange=maxScore-minScore;
-    const yStep=Math.ceil(yRange/ySteps/100)*100;
-    ctx.font='12px Inter, sans-serif';ctx.fillStyle='#555';ctx.textAlign='right';ctx.textBaseline='middle';
-    for(let v=minScore;v<=maxScore;v+=yStep){
-        const y=yPos(v);
-        ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(w-pad.right,y);ctx.stroke();
-        ctx.fillText('$'+v.toLocaleString(),pad.left-8,y);
-    }
-
-    // Round dividers
-    ctx.textAlign='center';ctx.textBaseline='top';ctx.fillStyle='#555';
-    let prevRound=0;
-    dataPoints.forEach((dp,i)=>{
-        if(dp.round&&dp.round!==prevRound&&i>0){
-            const x=xPos(i);
-            ctx.save();ctx.strokeStyle='#333';ctx.setLineDash([4,4]);
-            ctx.beginPath();ctx.moveTo(x,pad.top);ctx.lineTo(x,h-pad.bottom);ctx.stroke();
-            ctx.setLineDash([]);ctx.restore();
+    let bestAccuracy='',bestAccPct=0;
+    teamKeys.forEach(tk=>{
+        if(totalAnswered[tk]>=3){
+            const pct=(totalCorrect[tk]||0)/totalAnswered[tk];
+            if(pct>bestAccPct){bestAccPct=pct;bestAccuracy=tk;}
         }
-        prevRound=dp.round||prevRound;
     });
 
-    // Round labels at bottom
-    let roundStarts={};
-    let curRound=0;
-    dataPoints.forEach((dp,i)=>{
-        const r=dp.round||curRound;
-        if(r!==curRound){roundStarts[r]=i;curRound=r;}
+    const cards=[];
+    let idx=0;
+
+    if(hardest)cards.push({
+        icon:'💀',accent:'red-accent',label:'Hardest Question',delay:idx++,
+        value:'<span class="hl">'+esc(hardest.category)+'</span> for <span class="hl">$'+hardest.value.toLocaleString()+'</span>',
+        sub:hardestWrong+' of '+hardestTotal+' teams got it wrong'
     });
-    const roundNames={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
-    ctx.font='11px Rajdhani, sans-serif';ctx.fillStyle='#666';
-    Object.entries(roundStarts).forEach(([r,startIdx])=>{
-        let endIdx=numPoints-1;
-        Object.entries(roundStarts).forEach(([r2,si])=>{if(parseInt(r2)>parseInt(r)&&si<endIdx)endIdx=si;});
-        const cx=xPos((startIdx+endIdx)/2);
-        ctx.fillText(roundNames[r]||'Round '+r,cx,h-pad.bottom+8);
+    if(easiest)cards.push({
+        icon:'🎯',accent:'green-accent',label:'Easiest Question',delay:idx++,
+        value:'<span class="hl">'+esc(easiest.category)+'</span> for <span class="hl">$'+easiest.value.toLocaleString()+'</span>',
+        sub:easiestRight+' of '+easiestTotal+' teams got it right'
+    });
+    if(longestStreak&&longestStreakLen>=2)cards.push({
+        icon:'🔥',accent:'gold-accent',label:'Hottest Streak',delay:idx++,
+        value:getName(longestStreak),avatar:longestStreak,
+        sub:longestStreakLen+' correct answers in a row'
+    });
+    if(biggestGain&&biggestGainPts>0)cards.push({
+        icon:'🚀',accent:'green-accent',label:'Biggest Single Win',delay:idx++,
+        value:getName(biggestGain)+' <span class="hl-green">+$'+biggestGainPts.toLocaleString()+'</span>',avatar:biggestGain,
+        sub:esc(biggestGainCat)+' for $'+biggestGainVal.toLocaleString()
+    });
+    if(biggestLoss&&biggestLossPts<0)cards.push({
+        icon:'💥',accent:'red-accent',label:'Biggest Gamble Gone Wrong',delay:idx++,
+        value:getName(biggestLoss)+' <span class="hl-red">−$'+Math.abs(biggestLossPts).toLocaleString()+'</span>',avatar:biggestLoss,
+        sub:esc(biggestLossCat)+' for $'+biggestLossVal.toLocaleString()
+    });
+    if(biggestComeback&&biggestComebackAmt>0)cards.push({
+        icon:'📈',accent:'gold-accent',label:'Biggest Comeback',delay:idx++,
+        value:getName(biggestComeback),avatar:biggestComeback,
+        sub:'Climbed <span class="hl">+$'+biggestComebackAmt.toLocaleString()+'</span> from a low of $'+comebackLow.toLocaleString()
+    });
+    if(bestAccuracy&&bestAccPct>0)cards.push({
+        icon:'🧠',accent:'blue-accent',label:'Sharpest Team',delay:idx++,
+        value:getName(bestAccuracy),avatar:bestAccuracy,
+        sub:Math.round(bestAccPct*100)+'% accuracy ('+totalCorrect[bestAccuracy]+'/'+totalAnswered[bestAccuracy]+')'
+    });
+    if(mostAnswered)cards.push({
+        icon:'✋',accent:'gold-accent',label:'Most Answers Submitted',delay:idx++,
+        value:getName(mostAnswered),avatar:mostAnswered,
+        sub:mostAnsweredCount+' of '+totalQuestions+' questions answered'
     });
 
-    // X-axis question numbers
-    ctx.font='10px Inter, sans-serif';ctx.fillStyle='#444';
-    for(let i=0;i<numPoints;i++){
-        if(numPoints<=20||i%Math.ceil(numPoints/20)===0){
-            ctx.fillText(i===0?'':String(i),xPos(i),h-pad.bottom+24);
-        }
-    }
-
-    // Animate lines
-    const animDuration=5000;
-    const startTime=performance.now();
-
-    function animFrame(now){
-        const elapsed=now-startTime;
-        const progress=Math.min(elapsed/animDuration,1);
-        const pointProgress=progress*(numPoints-1);
-
-        // Clear lines area only (preserve grid)
-        ctx.clearRect(pad.left-1,pad.top-1,gw+2,gh+2);
-
-        // Redraw grid lines (behind the data lines)
-        ctx.strokeStyle='#222';ctx.lineWidth=1;
-        for(let v=minScore;v<=maxScore;v+=yStep){
-            const y=yPos(v);
-            ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(w-pad.right,y);ctx.stroke();
-        }
-        // Redraw round dividers
-        let pR=0;
-        dataPoints.forEach((dp,i)=>{
-            if(dp.round&&dp.round!==pR&&i>0){
-                const x=xPos(i);
-                ctx.save();ctx.strokeStyle='#333';ctx.setLineDash([4,4]);
-                ctx.beginPath();ctx.moveTo(x,pad.top);ctx.lineTo(x,h-pad.bottom);ctx.stroke();
-                ctx.setLineDash([]);ctx.restore();
-            }
-            pR=dp.round||pR;
-        });
-
-        teamKeys.forEach(tk=>{
-            const col=avatarColor(teams[tk]&&teams[tk].avatar);
-            const points=[];
-            for(let i=0;i<=Math.floor(pointProgress);i++){
-                const s=dataPoints[i].scores&&dataPoints[i].scores[tk]!==undefined?dataPoints[i].scores[tk]:0;
-                points.push({x:xPos(i),y:yPos(s)});
-            }
-            // Fractional last point
-            const floorIdx=Math.floor(pointProgress);
-            const frac=pointProgress-floorIdx;
-            if(frac>0&&floorIdx+1<numPoints){
-                const s0=dataPoints[floorIdx].scores&&dataPoints[floorIdx].scores[tk]!==undefined?dataPoints[floorIdx].scores[tk]:0;
-                const s1=dataPoints[floorIdx+1].scores&&dataPoints[floorIdx+1].scores[tk]!==undefined?dataPoints[floorIdx+1].scores[tk]:0;
-                const si=s0+(s1-s0)*frac;
-                points.push({x:xPos(floorIdx+frac),y:yPos(si)});
-            }
-            if(points.length<2)return;
-
-            // Glow
-            ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
-            for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);
-            ctx.strokeStyle=col+'40';ctx.lineWidth=8;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
-
-            // Main line
-            ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
-            for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);
-            ctx.strokeStyle=col;ctx.lineWidth=3;ctx.stroke();
-
-            // Dot at current end
-            const last=points[points.length-1];
-            ctx.beginPath();ctx.arc(last.x,last.y,5,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
-            ctx.strokeStyle='#000';ctx.lineWidth=1.5;ctx.stroke();
-        });
-
-        if(progress<1){
-            requestAnimationFrame(animFrame);
-        } else {
-            // Labels at the end of each line
-            teamKeys.forEach(tk=>{
-                const lastScore=dataPoints[numPoints-1].scores&&dataPoints[numPoints-1].scores[tk]!==undefined?dataPoints[numPoints-1].scores[tk]:0;
-                const x=xPos(numPoints-1)+10;
-                const y=yPos(lastScore);
-                const col=avatarColor(teams[tk]&&teams[tk].avatar);
-                ctx.font='bold 12px Oswald, sans-serif';ctx.fillStyle=col;ctx.textAlign='left';ctx.textBaseline='middle';
-                ctx.fillText((teams[tk]&&teams[tk].name)||tk,x,y);
-            });
-        }
-    }
-    requestAnimationFrame(animFrame);
+    el.innerHTML=cards.map(c=>{
+        const avHtml=c.avatar?'<div class="recap-avatar">'+getAvatar(c.avatar)+'</div>':'';
+        return'<div class="recap-card '+c.accent+'" style="animation-delay:'+(.3*c.delay)+'s">'+
+            '<div class="recap-icon">'+c.icon+'</div>'+
+            '<div class="recap-body"><div class="recap-label">'+esc(c.label)+'</div><div class="recap-value">'+c.value+'</div><div class="recap-sub">'+c.sub+'</div></div>'+
+            avHtml+'</div>';
+    }).join('');
 }
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
