@@ -341,6 +341,9 @@
             <div class="toggle-bar" style="margin-bottom:.4rem;">
                 <button class="toggle-accept open hidden" id="wager-toggle-btn" onclick="toggleWagering()">Open for Wagers</button>
             </div>
+            <div class="toggle-bar hidden" id="fj-reveal-q-bar" style="margin-bottom:.4rem;">
+                <button class="btn btn-gold btn-lg" onclick="revealFJQuestion()" title="Send the Final Jeopardy question to all screens — wagers should be locked first" style="width:100%;">Reveal Question to Teams</button>
+            </div>
             <div class="toggle-bar">
                 <button class="toggle-accept open" id="toggle-btn" onclick="toggleAccepting()">Open for Answers</button>
             </div>
@@ -665,6 +668,9 @@ function updateStatus() {
     else{wBtn.textContent='Open for Wagers';wBtn.className='toggle-accept open';wBtn.title='Allow teams to set their wager amount';}
     const showWager=GS.dailyDouble||(GS.round===3&&GS.questionKey==='final');
     wBtn.classList.toggle('hidden',!showWager);
+    const isFJ=GS.round===3&&GS.questionKey==='final';
+    const fjRevealBar=document.getElementById('fj-reveal-q-bar');
+    fjRevealBar.classList.toggle('hidden',!(isFJ&&!GS.wageringOpen&&!GS.fjQuestionRevealed));
 }
 
 // ── Answer Reveal ──
@@ -757,7 +763,7 @@ function returnToBoard(){
 // ── Final ──
 function startFinal(){
     roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
-        roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:f.questionText,accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:true,imageUrl:f.imageUrl||''});
+        roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:true,imageUrl:'',fjQuestionRevealed:false});
         showView('question-view');
         document.getElementById('qv-rl').textContent='Final Jeopardy';
         document.getElementById('qv-cat').textContent=f.category;
@@ -768,7 +774,13 @@ function startFinal(){
         document.getElementById('ans-lbl').classList.remove('hidden');
         document.getElementById('qv-dd').classList.add('hidden');
         document.getElementById('dd-team-info').classList.add('hidden');
+        document.getElementById('qv-img').classList.add('hidden');
         showFJRevealButton();
+    });
+}
+function revealFJQuestion(){
+    roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
+        roomRef.child('state').update({questionText:f.questionText,fjQuestionRevealed:true,imageUrl:f.imageUrl||''});
     });
 }
 
