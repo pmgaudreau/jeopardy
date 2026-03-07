@@ -353,7 +353,8 @@
             </div>
         </div>
         <div class="qcard">
-            <div class="ans-header"><h3>Team Answers</h3><span class="cnt-badge" id="ans-count">0</span></div>
+            <div class="ans-header"><h3>Team Answers</h3><span class="cnt-badge" id="ans-count">0</span><span style="font-size:.75rem;color:var(--text-muted);margin-left:.5rem;" id="ans-of-total"></span></div>
+            <div id="waiting-list" class="hidden" style="margin-bottom:.75rem;padding:.5rem .75rem;background:rgba(255,215,0,.04);border:1px solid var(--border);border-radius:var(--radius);font-size:.8rem;color:var(--text-sec);"><span style="color:var(--text-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Still waiting: </span><span id="waiting-names"></span></div>
             <div id="answers-list"></div>
             <div class="apply-row">
                 <button class="btn btn-green" onclick="applyScores()" title="Apply all graded scores — correct answers earn points, incorrect answers lose points">Apply Scores</button>
@@ -677,12 +678,36 @@ function revealAnswer() {
 // ── Answers ──
 function renderAnswers() {
     const list=document.getElementById('answers-list'), keys=Object.keys(curAnswers);
-    document.getElementById('ans-count').textContent=keys.length;
+    const eligible=getEligibleTeams();
+    const total=eligible.length;
+    const answered=keys.length;
+    document.getElementById('ans-count').textContent=answered;
+    document.getElementById('ans-of-total').textContent=total>0?'of '+total:'';
+
+    const waiting=eligible.filter(tk=>!curAnswers[tk]);
+    const wl=document.getElementById('waiting-list');
+    if(waiting.length>0&&answered>0){
+        wl.classList.remove('hidden');
+        document.getElementById('waiting-names').textContent=waiting.map(tk=>(teams[tk]&&teams[tk].name)||tk).join(', ');
+    } else {
+        wl.classList.add('hidden');
+    }
+
+    if(total>0&&answered>=total&&GS.accepting){
+        roomRef.child('state').update({accepting:false,timerRunning:false});
+        stopLocalTimer();
+    }
+
     if(!keys.length){list.innerHTML='<div class="no-ans">No answers yet.</div>';updateStatus();return;}
     list.innerHTML=keys.map(tk=>{const a=curAnswers[tk],nm=(teams[tk]&&teams[tk].name)||tk,av=teams[tk]&&teams[tk].avatar;
         const gc=grading[tk]===true?'correct':grading[tk]===false?'incorrect':'';
         return`<div class="acard ${gc}"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text">${esc(a.answer||'(blank)')}</span><button class="gbtn ${grading[tk]===true?'ca':''}" onclick="grade('${tk}',true)" title="Mark as correct — team earns points">✓</button><button class="gbtn ${grading[tk]===false?'ia':''}" onclick="grade('${tk}',false)" title="Mark as incorrect — team loses points">✕</button></div>`;
     }).join(''); updateStatus();
+}
+function getEligibleTeams(){
+    const all=Object.keys(teams);
+    if(GS.dailyDouble&&GS.ddTeam)return all.filter(tk=>tk===GS.ddTeam);
+    return all;
 }
 function grade(tk,c){grading[tk]=grading[tk]===c?undefined:c;renderAnswers();}
 function clearGrading(){grading={};renderAnswers();}
