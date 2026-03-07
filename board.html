@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.2/qrcode.min.js"></script>
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
         :root{--bg:#000;--card:#111;--elev:#1a1a1a;--gold:#FFD700;--gold-dim:#b8960f;--gold-bright:#ffe44d;--red:#e63946;--green:#2ecc71;--blue:#4a90d9;--text:#fff;--tsec:#b0b0b0;--tmut:#666;--border:#333;--cell:#0a1640;--cell-done:#0a0a0a;--fh:'Oswald','Impact',sans-serif;--fs:'Rajdhani','Inter',sans-serif;--fb:'Inter',system-ui,sans-serif;}
@@ -90,6 +90,48 @@
         @keyframes fadeDown{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
         @keyframes slideIn{from{opacity:0;transform:translateX(-30px);}to{opacity:1;transform:translateX(0);}}
 
+        /* ═══ FINAL REVEAL ═══ */
+        #reveal-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:4vw;position:relative;}
+        .fr-leader-bar{position:absolute;top:2vw;right:3vw;text-align:right;}
+        .fr-leader-label{font-family:var(--fs);font-size:1.2vw;color:var(--tmut);text-transform:uppercase;letter-spacing:.06em;}
+        .fr-leader-name{font-family:var(--fh);font-size:2vw;color:var(--gold-bright);}
+        .fr-leader-score{font-family:var(--fh);font-size:1.6vw;color:var(--gold);}
+
+        .fr-card{display:flex;flex-direction:column;align-items:center;gap:1.5vw;animation:frSlide .6s ease;}
+        .fr-avatar img{width:8vw;height:8vw;border-radius:50%;object-fit:cover;border:4px solid var(--gold-dim);box-shadow:0 0 40px rgba(255,215,0,.15);}
+        .fr-name{font-family:var(--fh);font-size:3.5vw;text-transform:uppercase;letter-spacing:.06em;}
+        .fr-stage-label{font-family:var(--fs);font-size:1.4vw;color:var(--tmut);text-transform:uppercase;letter-spacing:.08em;}
+        .fr-detail{font-family:var(--fh);font-size:5vw;font-weight:700;min-height:6vw;display:flex;align-items:center;}
+        .fr-detail.correct{color:var(--green);}
+        .fr-detail.incorrect{color:var(--red);}
+        .fr-math{font-family:var(--fh);font-size:2vw;color:var(--tsec);margin-bottom:.5vw;}
+        @keyframes frSlide{from{opacity:0;transform:scale(.9) translateY(30px);}to{opacity:1;transform:scale(1) translateY(0);}}
+        @keyframes frPop{from{opacity:0;transform:scale(.5);}to{opacity:1;transform:scale(1);}}
+        @keyframes frCount{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+        /* ═══ FINAL RANKINGS ═══ */
+        #rankings-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:3vw;gap:1.5vw;}
+        .rk-title{font-family:var(--fh);font-size:4vw;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;text-shadow:0 0 40px rgba(255,215,0,.3);animation:fadeDown .6s ease;}
+        .rk-list{display:flex;flex-direction:column;gap:.5vw;width:70vw;max-width:900px;max-height:70vh;overflow-y:auto;}
+        .rk-row{
+            display:flex;align-items:center;gap:1vw;border-radius:12px;padding:.8vw 2vw;
+            animation:slideIn .5s ease;animation-fill-mode:both;background:var(--card);border:1px solid var(--border);
+        }
+        .rk-row.gold{background:linear-gradient(135deg,#2a2000,#1a1500);border-color:var(--gold);}
+        .rk-row.silver{background:linear-gradient(135deg,#1a1a1e,#141417);border-color:#c0c0c0;}
+        .rk-row.bronze{background:linear-gradient(135deg,#1c1410,#12100c);border-color:#cd7f32;}
+        .rk-row .rank{font-family:var(--fh);font-size:2.2vw;font-weight:800;min-width:3vw;text-align:center;color:var(--tmut);}
+        .rk-row.gold .rank{color:var(--gold);font-size:2.8vw;}
+        .rk-row.silver .rank{color:#c0c0c0;}
+        .rk-row.bronze .rank{color:#cd7f32;}
+        .rk-row .av img{width:2.5vw;height:2.5vw;border-radius:50%;object-fit:cover;}
+        .rk-row.gold .av img{width:3.5vw;height:3.5vw;border:2px solid var(--gold);}
+        .rk-row .nm{flex:1;font-family:var(--fs);font-weight:700;font-size:1.6vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .rk-row.gold .nm{font-size:2vw;}
+        .rk-row .sc{font-family:var(--fh);font-weight:800;font-size:2vw;color:var(--gold);}
+        .rk-row.gold .sc{font-size:2.8vw;}
+        .rk-crown{font-size:2.5vw;margin-right:.3vw;}
+
         /* ═══ QR OVERLAY ═══ */
         #qr-overlay{
             position:fixed;inset:0;background:rgba(0,0,0,.95);
@@ -98,7 +140,8 @@
         }
         #qr-overlay.show{opacity:1;pointer-events:auto;}
         #qr-overlay h3{font-family:var(--fh);font-size:4vw;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;}
-        #qr-overlay canvas{border-radius:16px;box-shadow:0 0 60px rgba(255,215,0,.2);}
+        #qr-box{background:#fff;padding:24px;border-radius:16px;box-shadow:0 0 60px rgba(255,215,0,.2);line-height:0;}
+        #qr-box canvas,#qr-box img{display:block;border-radius:4px;}
         #qr-overlay .url{font-family:var(--fh);font-size:2vw;color:var(--gold-bright);letter-spacing:.05em;}
         #qr-overlay .room-hint{font-family:var(--fs);font-size:1.5vw;color:var(--tsec);}
 
@@ -160,10 +203,32 @@
     <div class="tr-next" id="tr-next">Double Jeopardy Coming Up...</div>
 </div>
 
+<!-- Final Reveal (team-by-team) -->
+<div id="reveal-display" class="hidden">
+    <div class="fr-leader-bar">
+        <div class="fr-leader-label">Current Leader</div>
+        <div class="fr-leader-name" id="fr-leader-name">—</div>
+        <div class="fr-leader-score" id="fr-leader-score"></div>
+    </div>
+    <div class="fr-card" id="fr-card">
+        <div class="fr-avatar" id="fr-avatar"></div>
+        <div class="fr-name" id="fr-name"></div>
+        <div class="fr-stage-label" id="fr-stage-label"></div>
+        <div class="fr-math" id="fr-math"></div>
+        <div class="fr-detail" id="fr-detail"></div>
+    </div>
+</div>
+
+<!-- Final Rankings -->
+<div id="rankings-display" class="hidden">
+    <div class="rk-title">Final Standings</div>
+    <div class="rk-list" id="rk-list"></div>
+</div>
+
 <!-- QR Overlay -->
 <div id="qr-overlay">
     <h3>Join the Game!</h3>
-    <canvas id="qr-canvas"></canvas>
+    <div id="qr-box"></div>
     <div class="url" id="qr-url"></div>
     <div class="room-hint">Room Code: <span id="qr-room" style="color:var(--gold);font-family:var(--fh);font-weight:700;font-size:1.8vw;letter-spacing:2px;"></span></div>
 </div>
@@ -175,6 +240,8 @@
 let roomCode=null,roomRef=null;
 let GS={},prevPhase=null,prevQKey=null,teams={},boardQ={},categories={};
 let timerInterval=null,timerDuration=30;
+let finalReveal=null,prevFRKey='';
+let thinkMusicPlaying=false;
 
 // ═══ SOUND EFFECTS ═══
 const SFX=(()=>{
@@ -196,7 +263,63 @@ const SFX=(()=>{
         timesUp(){tone(220,.4,'sawtooth',.3,0);tone(185,.5,'sawtooth',.25,.15);},
         correct(){tone(523,.12,'sine',.25,0);tone(659,.25,'sine',.3,.12);},
         roundEnd(){[523,587,659,784,1047].forEach((f,i)=>tone(f,.25,'sine',.25,i*.12));},
-        wrong(){tone(196,.3,'sawtooth',.15,0);tone(165,.4,'sawtooth',.12,.15);}
+        wrong(){tone(196,.3,'sawtooth',.15,0);tone(165,.4,'sawtooth',.12,.15);},
+        revealTeam(){tone(392,.12,'sine',.2,0);tone(494,.12,'sine',.2,.1);tone(587,.2,'sine',.25,.2);},
+        revealScore(){tone(523,.1,'sine',.2,0);tone(659,.1,'sine',.2,.08);tone(784,.3,'sine',.3,.16);},
+        winner(){[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,.2,'sine',.3,i*.1));},
+        wrongBuzz(){tone(150,.5,'sawtooth',.2);},
+        thinkMusic:{
+            _nodes:[],_timeout:null,
+            start(){
+                this.stop();
+                const c=getCtx();
+                const bpm=200,beat=60/bpm;
+                // ~30s melody loop, original bouncy feel in C major
+                const melody=[
+                    // Phrase 1
+                    [262,1],[294,1],[330,1],[262,1],[330,.5],[349,.5],[330,1],
+                    [294,1],[262,1],[294,1],[262,2],
+                    // Phrase 2
+                    [262,1],[294,1],[330,1],[262,1],[330,.5],[349,.5],[330,1],
+                    [392,1],[349,1],[330,1],[294,2],
+                    // Phrase 3
+                    [262,1],[294,1],[330,1],[262,1],[392,1],[349,.5],[330,.5],
+                    [294,1],[330,1],[294,1],[262,2],
+                    // Phrase 4
+                    [294,1],[330,1],[349,1],[330,1],[294,.5],[330,.5],[294,1],
+                    [262,1],[294,1],[330,1],[262,2],
+                ];
+                const totalBeats=melody.reduce((s,n)=>s+n[1],0);
+                const loopDur=totalBeats*beat;
+                const schedule=(offset)=>{
+                    let t=offset;
+                    melody.forEach(([freq,dur])=>{
+                        const d=dur*beat;
+                        const o=c.createOscillator(),g=c.createGain();
+                        o.type='sine';o.frequency.value=freq;
+                        g.gain.setValueAtTime(0,c.currentTime+t);
+                        g.gain.linearRampToValueAtTime(0.12,c.currentTime+t+0.03);
+                        g.gain.setValueAtTime(0.12,c.currentTime+t+d*0.7);
+                        g.gain.linearRampToValueAtTime(0,c.currentTime+t+d*0.95);
+                        o.connect(g);g.connect(c.destination);
+                        o.start(c.currentTime+t);o.stop(c.currentTime+t+d);
+                        this._nodes.push(o,g);
+                        t+=d;
+                    });
+                };
+                schedule(0);
+                const loop=()=>{
+                    schedule(0);
+                    this._timeout=setTimeout(loop,loopDur*1000);
+                };
+                this._timeout=setTimeout(loop,loopDur*1000);
+            },
+            stop(){
+                if(this._timeout){clearTimeout(this._timeout);this._timeout=null;}
+                this._nodes.forEach(n=>{try{n.disconnect();}catch(e){}});
+                this._nodes=[];
+            }
+        }
     };
 })();
 
@@ -225,6 +348,7 @@ function startListening(){
     roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScores();});
     roomRef.child('board').on('value',s=>{boardQ=s.val()||{};if(GS.phase==='board')renderGrid();});
     roomRef.child('categories').on('value',s=>{categories=s.val()||{};if(GS.phase==='board')renderGrid();});
+    roomRef.child('finalReveal').on('value',s=>{finalReveal=s.val();if(GS.phase==='final-reveal')renderFinalReveal();if(GS.phase==='final-rankings')showFinalRankings();});
 }
 
 // ═══ QR CODE ═══
@@ -233,7 +357,9 @@ function generateQR(){
     const url=base+'play.html?room='+roomCode;
     document.getElementById('qr-url').textContent=url;
     document.getElementById('qr-room').textContent=roomCode;
-    try{QRCode.toCanvas(document.getElementById('qr-canvas'),url,{width:500,margin:3,color:{dark:'#000000',light:'#FFFFFF'}},function(err){if(err)console.error('QR error:',err);});}catch(e){console.error('QR init error:',e);}
+    const box=document.getElementById('qr-box');
+    box.innerHTML='';
+    try{new QRCode(box,{text:url,width:460,height:460,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){console.error('QR init error:',e);}
 }
 function updateQR(){document.getElementById('qr-overlay').classList.toggle('show',!!GS.showQR);}
 
@@ -244,6 +370,10 @@ function onStateChange(){
 
     if(phase==='round-transition'&&prevPhase!=='round-transition'){
         showTransition();SFX.roundEnd();
+    } else if(phase==='final-reveal'){
+        renderFinalReveal();
+    } else if(phase==='final-rankings'){
+        showFinalRankings();
     } else if(phase==='question'&&dailyDouble&&GS.questionKey!==prevQKey){
         showDailyDouble();SFX.dailyDouble();
         setTimeout(()=>{if(GS.phase==='question')showQuestion();},3000);
@@ -256,11 +386,16 @@ function onStateChange(){
     }
 
     if(GS.timerRunning)startTimer();else stopTimer();
+
+    const wantThink=phase==='question'&&round===3&&GS.accepting;
+    if(wantThink&&!thinkMusicPlaying){SFX.thinkMusic.start();thinkMusicPlaying=true;}
+    else if(!wantThink&&thinkMusicPlaying){SFX.thinkMusic.stop();thinkMusicPlaying=false;}
+
     prevPhase=phase;prevQKey=GS.questionKey;
 }
 
 // ═══ SCREENS ═══
-function showScreen(id){['lobby','board-display','question-display','dd-display','transition-display'].forEach(s=>{const el=document.getElementById(s);el.classList.add('hidden');el.style.display='';});const el=document.getElementById(id);el.classList.remove('hidden');el.style.display='flex';}
+function showScreen(id){['lobby','board-display','question-display','dd-display','transition-display','reveal-display','rankings-display'].forEach(s=>{const el=document.getElementById(s);el.classList.add('hidden');el.style.display='';});const el=document.getElementById(id);el.classList.remove('hidden');el.style.display='flex';}
 
 function showBoard(){
     showScreen('board-display');
@@ -362,6 +497,91 @@ function showTransition(){
     document.getElementById('tr-scores').innerHTML=sorted.map(([k,t],i)=>
         `<div class="tr-row" style="animation-delay:${i*.15}s;border-left:4px solid ${avatarColor(t.avatar)}"><span class="rank">${i+1}</span><span class="av">${avatarImg(t.avatar,'2.5vw')}</span><span class="nm" style="color:${avatarColor(t.avatar)}">${esc(t.name||k)}</span><span class="sc">$${(t.score||0).toLocaleString()}</span></div>`
     ).join('');
+}
+
+// ═══ FINAL REVEAL ═══
+function renderFinalReveal(){
+    if(!finalReveal||!finalReveal.teams)return;
+    showScreen('reveal-display');
+    const {teams:rt, currentIndex:idx, currentStage:stage} = finalReveal;
+    if(idx>=rt.length)return;
+    const t=rt[idx];
+    const frKey=idx+'_'+stage;
+    const isNew=frKey!==prevFRKey;
+    prevFRKey=frKey;
+
+    const card=document.getElementById('fr-card');
+    if(isNew){card.style.animation='none';card.offsetHeight;card.style.animation='';}
+
+    document.getElementById('fr-avatar').innerHTML=avatarImg(t.avatar,'8vw');
+    const col=avatarColor(t.avatar);
+    document.getElementById('fr-name').textContent=t.name;
+    document.getElementById('fr-name').style.color=col;
+
+    const lbl=document.getElementById('fr-stage-label');
+    const detail=document.getElementById('fr-detail');
+    const math=document.getElementById('fr-math');
+    detail.className='fr-detail';
+    math.textContent='';
+
+    if(stage===1){
+        lbl.textContent='Score before Final Jeopardy';
+        detail.textContent='$'+t.preFinalScore.toLocaleString();
+        if(isNew)SFX.revealTeam();
+    } else if(stage===2){
+        lbl.textContent='Their Wager';
+        detail.textContent='$'+t.wager.toLocaleString();
+        if(isNew)SFX.revealTeam();
+    } else if(stage===3){
+        lbl.textContent='Their Answer';
+        detail.textContent='"'+t.answer+'"';
+        detail.classList.add(t.correct?'correct':'incorrect');
+        if(isNew){if(t.correct)SFX.correct();else SFX.wrongBuzz();}
+    } else if(stage===4){
+        lbl.textContent='Final Score';
+        const diff=t.correct?t.wager:-t.wager;
+        const sign=diff>=0?'+':'';
+        math.textContent='$'+t.preFinalScore.toLocaleString()+' '+sign+' $'+Math.abs(diff).toLocaleString();
+        detail.textContent='$'+t.finalScore.toLocaleString();
+        if(isNew)SFX.revealScore();
+    }
+
+    updateRevealLeader(rt, idx, stage);
+}
+
+function updateRevealLeader(rt, currentIdx, currentStage){
+    const revealed=rt.slice(0, currentIdx+(currentStage>=4?1:0));
+    const finalized=revealed.filter((_,i)=>i<currentIdx||(i===currentIdx&&currentStage>=4));
+    let leader=null;
+    finalized.forEach(t=>{if(!leader||t.finalScore>leader.finalScore)leader=t;});
+    const ln=document.getElementById('fr-leader-name');
+    const ls=document.getElementById('fr-leader-score');
+    if(leader){
+        ln.textContent=leader.name;
+        ln.style.color=avatarColor(leader.avatar);
+        ls.textContent='$'+leader.finalScore.toLocaleString();
+    } else {
+        ln.textContent='—';
+        ls.textContent='';
+    }
+}
+
+// ═══ FINAL RANKINGS ═══
+function showFinalRankings(){
+    if(!finalReveal||!finalReveal.teams)return;
+    showScreen('rankings-display');
+    const sorted=[...finalReveal.teams].sort((a,b)=>b.finalScore-a.finalScore);
+    const list=document.getElementById('rk-list');
+    list.innerHTML=sorted.map((t,i)=>{
+        let cls='';
+        if(i===0)cls='gold';
+        else if(i===1)cls='silver';
+        else if(i===2)cls='bronze';
+        const medal=i===0?'<span class="rk-crown">👑</span>':'';
+        const col=avatarColor(t.avatar);
+        return`<div class="rk-row ${cls}" style="animation-delay:${i*.2}s;${i<3?'border-left:4px solid '+col:''}"><span class="rank">${medal}${i+1}</span><span class="av">${avatarImg(t.avatar,i===0?'3.5vw':'2.5vw')}</span><span class="nm" style="color:${col}">${esc(t.name)}</span><span class="sc">$${t.finalScore.toLocaleString()}</span></div>`;
+    }).join('');
+    SFX.winner();
 }
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}

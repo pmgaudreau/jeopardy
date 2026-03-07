@@ -251,13 +251,16 @@ function render(){
     document.getElementById('g-dd').classList.toggle('hidden',!dailyDouble);
 
     const qtc=document.getElementById('q-txt-card');
-    if(questionText&&phase!=='board'&&phase!=='round-transition'){qtc.classList.remove('hidden');document.getElementById('g-qtxt').textContent=questionText;}
+    if(questionText&&phase!=='board'&&phase!=='round-transition'&&phase!=='final-reveal'&&phase!=='final-rankings'){qtc.classList.remove('hidden');document.getElementById('g-qtxt').textContent=questionText;}
     else qtc.classList.add('hidden');
 
     const cards=['wait-card','answer-card','submitted-card','dd-spec-card','wager-card','phone-timer'];
     cards.forEach(id=>document.getElementById(id).classList.add('hidden'));
 
-    if(phase==='board'||phase==='round-transition'||!category){
+    if(phase==='final-reveal'||phase==='final-rankings'){
+        show('wait-card');
+        document.getElementById('wait-msg').textContent=phase==='final-rankings'?'Final standings are on the big screen!':'Final scores are being revealed — look at the big screen!';
+    } else if(phase==='board'||phase==='round-transition'||!category){
         show('wait-card');
         document.getElementById('wait-msg').textContent=phase==='round-transition'?'Scores are being tallied...':'Waiting for the host to select a question...';
     } else if(round===3&&!wagerLocked&&!accepting){
