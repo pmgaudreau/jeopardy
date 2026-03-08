@@ -156,8 +156,8 @@
 
         <div class="state-card" id="wait-card"><div class="wait"><div class="dots">• • •</div><div class="msg" id="wait-msg">Waiting for the host...</div></div></div>
         <div class="state-card hidden" id="dd-spec-card"><div class="dd-spec"><div class="star">★</div><div class="msg">Daily Double!</div><div class="tn" id="dd-spec-team"></div><div class="msg">is answering this question</div></div></div>
-        <div class="state-card hidden" id="answer-card"><div class="answer-area" style="display:flex;flex-direction:column;gap:.75rem;flex:1;"><textarea id="answer-input" placeholder="Type your answer..." autocomplete="off" autocorrect="off"></textarea><button class="btn btn-green" id="submit-btn" onclick="submitAnswer()">Submit Answer</button></div></div>
-        <div class="state-card hidden" id="submitted-card"><div class="submitted"><div class="check">✓</div><div class="label">Answer Submitted!</div><div class="echo" id="answer-echo"></div></div></div>
+        <div class="state-card hidden" id="answer-card"><div class="answer-area" style="display:flex;flex-direction:column;gap:.75rem;flex:1;"><textarea id="answer-input" placeholder="Type your answer..." autocomplete="off" autocorrect="off"></textarea><button class="btn btn-green" id="submit-btn" onclick="submitAnswer()">Submit Answer</button><button class="btn" id="pass-btn" onclick="passAnswer()" style="background:var(--elev);color:var(--tmut);font-size:.9rem;padding:.7rem;">Pass — I don't know</button></div></div>
+        <div class="state-card hidden" id="submitted-card"><div class="submitted"><div class="check" id="submitted-icon">✓</div><div class="label" id="submitted-label">Answer Submitted!</div><div class="echo" id="answer-echo"></div></div></div>
         <div class="wager-card hidden" id="wager-card">
             <h3>Set Your Wager</h3>
             <div class="note" id="wager-note">You can wager up to your current score</div>
@@ -172,7 +172,7 @@
 <script src="config.js"></script>
 <script>
 let roomCode=null,roomRef=null,teamKey=null,teamName=null,selectedAvatar=null,playerCount=1;
-let GS={},cachedScore=0,lastQKey=null,hasSubmitted=false,wagerLocked=false,answerCardShown=false;
+let GS={},cachedScore=0,lastQKey=null,hasSubmitted=false,hasPassed=false,wagerLocked=false,answerCardShown=false;
 let phoneTimerInterval=null;
 
 // ── Avatar Grid ──
@@ -282,12 +282,12 @@ function setupListeners(){
         const t=teamSnap.val();
         if(t){cachedScore=t.score||0;if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}}
         const a=ansSnap.val();
-        if(a&&a.answer){hasSubmitted=true;document.getElementById('answer-echo').textContent='Your answer: "'+a.answer+'"';}
+        if(a){if(a.passed){hasSubmitted=true;hasPassed=true;}else if(a.answer){hasSubmitted=true;document.getElementById('answer-echo').textContent='Your answer: "'+a.answer+'"';}}
         render();startPhoneTimer();
 
         roomRef.child('state').on('value',snap=>{
             const s=snap.val();if(!s)return;GS=s;
-            if(s.questionKey!==lastQKey){lastQKey=s.questionKey;hasSubmitted=false;wagerLocked=false;answerCardShown=false;resetWagerUI();try{navigator.vibrate(200);}catch(e){}}
+            if(s.questionKey!==lastQKey){lastQKey=s.questionKey;hasSubmitted=false;hasPassed=false;wagerLocked=false;answerCardShown=false;resetWagerUI();try{navigator.vibrate(200);}catch(e){}}
             render();startPhoneTimer();
         });
         roomRef.child('teams/'+teamKey).on('value',snap=>{
@@ -296,7 +296,7 @@ function setupListeners(){
             if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
         });
         roomRef.child('currentAnswers/'+teamKey).on('value',snap=>{
-            if(snap.exists()&&snap.val()&&snap.val().answer){hasSubmitted=true;document.getElementById('answer-echo').textContent='Your answer: "'+snap.val().answer+'"';}
+            if(snap.exists()&&snap.val()){const v=snap.val();if(v.passed){hasSubmitted=true;hasPassed=true;}else if(v.answer){hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your answer: "'+v.answer+'"';}}
             render();
         });
     });
@@ -354,12 +354,18 @@ function render(){
         show('dd-spec-card');
         roomRef.child('teams/'+ddTeam+'/name').once('value',s=>{document.getElementById('dd-spec-team').textContent=s.val()||ddTeam;});
     } else if(hasSubmitted){
+        document.getElementById('submitted-icon').textContent=hasPassed?'⏭':'✓';
+        document.getElementById('submitted-label').textContent=hasPassed?'Passed':'Answer Submitted!';
+        document.getElementById('answer-echo').textContent=hasPassed?'You skipped this question.':'';
         show('submitted-card');
     } else if(accepting){
         show('answer-card'); show('phone-timer');
         if(!answerCardShown){document.getElementById('answer-input').value='';answerCardShown=true;try{navigator.vibrate([100,50,100]);}catch(e){}}
         document.getElementById('submit-btn').disabled=false;
         document.getElementById('submit-btn').textContent='Submit Answer';
+        const passBtn=document.getElementById('pass-btn');
+        passBtn.disabled=false;passBtn.textContent='Pass \u2014 I don\u2019t know';
+        passBtn.style.display=(dailyDouble||isFJ)?'none':'block';
     } else if(phase==='question'){
         show('wait-card');
         document.getElementById('wait-msg').textContent='Waiting for the host to open answers...';
@@ -385,14 +391,22 @@ function startPhoneTimer(){
     },250);
 }
 
-// ── Submit ──
+// ── Submit / Pass ──
 function submitAnswer(){
     const inp=document.getElementById('answer-input'),answer=inp.value.trim();
     if(!answer){inp.style.borderColor='var(--red)';setTimeout(()=>inp.style.borderColor='',1200);return;}
     const btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='Submitting...';
+    document.getElementById('pass-btn').disabled=true;
     roomRef.child('currentAnswers/'+teamKey).set({answer,timestamp:firebase.database.ServerValue.TIMESTAMP})
-        .then(()=>{hasSubmitted=true;document.getElementById('answer-echo').textContent='Your answer: "'+answer+'"';render();})
-        .catch(()=>{btn.disabled=false;btn.textContent='Submit Answer';alert('Error. Try again.');});
+        .then(()=>{hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your answer: "'+answer+'"';render();})
+        .catch(()=>{btn.disabled=false;btn.textContent='Submit Answer';document.getElementById('pass-btn').disabled=false;alert('Error. Try again.');});
+}
+function passAnswer(){
+    const btn=document.getElementById('pass-btn');btn.disabled=true;btn.textContent='Passing...';
+    document.getElementById('submit-btn').disabled=true;
+    roomRef.child('currentAnswers/'+teamKey).set({passed:true,timestamp:firebase.database.ServerValue.TIMESTAMP})
+        .then(()=>{hasSubmitted=true;hasPassed=true;render();})
+        .catch(()=>{btn.disabled=false;btn.textContent='Pass — I don\'t know';document.getElementById('submit-btn').disabled=false;alert('Error. Try again.');});
 }
 
 // ── Wager ──

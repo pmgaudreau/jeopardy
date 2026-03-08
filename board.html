@@ -784,15 +784,23 @@ function buildHighlights(entries,el){
     let biggestLoss='',biggestLossPts=0,biggestLossCat='',biggestLossVal=0;
     let totalQuestions=0;
 
-    teamKeys.forEach(tk=>{streaks[tk]=0;totalAnswered[tk]=0;totalCorrect[tk]=0;});
+    let totalPasses={};
+    let responseTimes={},responseCount={};
+    teamKeys.forEach(tk=>{streaks[tk]=0;totalAnswered[tk]=0;totalCorrect[tk]=0;totalPasses[tk]=0;responseTimes[tk]=0;responseCount[tk]=0;});
 
     entries.forEach(([key,entry])=>{
         if(!entry.answers)return;
         totalQuestions++;
+        const openedAt=entry.acceptedAt||0;
         const ansKeys=Object.keys(entry.answers);
         let wrong=0,right=0;
         ansKeys.forEach(tk=>{
             const a=entry.answers[tk];
+            if(openedAt>0&&a.ts>0&&!a.passed){
+                responseTimes[tk]+=(a.ts-openedAt);
+                responseCount[tk]++;
+            }
+            if(a.passed){streaks[tk]=0;totalPasses[tk]=(totalPasses[tk]||0)+1;return;}
             if(a.correct){
                 right++;totalCorrect[tk]=(totalCorrect[tk]||0)+1;
                 streaks[tk]=(streaks[tk]||0)+1;
@@ -911,6 +919,35 @@ function buildHighlights(entries,el){
         sub:'Wagered a total of $'+biggestRiskAmt.toLocaleString()
     });
 
+    let mostPasses='',mostPassesCount=0;
+    Object.entries(totalPasses).forEach(([tk,cnt])=>{if(cnt>mostPassesCount){mostPassesCount=cnt;mostPasses=tk;}});
+    if(mostPasses&&mostPassesCount>0)cards.push({
+        icon:'🏳️',accent:'blue-accent',label:'Playing It Safe',delay:idx++,
+        value:getName(mostPasses),avatar:mostPasses,
+        sub:'Passed on '+mostPassesCount+' question'+(mostPassesCount!==1?'s':'')
+    });
+
+    let fastestTk='',fastestAvg=Infinity,slowestTk='',slowestAvg=0;
+    const minResponses=2;
+    teamKeys.forEach(tk=>{
+        if(responseCount[tk]>=minResponses){
+            const avg=responseTimes[tk]/responseCount[tk];
+            if(avg<fastestAvg){fastestAvg=avg;fastestTk=tk;}
+            if(avg>slowestAvg){slowestAvg=avg;slowestTk=tk;}
+        }
+    });
+    function fmtTime(ms){const s=ms/1000;return s<60?s.toFixed(1)+'s':Math.floor(s/60)+'m '+Math.round(s%60)+'s';}
+    if(fastestTk)cards.push({
+        icon:'⚡',accent:'green-accent',label:'Quickest Trigger Finger',delay:idx++,
+        value:getName(fastestTk),avatar:fastestTk,
+        sub:'Avg response time: '+fmtTime(fastestAvg)+' ('+responseCount[fastestTk]+' answers)'
+    });
+    if(slowestTk&&slowestTk!==fastestTk)cards.push({
+        icon:'🤔',accent:'blue-accent',label:'Most Thoughtful',delay:idx++,
+        value:getName(slowestTk),avatar:slowestTk,
+        sub:'Avg response time: '+fmtTime(slowestAvg)+' ('+responseCount[slowestTk]+' answers)'
+    });
+
     const halfIdx=Math.floor(entries.length/2);
     let mostImproved='',mostImprovedAmt=0;
     if(halfIdx>0){
@@ -924,7 +961,7 @@ function buildHighlights(entries,el){
         });
     }
     if(mostImproved&&mostImprovedAmt>0)cards.push({
-        icon:'⚡',accent:'green-accent',label:'Second Half Surge',delay:idx++,
+        icon:'🏃',accent:'green-accent',label:'Second Half Surge',delay:idx++,
         value:getName(mostImproved),avatar:mostImproved,
         sub:'Gained $'+mostImprovedAmt.toLocaleString()+' in the second half'
     });
@@ -938,20 +975,22 @@ function buildHighlights(entries,el){
     }).join('');
 
     el.innerHTML=cardHtml+cardHtml;
+    startRecapScroll(el);
+}
 
-    requestAnimationFrame(()=>{
-        requestAnimationFrame(()=>{
-            const scrollH=el.scrollHeight/2;
-            const speed=40;
-            const dur=scrollH/speed;
-            document.getElementById('recap-scroll-style')?.remove();
-            const style=document.createElement('style');
-            style.id='recap-scroll-style';
-            style.textContent='@keyframes recapScroll{0%{transform:translateY(0)}100%{transform:translateY(-'+scrollH+'px)}}';
-            document.head.appendChild(style);
-            el.style.animation='recapScroll '+dur+'s linear infinite';
-        });
-    });
+function startRecapScroll(el){
+    const scrollH=el.scrollHeight/2;
+    if(scrollH<=0){setTimeout(()=>startRecapScroll(el),300);return;}
+    const speed=40;
+    const dur=scrollH/speed;
+    document.getElementById('recap-scroll-style')?.remove();
+    const style=document.createElement('style');
+    style.id='recap-scroll-style';
+    style.textContent='@keyframes recapScroll{0%{transform:translateY(0)}100%{transform:translateY(-'+scrollH+'px)}}';
+    document.head.appendChild(style);
+    el.style.animation='none';
+    el.offsetHeight;
+    el.style.animation='recapScroll '+dur+'s linear infinite';
 }
 
 let gameoverPlayed=false;

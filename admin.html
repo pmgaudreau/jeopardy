@@ -202,7 +202,7 @@
             background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px;
             margin-bottom: .35rem; transition: border-color .2s;
         }
-        .acard.correct { border-color: var(--green); } .acard.incorrect { border-color: var(--red); }
+        .acard.correct { border-color: var(--green); } .acard.incorrect { border-color: var(--red); } .acard.passed { opacity: .5; }
         .a-avatar { display:flex; align-items:center; }
         .a-team { font-weight: 700; min-width: 80px; font-size: .85rem; }
         .a-text { flex: 1; color: var(--gold-bright); font-size: .95rem; }
@@ -451,7 +451,7 @@
 let roomCode = null, roomRef = null;
 let GS = { round:1, phase:'board', category:'', value:0, questionText:'', accepting:false, dailyDouble:false, ddTeam:'', questionKey:'', showQR:false, timerEnd:0, timerRunning:false, answerRevealed:false, wageringOpen:false, imageUrl:'' };
 let teams = {}, curAnswers = {}, grading = {}, boardQ = {}, parsedCSV = null, scoresApplied = false;
-let timerInterval = null, timerSec = 30;
+let timerInterval = null, timerSec = 30, roundTransTimeout = null;
 const VALS = { 1:[200,400,600,800,1000], 2:[400,800,1200,1600,2000] };
 
 function showView(id) { document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); document.getElementById(id).classList.add('active'); }
@@ -632,7 +632,8 @@ function confirmEndRound() {
     if (nextRound > 3) return;
     roomRef.child('state').update({round:nextRound,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
     roomRef.child('currentAnswers').remove(); grading={};
-    setTimeout(()=>{ roomRef.child('state/phase').set('board'); }, 8000);
+    if(roundTransTimeout)clearTimeout(roundTransTimeout);
+    roundTransTimeout=setTimeout(()=>{ roundTransTimeout=null; roomRef.child('state/phase').set('board'); }, 8000);
 }
 
 // ── Board ──
@@ -673,6 +674,7 @@ function selQ(key) {
 }
 let pendingQuestion=null;
 function activateQ(key,q,isDD,ddTk) {
+    if(roundTransTimeout){clearTimeout(roundTransTimeout);roundTransTimeout=null;}
     const val=q.value;
     const hideQ=isDD;
     pendingQuestion=hideQ?{questionText:q.questionText,imageUrl:q.imageUrl||''}:null;
@@ -701,7 +703,7 @@ function toggleAccepting() {
     const a=!GS.accepting;
     if(a){
         const end=Date.now()+timerSec*1000;
-        roomRef.child('state').update({accepting:true,timerEnd:end,timerRunning:true,wageringOpen:false});
+        roomRef.child('state').update({accepting:true,timerEnd:end,timerRunning:true,wageringOpen:false,acceptedAt:firebase.database.ServerValue.TIMESTAMP});
         startLocalTimer();
     } else {
         roomRef.child('state').update({accepting:false,timerRunning:false});
@@ -780,6 +782,7 @@ function renderAnswers() {
 
     if(!keys.length){list.innerHTML='<div class="no-ans">No answers yet.</div>';updateStatus();return;}
     list.innerHTML=keys.map(tk=>{const a=curAnswers[tk],nm=(teams[tk]&&teams[tk].name)||tk,av=teams[tk]&&teams[tk].avatar;
+        if(a.passed){return`<div class="acard passed"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text" style="color:var(--tmut);font-style:italic;">Passed</span></div>`;}
         const gc=grading[tk]===true?'correct':grading[tk]===false?'incorrect':'';
         return`<div class="acard ${gc}"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text">${esc(a.answer||'(blank)')}</span><button class="gbtn ${grading[tk]===true?'ca':''}" onclick="grade('${tk}',true)" title="Mark as correct — team earns points">✓</button><button class="gbtn ${grading[tk]===false?'ia':''}" onclick="grade('${tk}',false)" title="Mark as incorrect — team loses points">✕</button></div>`;
     }).join(''); updateStatus();
@@ -793,9 +796,16 @@ function getEligibleTeams(){
 function grade(tk,c){grading[tk]=grading[tk]===c?undefined:c;renderAnswers();}
 function clearGrading(){grading={};renderAnswers();}
 function applyScores() {
-    const upd={}, hist={round:GS.round,category:GS.category,value:GS.value,answers:{}};
+    const upd={}, hist={round:GS.round,category:GS.category,value:GS.value,acceptedAt:GS.acceptedAt||0,answers:{}};
     const isDD=GS.dailyDouble, isFJ=GS.round===3&&GS.questionKey==='final';
-    Object.keys(curAnswers).forEach(tk=>{const c=grading[tk]; if(c===undefined)return;
+    Object.keys(curAnswers).forEach(tk=>{
+        const ts=curAnswers[tk].timestamp||0;
+        if(curAnswers[tk].passed){
+            upd['teams/'+tk+'/streak']=0;
+            hist.answers[tk]={answer:null,correct:null,points:0,passed:true,ts};
+            return;
+        }
+        const c=grading[tk]; if(c===undefined)return;
         let pts;
         if(isDD||isFJ){
             const wager=(teams[tk]&&teams[tk].wager)||0;
@@ -807,7 +817,7 @@ function applyScores() {
         upd['teams/'+tk+'/score']=cur+pts;
         const streak=(teams[tk]&&teams[tk].streak)||0;
         upd['teams/'+tk+'/streak']=c?streak+1:0;
-        hist.answers[tk]={answer:curAnswers[tk].answer,correct:c,points:pts};
+        hist.answers[tk]={answer:curAnswers[tk].answer,correct:c,points:pts,ts};
     });
     Object.keys(teams).forEach(tk=>{
         if(!curAnswers[tk]&&!upd['teams/'+tk+'/streak']){
@@ -852,7 +862,8 @@ function assignInitialControl(){
 }
 
 // ── Complete ──
-function completeAndReturn(){
+function completeAndReturn(fromKeyboard){
+    if(GS.accepting){alert('Close answers before completing this question.');return;}
     const answered=Object.keys(curAnswers);
     if(answered.length>0&&!scoresApplied){
         const graded=Object.keys(grading).length;
@@ -860,6 +871,9 @@ function completeAndReturn(){
             alert('Scores haven\'t been applied yet. Click "Apply Scores" before completing.');return;
         }
         alert('You have '+answered.length+' answer(s) that haven\'t been graded or scored yet. Grade and apply scores before completing.');return;
+    }
+    if(fromKeyboard&&answered.length===0&&!scoresApplied){
+        if(!confirm('No answers were submitted. Return to the board?'))return;
     }
     const k=GS.questionKey;if(k&&k!=='final')roomRef.child('board/'+k+'/completed').set(true);returnToBoard();
 }
@@ -1117,7 +1131,7 @@ document.addEventListener('keydown',e=>{
     if(!qv||!qv.classList.contains('active'))return;
     if(e.code==='Space'){e.preventDefault();toggleAccepting();}
     else if(e.code==='KeyR'){e.preventDefault();revealAnswer();}
-    else if(e.code==='Enter'){e.preventDefault();completeAndReturn();}
+    else if(e.code==='Enter'){e.preventDefault();completeAndReturn(true);}
 });
 
 resetTimerDisp();
