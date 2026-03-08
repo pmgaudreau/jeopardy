@@ -951,6 +951,7 @@ function buildHighlights(entries,el){
     });
 }
 
+let gameoverPlayed=false;
 function showGameOver(){
     showScreen('gameover-display');
     const sorted=Object.entries(teams).sort((a,b)=>(b[1].score||0)-(a[1].score||0));
@@ -958,7 +959,7 @@ function showGameOver(){
         const [k,t]=sorted[0];
         document.getElementById('go-winner').innerHTML=avatarImg(t.avatar,'4vw')+' <span style="color:'+avatarColor(t.avatar)+'">'+esc(t.name||k)+'</span> wins with $'+(t.score||0).toLocaleString()+'!';
     }
-    SFX.winner();
+    if(!gameoverPlayed){SFX.winner();gameoverPlayed=true;}
 }
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}

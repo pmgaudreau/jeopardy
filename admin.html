@@ -217,7 +217,7 @@
         .apply-row { display: flex; gap: .5rem; margin-top: 1rem; }
         .apply-row .btn { flex: 1; }
 
-        /* DD overlay */
+        /* Overlay shared */
         .dd-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,.85);
             display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem;
@@ -227,15 +227,6 @@
             padding: 2rem; max-width: 400px; width: 100%; text-align: center;
         }
         .dd-modal h2 { font-family: var(--fh); font-size: 1.6rem; color: var(--gold); text-transform: uppercase; margin-bottom: .25rem; }
-        .dd-modal .sub { font-size: .9rem; color: var(--text-sec); margin-bottom: 1.25rem; }
-        .dd-tbtn {
-            display: block; width: 100%; padding: .7rem; margin-bottom: .4rem;
-            background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius);
-            color: var(--text); font-family: var(--fs); font-size: 1rem; font-weight: 600;
-            cursor: pointer; transition: all .15s; text-align: left;
-        }
-        .dd-tbtn:hover { border-color: var(--gold); background: rgba(255,215,0,.06); }
-        .dd-tbtn .ts { float: right; color: var(--gold); }
 
         @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
         .fade-in { animation: fadeIn .25s ease; }
@@ -452,15 +443,6 @@
     </div>
 </div>
 
-<!-- ═══ DD OVERLAY ═══ -->
-<div class="dd-overlay hidden" id="dd-overlay">
-    <div class="dd-modal fade-in">
-        <h2>★ Daily Double ★</h2>
-        <div class="sub" id="dd-label"></div>
-        <div style="font-size:.9rem;color:var(--text-muted);margin-bottom:1rem;">Select a team:</div>
-        <div id="dd-teams"></div>
-    </div>
-</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -615,7 +597,7 @@ function syncView() {
             showView('reveal-view');
         }
         document.getElementById('end-game-btn').style.display=(GS.phase==='recap'||GS.phase==='gameover')?'inline-block':'none';
-    } else if(GS.phase==='board'||GS.phase==='round-transition'||GS.phase==='intermission'){showView('board-view');document.getElementById('dd-overlay').classList.add('hidden');document.getElementById('end-game-btn').style.display='none';renderBoard();}
+    } else if(GS.phase==='board'||GS.phase==='round-transition'||GS.phase==='intermission'){showView('board-view');document.getElementById('end-game-btn').style.display='none';renderBoard();}
     renderBoardControl();
 }
 function renderBoardControl(){
@@ -713,17 +695,6 @@ function activateQ(key,q,isDD,ddTk) {
     if(q.imageUrl){imgEl.src=q.imageUrl;imgEl.classList.remove('hidden');}else{imgEl.classList.add('hidden');imgEl.src='';}
     resetTimerDisp(); updateStatus(); showFJRevealButton();
 }
-
-// ── Daily Double ──
-function showDDSelect(key,q) {
-    document.getElementById('dd-overlay').classList.remove('hidden');
-    document.getElementById('dd-label').textContent=q.category+' — $'+q.value+' (Daily Double — team will wager)';
-    const list=document.getElementById('dd-teams');
-    list.innerHTML=Object.entries(teams).map(([k,t])=>
-        `<button class="dd-tbtn" onclick="confirmDD('${key}','${k}')" title="Select this team to answer the Daily Double">${avatarImg(t.avatar, 24)} ${esc(t.name||k)} <span class="ts">$${(t.score||0).toLocaleString()}</span></button>`
-    ).join('');
-}
-function confirmDD(key,tk) { document.getElementById('dd-overlay').classList.add('hidden'); activateQ(key,boardQ[key],true,tk); }
 
 // ── Accepting ──
 function toggleAccepting() {
@@ -944,7 +915,17 @@ function renderScoreboard() {
 }
 function adjScore(tk){const cur=(teams[tk]&&teams[tk].score)||0;const a=prompt(`Adjust ${teams[tk]?.name||tk} ($${cur}):`,0);if(a===null)return;const n=parseInt(a);if(!isNaN(n))roomRef.child('teams/'+tk+'/score').set(cur+n);}
 function removeTeam(tk){const name=(teams[tk]&&teams[tk].name)||tk;if(!confirm('Remove "'+name+'" from the game? This cannot be undone.'))return;roomRef.child('teams/'+tk).remove();}
-function addTeamManual(){const n=document.getElementById('add-team').value.trim();if(!n)return;const k=n.toLowerCase().replace(/[^a-z0-9]/g,'_');roomRef.child('teams/'+k).set({name:n,score:0,wager:0,avatar:'',color:''});document.getElementById('add-team').value='';}
+function addTeamManual(){
+    const n=document.getElementById('add-team').value.trim();if(!n)return;
+    let k=n.toLowerCase().replace(/[^a-z0-9]/g,'_');
+    roomRef.child('teams/'+k).once('value',snap=>{
+        if(snap.exists()&&snap.val().name&&snap.val().name.toLowerCase()!==n.toLowerCase()){
+            k=k+'_'+Math.random().toString(36).slice(2,5);
+        }
+        roomRef.child('teams/'+k).set({name:n,score:0,wager:0,avatar:'',color:''});
+        document.getElementById('add-team').value='';
+    });
+}
 
 // ── History ──
 function renderHistory(h) {
@@ -1133,7 +1114,7 @@ function esc(s){const d=document.createElement('div');d.textContent=s;return d.i
 document.addEventListener('keydown',e=>{
     if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.isContentEditable)return;
     const qv=document.getElementById('question-view');
-    if(!qv||qv.classList.contains('hidden'))return;
+    if(!qv||!qv.classList.contains('active'))return;
     if(e.code==='Space'){e.preventDefault();toggleAccepting();}
     else if(e.code==='KeyR'){e.preventDefault();revealAnswer();}
     else if(e.code==='Enter'){e.preventDefault();completeAndReturn();}

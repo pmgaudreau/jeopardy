@@ -411,6 +411,12 @@ function lockWager(){
 }
 function showLockedWager(amt){document.getElementById('wager-input-area').classList.add('hidden');document.getElementById('wager-locked').classList.remove('hidden');document.getElementById('wager-locked-amt').textContent='$'+amt.toLocaleString();}
 function resetWagerUI(){document.getElementById('wager-input-area').classList.remove('hidden');document.getElementById('wager-locked').classList.add('hidden');document.getElementById('wager-input').value='';}
+
+(function(){
+    const p=new URLSearchParams(window.location.search);
+    const r=p.get('room');
+    if(r)document.getElementById('inp-room').value=r.toUpperCase();
+})();
 </script>
 </body>
 </html>
