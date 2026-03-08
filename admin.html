@@ -796,7 +796,7 @@ function getEligibleTeams(){
 function grade(tk,c){grading[tk]=grading[tk]===c?undefined:c;renderAnswers();}
 function clearGrading(){grading={};renderAnswers();}
 function applyScores() {
-    const upd={}, hist={round:GS.round,category:GS.category,value:GS.value,acceptedAt:GS.acceptedAt||0,answers:{}};
+    const upd={}, hist={round:GS.round,category:GS.category,value:GS.value,questionText:GS.questionText||'',acceptedAt:GS.acceptedAt||0,answers:{}};
     const isDD=GS.dailyDouble, isFJ=GS.round===3&&GS.questionKey==='final';
     Object.keys(curAnswers).forEach(tk=>{
         const ts=curAnswers[tk].timestamp||0;

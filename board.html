@@ -174,11 +174,12 @@
         .recap-card.blue-accent::before{background:var(--blue);}
         .recap-icon{font-size:4.5vw;flex-shrink:0;width:5vw;text-align:center;}
         .recap-body{flex:1;}
-        .recap-label{font-family:var(--fs);font-size:1.4vw;color:var(--tmut);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.4vw;font-weight:600;}
-        .recap-value{font-family:var(--fh);font-size:2.6vw;color:var(--text);font-weight:700;}
+            .recap-label{font-family:var(--fh);font-size:1.8vw;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.5vw;font-weight:700;}
+            .recap-value{font-family:var(--fh);font-size:2.6vw;color:var(--text);font-weight:700;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
         .recap-value .hl{color:var(--gold);}
         .recap-value .hl-green{color:var(--green);}
         .recap-value .hl-red{color:var(--red);}
+        .recap-value.recap-quote{font-family:var(--fb);font-size:2vw;font-weight:500;font-style:italic;color:var(--tsec);-webkit-line-clamp:3;}
         .recap-sub{font-family:var(--fb);font-size:1.2vw;color:var(--tsec);margin-top:.3vw;}
         .recap-avatar{flex-shrink:0;}
         .recap-avatar img{width:5.5vw;height:5.5vw;border-radius:50%;object-fit:cover;border:3px solid var(--gold-dim);}
@@ -786,6 +787,7 @@ function buildHighlights(entries,el){
 
     let totalPasses={};
     let responseTimes={},responseCount={};
+    let catStats={};
     teamKeys.forEach(tk=>{streaks[tk]=0;totalAnswered[tk]=0;totalCorrect[tk]=0;totalPasses[tk]=0;responseTimes[tk]=0;responseCount[tk]=0;});
 
     entries.forEach(([key,entry])=>{
@@ -811,8 +813,15 @@ function buildHighlights(entries,el){
             if(a.points<biggestLossPts){biggestLossPts=a.points;biggestLoss=tk;biggestLossCat=entry.category;biggestLossVal=entry.value;}
         });
         teamKeys.forEach(tk=>{if(!entry.answers[tk])streaks[tk]=0;});
-        if(ansKeys.length>0&&wrong>hardestWrong){hardestWrong=wrong;hardest=entry;hardestTotal=ansKeys.length;}
-        if(ansKeys.length>0&&right>easiestRight){easiestRight=right;easiest=entry;easiestTotal=ansKeys.length;}
+        const graded=right+wrong;
+        if(graded>0&&wrong/graded>((hardest&&hardestWrong/hardestTotal)||0)){hardestWrong=wrong;hardest=entry;hardestTotal=graded;}
+        if(graded>0&&right/graded>((easiest&&easiestRight/easiestTotal)||0)){easiestRight=right;easiest=entry;easiestTotal=graded;}
+        if(entry.category){
+            if(!catStats[entry.category])catStats[entry.category]={right:0,wrong:0,total:0};
+            catStats[entry.category].right+=right;
+            catStats[entry.category].wrong+=wrong;
+            catStats[entry.category].total+=graded;
+        }
     });
 
     let biggestComeback='',biggestComebackAmt=0,comebackLow=0;
@@ -841,13 +850,34 @@ function buildHighlights(entries,el){
 
     if(hardest)cards.push({
         icon:'💀',accent:'red-accent',label:'Hardest Question',delay:idx++,
-        value:'<span class="hl">'+esc(hardest.category)+'</span> for <span class="hl">$'+hardest.value.toLocaleString()+'</span>',
-        sub:hardestWrong+' of '+hardestTotal+' teams got it wrong'
+        quote:!!hardest.questionText,
+        value:hardest.questionText?'"'+esc(hardest.questionText)+'"':'<span class="hl">'+esc(hardest.category)+'</span> for <span class="hl">$'+hardest.value.toLocaleString()+'</span>',
+        sub:hardestWrong+' of '+hardestTotal+' got it wrong — '+esc(hardest.category)+' $'+hardest.value.toLocaleString()
     });
     if(easiest)cards.push({
         icon:'🎯',accent:'green-accent',label:'Easiest Question',delay:idx++,
-        value:'<span class="hl">'+esc(easiest.category)+'</span> for <span class="hl">$'+easiest.value.toLocaleString()+'</span>',
-        sub:easiestRight+' of '+easiestTotal+' teams got it right'
+        quote:!!easiest.questionText,
+        value:easiest.questionText?'"'+esc(easiest.questionText)+'"':'<span class="hl">'+esc(easiest.category)+'</span> for <span class="hl">$'+easiest.value.toLocaleString()+'</span>',
+        sub:easiestRight+' of '+easiestTotal+' got it right — '+esc(easiest.category)+' $'+easiest.value.toLocaleString()
+    });
+    let hardestCat='',hardestCatPct=0,hardestCatStats=null;
+    let easiestCatBest='',easiestCatBestPct=-1,easiestCatBestStats=null;
+    Object.entries(catStats).forEach(([cat,s])=>{
+        if(s.total<2)return;
+        const wrongPct=s.wrong/s.total;
+        const rightPct=s.right/s.total;
+        if(wrongPct>hardestCatPct){hardestCatPct=wrongPct;hardestCat=cat;hardestCatStats=s;}
+        if(rightPct>easiestCatBestPct||(rightPct===easiestCatBestPct&&s.total>(easiestCatBestStats?easiestCatBestStats.total:0))){easiestCatBestPct=rightPct;easiestCatBest=cat;easiestCatBestStats=s;}
+    });
+    if(hardestCat&&hardestCatStats)cards.push({
+        icon:'🧱',accent:'red-accent',label:'Toughest Category',delay:idx++,
+        value:'<span class="hl">'+esc(hardestCat)+'</span>',
+        sub:hardestCatStats.wrong+' wrong out of '+hardestCatStats.total+' answers ('+Math.round(hardestCatPct*100)+'% miss rate)'
+    });
+    if(easiestCatBest&&easiestCatBestStats&&easiestCatBest!==hardestCat)cards.push({
+        icon:'🍰',accent:'green-accent',label:'Easiest Category',delay:idx++,
+        value:'<span class="hl">'+esc(easiestCatBest)+'</span>',
+        sub:easiestCatBestStats.right+' correct out of '+easiestCatBestStats.total+' answers ('+Math.round(easiestCatBestPct*100)+'% accuracy)'
     });
     if(longestStreak&&longestStreakLen>=2)cards.push({
         icon:'🔥',accent:'gold-accent',label:'Hottest Streak',delay:idx++,
@@ -970,7 +1000,7 @@ function buildHighlights(entries,el){
         const avHtml=c.avatar?'<div class="recap-avatar">'+getAvatar(c.avatar)+'</div>':'';
         return'<div class="recap-card '+c.accent+'">'+
             '<div class="recap-icon">'+c.icon+'</div>'+
-            '<div class="recap-body"><div class="recap-label">'+c.label+'</div><div class="recap-value">'+c.value+'</div><div class="recap-sub">'+c.sub+'</div></div>'+
+            '<div class="recap-body"><div class="recap-label">'+c.label+'</div><div class="recap-value'+(c.quote?' recap-quote':'')+'">'+c.value+'</div><div class="recap-sub">'+c.sub+'</div></div>'+
             avHtml+'</div>';
     }).join('');
 
