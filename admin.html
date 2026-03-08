@@ -374,7 +374,7 @@
             <div id="waiting-list" class="hidden" style="margin-bottom:.75rem;padding:.5rem .75rem;background:rgba(255,215,0,.04);border:1px solid var(--border);border-radius:var(--radius);font-size:.8rem;color:var(--text-sec);"><span style="color:var(--text-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Still waiting: </span><span id="waiting-names"></span></div>
             <div id="answers-list"></div>
             <div class="apply-row">
-                <button class="btn btn-green" onclick="applyScores()" title="Apply all graded scores — correct answers earn points, incorrect answers lose points">Apply Scores</button>
+                <button class="btn btn-green" id="apply-btn" onclick="applyScores()" title="Apply all graded scores — correct answers earn points, incorrect answers lose points">Apply Scores</button>
                 <button class="btn btn-outline" onclick="clearGrading()" title="Clear all correct/incorrect markings without applying scores">Reset</button>
             </div>
         </div>
@@ -415,6 +415,7 @@
             <h3 style="font-family:var(--fh);font-size:.8rem;color:var(--gold);text-transform:uppercase;margin-bottom:.5rem;">Running Standings</h3>
             <div id="rv-standings"></div>
         </div>
+        <button class="btn" id="end-game-btn" onclick="endGame()" style="margin-top:1rem;display:none;" title="Show a 'Thanks for Playing' screen on the projector">End Game</button>
     </div>
 </div>
 
@@ -523,6 +524,22 @@ function handleCSV(file) {
         const s=document.getElementById('csv-status');
         s.textContent=`R1: ${parsedCSV.categories.round1.join(', ')} | R2: ${parsedCSV.categories.round2.join(', ')}${parsedCSV.final?' | Final ✓':''}`;
         s.classList.remove('hidden'); document.getElementById('setup-err').textContent='';
+        // Validate board completeness
+        const b=parsedCSV; const warnings=[];
+        [1,2].forEach(r=>{
+            const cats=(r===1)?(b.categories.round1||[]):(b.categories.round2||[]);
+            if(cats.length<5)warnings.push('Round '+r+' has only '+cats.length+' of 5 categories.');
+            for(let col=0;col<5;col++){
+                for(let row=0;row<5;row++){
+                    const key='r'+r+'_c'+col+'_r'+row;
+                    if(!b.questions[key]&&col<cats.length)warnings.push('Round '+r+': missing question for '+cats[col]+' row '+(row+1));
+                }
+            }
+        });
+        if(!b.final)warnings.push('No Final Jeopardy question found (round 3).');
+        if(warnings.length>0){
+            s.innerHTML=s.textContent+'<br><span style="color:var(--red);font-size:.75rem;">⚠ '+warnings.join('<br>⚠ ')+'</span>';
+        }
     }; reader.readAsText(file);
 }
 function downloadTemplate() {
@@ -585,7 +602,7 @@ function syncView() {
         endIntBtn.style.display='none';
         stopIntCountdown();
     }
-    if(GS.phase==='final-reveal'||GS.phase==='final-rankings'||GS.phase==='recap'){
+    if(GS.phase==='final-reveal'||GS.phase==='final-rankings'||GS.phase==='recap'||GS.phase==='gameover'){
         if(!revealData){
             roomRef.child('finalReveal').once('value',s=>{
                 const fr=s.val();if(!fr||!fr.teams)return;
@@ -597,7 +614,8 @@ function syncView() {
         } else {
             showView('reveal-view');
         }
-    } else if(GS.phase==='board'||GS.phase==='round-transition'||GS.phase==='intermission'){showView('board-view');document.getElementById('dd-overlay').classList.add('hidden');renderBoard();}
+        document.getElementById('end-game-btn').style.display=(GS.phase==='recap'||GS.phase==='gameover')?'inline-block':'none';
+    } else if(GS.phase==='board'||GS.phase==='round-transition'||GS.phase==='intermission'){showView('board-view');document.getElementById('dd-overlay').classList.add('hidden');document.getElementById('end-game-btn').style.display='none';renderBoard();}
     renderBoardControl();
 }
 function renderBoardControl(){
@@ -760,10 +778,10 @@ function updateWagerProgress(){
 
 // ── Answer Reveal ──
 function revealAnswer() {
-    document.getElementById('ans-txt').classList.toggle('hidden');
-    document.getElementById('ans-lbl').classList.toggle('hidden');
-    const revealed=!document.getElementById('ans-txt').classList.contains('hidden');
-    roomRef.child('state/answerRevealed').set(revealed);
+    if(GS.accepting){alert('Close answers before revealing the answer.');return;}
+    document.getElementById('ans-txt').classList.remove('hidden');
+    document.getElementById('ans-lbl').classList.add('hidden');
+    roomRef.child('state/answerRevealed').set(true);
 }
 
 // ── Answers ──
@@ -833,7 +851,12 @@ function applyScores() {
     upd['history/q'+Date.now()]=hist;
     const newControl=determineBoardControl(grading,curAnswers);
     if(newControl)upd['state/boardControl']=newControl;
-    roomRef.update(upd).then(()=>{grading={};scoresApplied=true;renderAnswers();});
+    const applyBtn=document.getElementById('apply-btn');
+    if(applyBtn){applyBtn.disabled=true;applyBtn.textContent='Applying...';}
+    roomRef.update(upd).then(()=>{
+        grading={};scoresApplied=true;renderAnswers();
+        if(applyBtn){applyBtn.disabled=false;applyBtn.textContent='Apply Scores';applyBtn.style.boxShadow='0 0 12px var(--green)';setTimeout(()=>{applyBtn.style.boxShadow='';},2000);}
+    });
 }
 function determineBoardControl(gradingMap,answers){
     const current=GS.boardControl;
@@ -871,7 +894,7 @@ function completeAndReturn(){
 }
 function returnToBoard(){
     roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
-    roomRef.child('currentAnswers').remove();grading={};showView('board-view');stopLocalTimer();
+    roomRef.child('currentAnswers').remove();grading={};showView('board-view');stopLocalTimer();resetTimerDisp();
 }
 
 // ── Final ──
@@ -891,7 +914,7 @@ function startFinal(){
         document.getElementById('qv-dd').classList.add('hidden');
         document.getElementById('dd-team-info').classList.add('hidden');
         document.getElementById('qv-img').classList.add('hidden');
-        showFJRevealButton();
+        resetTimerDisp(); updateStatus(); showFJRevealButton();
     });
 }
 function revealFJQuestion(){
@@ -914,7 +937,9 @@ function renderScoreboard() {
         const av=avatarImg(t.avatar), col=avatarColor(t.avatar);
         const streak=t.streak||0;
         const streakBadge=streak>=3?`<span title="${streak} correct in a row" style="font-size:.7rem;color:#f97316;">🔥${streak}</span>`:'';
-        return`<div class="score-row"><span class="score-rank">${i+1}</span><span class="score-avatar">${av}</span><span class="score-name" style="color:${col}">${esc(t.name||k)} ${streakBadge}</span><span class="score-val">$${(t.score||0).toLocaleString()}</span><button class="adj-btn" onclick="adjScore('${k}')" title="Adjust score">±</button><button class="adj-btn" onclick="removeTeam('${k}')" title="Remove team" style="color:var(--red);border-color:var(--red);">✕</button></div>`;
+        const pc=t.players||1;
+        const pcBadge='<span style="font-size:.65rem;color:var(--text-muted);font-weight:400;margin-left:.3rem;" title="'+pc+' player'+(pc>1?'s':'')+' on team">'+pc+'p</span>';
+        return`<div class="score-row"><span class="score-rank">${i+1}</span><span class="score-avatar">${av}</span><span class="score-name" style="color:${col}">${esc(t.name||k)} ${streakBadge}${pcBadge}</span><span class="score-val">$${(t.score||0).toLocaleString()}</span><button class="adj-btn" onclick="adjScore('${k}')" title="Adjust score">±</button><button class="adj-btn" onclick="removeTeam('${k}')" title="Remove team" style="color:var(--red);border-color:var(--red);">✕</button></div>`;
     }).join('');
 }
 function adjScore(tk){const cur=(teams[tk]&&teams[tk].score)||0;const a=prompt(`Adjust ${teams[tk]?.name||tk} ($${cur}):`,0);if(a===null)return;const n=parseInt(a);if(!isNaN(n))roomRef.child('teams/'+tk+'/score').set(cur+n);}
@@ -1075,7 +1100,7 @@ function startIntCountdown(){
         const rem=Math.max(0,Math.ceil((GS.intermissionEnd-Date.now())/1000));
         const m=Math.floor(rem/60),s=rem%60;
         el.textContent=m+':'+String(s).padStart(2,'0');
-        if(rem<=0){el.textContent='0:00';stopIntCountdown();}
+        if(rem<=0){el.textContent='0:00';stopIntCountdown();endIntermission();}
     },500);
 }
 function stopIntCountdown(){if(intCountdownInterval)clearInterval(intCountdownInterval);intCountdownInterval=null;}
@@ -1099,8 +1124,21 @@ function stopLocalTimer(){if(timerInterval)clearInterval(timerInterval);timerInt
 function showRecap(){
     roomRef.child('state/phase').set('recap');
 }
+function endGame(){
+    roomRef.child('state/phase').set('gameover');
+}
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.isContentEditable)return;
+    const qv=document.getElementById('question-view');
+    if(!qv||qv.classList.contains('hidden'))return;
+    if(e.code==='Space'){e.preventDefault();toggleAccepting();}
+    else if(e.code==='KeyR'){e.preventDefault();revealAnswer();}
+    else if(e.code==='Enter'){e.preventDefault();completeAndReturn();}
+});
+
 resetTimerDisp();
 </script>
 </body>

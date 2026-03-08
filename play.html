@@ -40,6 +40,8 @@
         .avatar-img{width:36px;height:36px;border-radius:50%;object-fit:cover;}
         .avatar-opt .name{font-size:.65rem;color:var(--tsec);font-family:var(--fs);text-transform:uppercase;letter-spacing:.03em;}
         .avatar-opt.selected .name{color:var(--gold);}
+        .pc-btn{width:2.5rem;height:2.5rem;border-radius:10px;border:2px solid var(--border);background:var(--elev);color:var(--text);font-family:var(--fh);font-size:1.1rem;font-weight:700;cursor:pointer;transition:all .2s;}
+        .pc-btn.selected{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,.1);box-shadow:0 0 8px rgba(255,215,0,.2);}
 
         /* ═══ GAME ═══ */
         #game{flex:1;display:none;flex-direction:column;}
@@ -91,6 +93,8 @@
         .wager-locked .amt{font-family:var(--fh);font-size:1.5rem;font-weight:800;color:var(--gold);}
         .wager-locked .lbl{font-size:.8rem;color:var(--green);margin-top:.15rem;}
 
+        .offline-bar{background:var(--red);color:#fff;text-align:center;padding:.4rem;font-family:var(--fs);font-size:.8rem;font-weight:600;letter-spacing:.04em;}
+
         @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
         .fade-in{animation:fadeIn .25s ease;}
     </style>
@@ -100,7 +104,8 @@
 <!-- ═══ JOIN ═══ -->
 <div class="join" id="join-screen">
 <div class="join-card">
-    <h1>PDK NINE</h1>
+    <img src="Logo transparent.png" alt="PDK NINE" style="width:120px;height:auto;margin-bottom:.5rem;">
+    <h1 style="font-size:1.5rem;margin-top:0;">PDK NINE</h1>
     <div class="sub">Trivia Night — Join the Game</div>
     <div class="fg">
         <label>Room Code</label>
@@ -110,6 +115,16 @@
     <div class="fg">
         <label>Team Name</label>
         <input type="text" id="inp-name" placeholder="Your team name" maxlength="30" autocomplete="off" autocorrect="off">
+    </div>
+    <div class="fg">
+        <label>Players on Team</label>
+        <div style="display:flex;gap:.5rem;justify-content:center;" id="player-count-btns">
+            <button type="button" class="pc-btn selected" onclick="setPlayerCount(1)">1</button>
+            <button type="button" class="pc-btn" onclick="setPlayerCount(2)">2</button>
+            <button type="button" class="pc-btn" onclick="setPlayerCount(3)">3</button>
+            <button type="button" class="pc-btn" onclick="setPlayerCount(4)">4</button>
+            <button type="button" class="pc-btn" onclick="setPlayerCount(5)">5</button>
+        </div>
     </div>
     <div class="fg">
         <label>Choose Your Avatar</label>
@@ -122,8 +137,9 @@
 
 <!-- ═══ GAME ═══ -->
 <div id="game">
+    <div class="offline-bar hidden" id="offline-bar">Reconnecting...</div>
     <div class="game-hdr">
-        <span class="team-lbl"><span class="av" id="my-avatar"></span><span id="my-name"></span></span>
+        <span class="team-lbl"><img src="Logo transparent.png" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:.3rem;opacity:.7;"><span class="av" id="my-avatar"></span><span id="my-name"></span></span>
         <span class="score-badge" id="my-score">$0</span>
     </div>
     <div class="game-body">
@@ -155,8 +171,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="config.js"></script>
 <script>
-let roomCode=null,roomRef=null,teamKey=null,teamName=null,selectedAvatar=null;
-let GS={},cachedScore=0,lastQKey=null,hasSubmitted=false,wagerLocked=false;
+let roomCode=null,roomRef=null,teamKey=null,teamName=null,selectedAvatar=null,playerCount=1;
+let GS={},cachedScore=0,lastQKey=null,hasSubmitted=false,wagerLocked=false,answerCardShown=false;
 let phoneTimerInterval=null;
 
 // ── Avatar Grid ──
@@ -190,6 +206,11 @@ document.getElementById('inp-room').addEventListener('input',function(){
     }
 });
 
+function setPlayerCount(n){
+    playerCount=n;
+    document.querySelectorAll('.pc-btn').forEach((b,i)=>{b.classList.toggle('selected',i+1===n);});
+}
+
 // ── Join ──
 function joinRoom(){
     const code=document.getElementById('inp-room').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -206,11 +227,17 @@ function joinRoom(){
         if(!snap.exists()){document.getElementById('join-err').textContent='Room not found.';return;}
         roomRef.child('teams/'+teamKey).once('value',ts=>{
             if(ts.exists()){
-                roomRef.child('teams/'+teamKey).update({avatar:av.id,color:av.color});
+                const existingName=ts.val().name;
+                if(existingName&&existingName.toLowerCase()!==teamName.toLowerCase()){
+                    teamKey=teamKey+'_'+Math.random().toString(36).slice(2,5);
+                    roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,avatar:av.id,color:av.color,players:playerCount});
+                } else {
+                    roomRef.child('teams/'+teamKey).update({avatar:av.id,color:av.color,players:playerCount});
+                }
             } else {
-                roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,avatar:av.id,color:av.color});
+                roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,avatar:av.id,color:av.color,players:playerCount});
             }
-            try{sessionStorage.setItem('trivia_session',JSON.stringify({roomCode,teamName,teamKey,avatar:av.id}));}catch(e){}
+            try{sessionStorage.setItem('trivia_session',JSON.stringify({roomCode,teamName,teamKey,avatar:av.id,players:playerCount}));}catch(e){}
             enterGame(av);
         });
     });
@@ -229,7 +256,7 @@ function enterGame(av){
     try{
         const saved=JSON.parse(sessionStorage.getItem('trivia_session')||'null');
         if(saved&&saved.roomCode&&saved.teamKey){
-            roomCode=saved.roomCode;teamName=saved.teamName;teamKey=saved.teamKey;selectedAvatar=saved.avatar;
+            roomCode=saved.roomCode;teamName=saved.teamName;teamKey=saved.teamKey;selectedAvatar=saved.avatar;playerCount=saved.players||1;
             roomRef=db.ref('trivia-rooms/'+roomCode);
             roomRef.child('state').once('value',snap=>{
                 if(!snap.exists())return;
@@ -260,7 +287,7 @@ function setupListeners(){
 
         roomRef.child('state').on('value',snap=>{
             const s=snap.val();if(!s)return;GS=s;
-            if(s.questionKey!==lastQKey){lastQKey=s.questionKey;hasSubmitted=false;wagerLocked=false;resetWagerUI();}
+            if(s.questionKey!==lastQKey){lastQKey=s.questionKey;hasSubmitted=false;wagerLocked=false;answerCardShown=false;resetWagerUI();try{navigator.vibrate(200);}catch(e){}}
             render();startPhoneTimer();
         });
         roomRef.child('teams/'+teamKey).on('value',snap=>{
@@ -272,6 +299,10 @@ function setupListeners(){
             if(snap.exists()&&snap.val()&&snap.val().answer){hasSubmitted=true;document.getElementById('answer-echo').textContent='Your answer: "'+snap.val().answer+'"';}
             render();
         });
+    });
+    db.ref('.info/connected').on('value',snap=>{
+        const bar=document.getElementById('offline-bar');
+        if(bar)bar.classList.toggle('hidden',snap.val()===true);
     });
 }
 
@@ -285,7 +316,7 @@ function render(){
     document.getElementById('g-dd').classList.toggle('hidden',!dailyDouble);
 
     const qtc=document.getElementById('q-txt-card');
-    if(questionText&&phase!=='board'&&phase!=='round-transition'&&phase!=='intermission'&&phase!=='final-reveal'&&phase!=='final-rankings'&&phase!=='recap'){qtc.classList.remove('hidden');document.getElementById('g-qtxt').textContent=questionText;}
+    if(questionText&&phase!=='board'&&phase!=='round-transition'&&phase!=='intermission'&&phase!=='final-reveal'&&phase!=='final-rankings'&&phase!=='recap'&&phase!=='gameover'){qtc.classList.remove('hidden');document.getElementById('g-qtxt').textContent=questionText;}
     else qtc.classList.add('hidden');
 
     const cards=['wait-card','answer-card','submitted-card','dd-spec-card','wager-card','phone-timer'];
@@ -299,9 +330,9 @@ function render(){
     );
     const isDDSpectator=dailyDouble && ddTeam && ddTeam !== teamKey;
 
-    if(phase==='final-reveal'||phase==='final-rankings'||phase==='recap'){
+    if(phase==='final-reveal'||phase==='final-rankings'||phase==='recap'||phase==='gameover'){
         show('wait-card');
-        document.getElementById('wait-msg').textContent=phase==='recap'?'Check out the game recap on the big screen!':phase==='final-rankings'?'Final standings are on the big screen!':'Final scores are being revealed — look at the big screen!';
+        document.getElementById('wait-msg').textContent=phase==='gameover'?'Thanks for playing! See you next time!':phase==='recap'?'Check out the game recap on the big screen!':phase==='final-rankings'?'Final standings are on the big screen!':'Final scores are being revealed — look at the big screen!';
     } else if(phase==='intermission'){
         show('wait-card');
         document.getElementById('wait-msg').textContent='Intermission — grab a snack and stretch your legs!';
@@ -326,7 +357,7 @@ function render(){
         show('submitted-card');
     } else if(accepting){
         show('answer-card'); show('phone-timer');
-        document.getElementById('answer-input').value='';
+        if(!answerCardShown){document.getElementById('answer-input').value='';answerCardShown=true;try{navigator.vibrate([100,50,100]);}catch(e){}}
         document.getElementById('submit-btn').disabled=false;
         document.getElementById('submit-btn').textContent='Submit Answer';
     } else if(phase==='question'){
@@ -349,6 +380,7 @@ function startPhoneTimer(){
         const m=Math.floor(rem/60),s=rem%60;
         d.textContent=m+':'+String(s).padStart(2,'0');
         d.classList.toggle('danger',rem<=5);
+        if(rem===5)try{navigator.vibrate(300);}catch(e){}
         if(rem<=0)clearInterval(phoneTimerInterval);
     },250);
 }
