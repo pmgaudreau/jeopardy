@@ -162,27 +162,26 @@
         .rk-crown{font-size:2.5vw;margin-right:.3vw;}
 
         /* ═══ GAME RECAP ═══ */
-        #recap-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:2.5vw 3vw;background:var(--bg);overflow-y:auto;}
-        .recap-title{font-family:var(--fh);font-size:3.5vw;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;text-shadow:0 0 50px rgba(255,215,0,.35);margin-bottom:2vw;}
-        .recap-highlights{width:85%;max-width:1200px;flex:1;overflow:hidden;position:relative;mask-image:linear-gradient(to bottom,transparent 0%,black 8%,black 92%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,transparent 0%,black 8%,black 92%,transparent 100%);}
-        .recap-scroll{display:flex;flex-direction:column;gap:1.5vw;animation:recapScroll 30s linear infinite;}
-        .recap-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5vw 2vw;display:flex;align-items:center;gap:1.5vw;animation:recapSlide .6s ease both;position:relative;overflow:hidden;}
-        .recap-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;}
+        #recap-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:2vw 3vw;background:var(--bg);overflow:hidden;}
+        .recap-title{font-family:var(--fh);font-size:4vw;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;text-shadow:0 0 50px rgba(255,215,0,.35);margin-bottom:1.5vw;flex-shrink:0;}
+        .recap-highlights{width:90%;max-width:1400px;flex:1;overflow:hidden;position:relative;mask-image:linear-gradient(to bottom,transparent 0%,black 6%,black 94%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,transparent 0%,black 6%,black 94%,transparent 100%);}
+        .recap-scroll{display:flex;flex-direction:column;gap:2vw;will-change:transform;}
+        .recap-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2vw 2.5vw;display:flex;align-items:center;gap:2vw;position:relative;overflow:hidden;flex-shrink:0;}
+        .recap-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:6px;}
         .recap-card.gold-accent::before{background:var(--gold);}
         .recap-card.green-accent::before{background:var(--green);}
         .recap-card.red-accent::before{background:var(--red);}
         .recap-card.blue-accent::before{background:var(--blue);}
-        .recap-icon{font-size:3vw;flex-shrink:0;width:4vw;text-align:center;}
+        .recap-icon{font-size:4.5vw;flex-shrink:0;width:5vw;text-align:center;}
         .recap-body{flex:1;}
-        .recap-label{font-family:var(--fs);font-size:1vw;color:var(--tmut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3vw;}
-        .recap-value{font-family:var(--fh);font-size:1.8vw;color:var(--text);font-weight:700;}
+        .recap-label{font-family:var(--fs);font-size:1.4vw;color:var(--tmut);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.4vw;font-weight:600;}
+        .recap-value{font-family:var(--fh);font-size:2.6vw;color:var(--text);font-weight:700;}
         .recap-value .hl{color:var(--gold);}
         .recap-value .hl-green{color:var(--green);}
         .recap-value .hl-red{color:var(--red);}
-        .recap-sub{font-family:var(--fb);font-size:.9vw;color:var(--tsec);margin-top:.2vw;}
+        .recap-sub{font-family:var(--fb);font-size:1.2vw;color:var(--tsec);margin-top:.3vw;}
         .recap-avatar{flex-shrink:0;}
-        .recap-avatar img{width:4vw;height:4vw;border-radius:50%;object-fit:cover;border:3px solid var(--gold-dim);}
-        @keyframes recapSlide{from{opacity:0;transform:translateX(-40px);}to{opacity:1;transform:translateX(0);}}
+        .recap-avatar img{width:5.5vw;height:5.5vw;border-radius:50%;object-fit:cover;border:3px solid var(--gold-dim);}
 
         /* ═══ QR OVERLAY ═══ */
         #qr-overlay{
@@ -930,24 +929,28 @@ function buildHighlights(entries,el){
         sub:'Gained $'+mostImprovedAmt.toLocaleString()+' in the second half'
     });
 
-    el.innerHTML=cards.map(c=>{
+    const cardHtml=cards.map(c=>{
         const avHtml=c.avatar?'<div class="recap-avatar">'+getAvatar(c.avatar)+'</div>':'';
         return'<div class="recap-card '+c.accent+'">'+
             '<div class="recap-icon">'+c.icon+'</div>'+
-            '<div class="recap-body"><div class="recap-label">'+esc(c.label)+'</div><div class="recap-value">'+c.value+'</div><div class="recap-sub">'+c.sub+'</div></div>'+
+            '<div class="recap-body"><div class="recap-label">'+c.label+'</div><div class="recap-value">'+c.value+'</div><div class="recap-sub">'+c.sub+'</div></div>'+
             avHtml+'</div>';
     }).join('');
 
-    const original=el.innerHTML;
-    el.innerHTML=original+original;
+    el.innerHTML=cardHtml+cardHtml;
 
     requestAnimationFrame(()=>{
-        const scrollH=el.scrollHeight/2;
-        el.style.animation='none';
-        const style=document.createElement('style');
-        style.textContent='@keyframes recapScroll{0%{transform:translateY(0)}100%{transform:translateY(-'+scrollH+'px)}}';
-        document.head.appendChild(style);
-        el.style.animation='recapScroll '+(cards.length*4)+'s linear infinite';
+        requestAnimationFrame(()=>{
+            const scrollH=el.scrollHeight/2;
+            const speed=40;
+            const dur=scrollH/speed;
+            document.getElementById('recap-scroll-style')?.remove();
+            const style=document.createElement('style');
+            style.id='recap-scroll-style';
+            style.textContent='@keyframes recapScroll{0%{transform:translateY(0)}100%{transform:translateY(-'+scrollH+'px)}}';
+            document.head.appendChild(style);
+            el.style.animation='recapScroll '+dur+'s linear infinite';
+        });
     });
 }
 
