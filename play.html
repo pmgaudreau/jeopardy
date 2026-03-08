@@ -287,7 +287,24 @@ function setupListeners(){
 
         roomRef.child('state').on('value',snap=>{
             const s=snap.val();if(!s)return;GS=s;
-            if(s.questionKey!==lastQKey){lastQKey=s.questionKey;hasSubmitted=false;hasPassed=false;wagerLocked=false;answerCardShown=false;resetWagerUI();try{navigator.vibrate(200);}catch(e){}}
+            if(s.questionKey!==lastQKey){
+                lastQKey=s.questionKey;hasSubmitted=false;hasPassed=false;wagerLocked=false;answerCardShown=false;resetWagerUI();
+                try{navigator.vibrate(200);}catch(e){}
+                if(s.questionKey&&teamKey){
+                    roomRef.child('currentAnswers/'+teamKey).once('value',as=>{
+                        if(as.exists()&&as.val()){
+                            const v=as.val();
+                            if(v.passed){hasSubmitted=true;hasPassed=true;}
+                            else if(v.answer){hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your answer: "'+v.answer+'"';}
+                        }
+                        render();
+                    });
+                    roomRef.child('teams/'+teamKey).once('value',ts=>{
+                        const t=ts.val();
+                        if(t&&t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
+                    });
+                }
+            }
             render();startPhoneTimer();
         });
         roomRef.child('teams/'+teamKey).on('value',snap=>{

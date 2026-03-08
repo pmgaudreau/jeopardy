@@ -451,7 +451,7 @@
 let roomCode = null, roomRef = null;
 let GS = { round:1, phase:'board', category:'', value:0, questionText:'', accepting:false, dailyDouble:false, ddTeam:'', questionKey:'', showQR:false, timerEnd:0, timerRunning:false, answerRevealed:false, wageringOpen:false, imageUrl:'' };
 let teams = {}, curAnswers = {}, grading = {}, boardQ = {}, parsedCSV = null, scoresApplied = false;
-let timerInterval = null, timerSec = 30, roundTransTimeout = null;
+let timerInterval = null, timerSec = 30, roundTransTimeout = null, lastQuestionKey = null;
 const VALS = { 1:[200,400,600,800,1000], 2:[400,800,1200,1600,2000] };
 
 function showView(id) { document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); document.getElementById(id).classList.add('active'); }
@@ -597,7 +597,14 @@ function syncView() {
             showView('reveal-view');
         }
         document.getElementById('end-game-btn').style.display=(GS.phase==='recap'||GS.phase==='gameover')?'inline-block':'none';
-    } else if(GS.phase==='board'||GS.phase==='round-transition'||GS.phase==='intermission'){showView('board-view');document.getElementById('end-game-btn').style.display='none';renderBoard();}
+    } else if(GS.phase==='board'||GS.phase==='round-transition'||GS.phase==='intermission'){
+        const onQ=document.getElementById('question-view').classList.contains('active');
+        if(onQ&&lastQuestionKey){
+            console.warn('syncView blocked unexpected switch from question to board (phase='+GS.phase+')');
+        } else {
+            showView('board-view');document.getElementById('end-game-btn').style.display='none';renderBoard();
+        }
+    }
     renderBoardControl();
 }
 function renderBoardControl(){
@@ -631,7 +638,7 @@ function confirmEndRound() {
     const nextRound = GS.round + 1;
     if (nextRound > 3) return;
     roomRef.child('state').update({round:nextRound,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
-    roomRef.child('currentAnswers').remove(); grading={};
+    roomRef.child('currentAnswers').remove(); grading={}; lastQuestionKey=null;
     if(roundTransTimeout)clearTimeout(roundTransTimeout);
     roundTransTimeout=setTimeout(()=>{ roundTransTimeout=null; roomRef.child('state/phase').set('board'); }, 8000);
 }
@@ -675,12 +682,16 @@ function selQ(key) {
 let pendingQuestion=null;
 function activateQ(key,q,isDD,ddTk) {
     if(roundTransTimeout){clearTimeout(roundTransTimeout);roundTransTimeout=null;}
+    const isReentry=(key===lastQuestionKey);
     const val=q.value;
     const hideQ=isDD;
     pendingQuestion=hideQ?{questionText:q.questionText,imageUrl:q.imageUrl||''}:null;
-    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD});
-    roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false;
-    if(isDD){resetWagers([ddTk]);}
+    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isReentry?false:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD});
+    if(!isReentry){
+        roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false;
+        if(isDD){resetWagers([ddTk]);}
+    }
+    lastQuestionKey=key;
     showView('question-view');
     const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
     document.getElementById('qv-rl').textContent=rl[q.round]||'';
@@ -875,19 +886,34 @@ function completeAndReturn(fromKeyboard){
     if(fromKeyboard&&answered.length===0&&!scoresApplied){
         if(!confirm('No answers were submitted. Return to the board?'))return;
     }
-    const k=GS.questionKey;if(k&&k!=='final')roomRef.child('board/'+k+'/completed').set(true);returnToBoard();
+    const k=GS.questionKey;if(k&&k!=='final')roomRef.child('board/'+k+'/completed').set(true);
+    roomRef.child('currentAnswers').remove();grading={};scoresApplied=false;lastQuestionKey=null;
+    goToBoard();
 }
 function returnToBoard(){
+    const hasUnscored=Object.keys(curAnswers).length>0&&!scoresApplied;
+    if(hasUnscored){
+        if(!confirm('There are unscored answers. Leave this question?\n\nYou can re-select it from the board to continue.'))return;
+    }
+    goToBoard();
+}
+function goToBoard(){
     roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
-    roomRef.child('currentAnswers').remove();grading={};showView('board-view');stopLocalTimer();resetTimerDisp();
+    showView('board-view');stopLocalTimer();resetTimerDisp();
 }
 
 // ── Final ──
 function startFinal(){
     roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
-        resetWagers(Object.keys(teams));
-        pendingQuestion={questionText:f.questionText,imageUrl:f.imageUrl||''};
-        roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:true,imageUrl:'',fjQuestionRevealed:false});
+        const isReentry=(lastQuestionKey==='final');
+        if(!isReentry){
+            resetWagers(Object.keys(teams));
+            roomRef.child('currentAnswers').remove();grading={};scoresApplied=false;
+            pendingQuestion={questionText:f.questionText,imageUrl:f.imageUrl||''};
+        }
+        lastQuestionKey='final';
+        const wasRevealed=isReentry&&!pendingQuestion;
+        roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:wasRevealed?f.questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:isReentry?false:true,imageUrl:wasRevealed?(f.imageUrl||''):'',fjQuestionRevealed:wasRevealed});
         showView('question-view');
         document.getElementById('qv-rl').textContent='Final Jeopardy';
         document.getElementById('qv-cat').textContent=f.category;
