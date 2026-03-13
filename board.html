@@ -77,6 +77,7 @@
         .qd-timer .bar.danger{background:var(--red);}
         .qd-status{font-family:var(--fs);font-size:1.8vw;color:var(--green);margin-top:1vw;letter-spacing:.06em;text-transform:uppercase;}
         .qd-answer-count{font-family:var(--fs);font-size:1.6vw;color:var(--tsec);margin-top:.5vw;letter-spacing:.04em;}
+        .qd-dd-banner{font-family:var(--fh);font-size:2.2vw;color:var(--gold);background:rgba(255,215,0,.12);border:2px solid var(--gold);border-radius:12px;padding:.8vw 2vw;margin-bottom:2vw;letter-spacing:.05em;}
 
         /* ═══ DAILY DOUBLE ═══ */
         #dd-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;}
@@ -247,6 +248,7 @@
 
 <!-- Active question -->
 <div id="question-display" class="hidden">
+    <div class="qd-dd-banner hidden" id="qd-dd-banner"></div>
     <div class="qd-cat" id="qd-cat"></div>
     <div class="qd-val" id="qd-val"></div>
     <div class="qd-text" id="qd-text"></div>
@@ -571,6 +573,12 @@ function showDailyDouble(){
 // ═══ QUESTION ═══
 function showQuestion(){
     showScreen('question-display');
+    const ddBanner=document.getElementById('qd-dd-banner');
+    if(GS.dailyDouble&&GS.ddTeam){
+        const tn=teams[GS.ddTeam]?teams[GS.ddTeam].name:GS.ddTeam;
+        ddBanner.textContent='Only '+tn+' can answer (Daily Double)';
+        ddBanner.classList.remove('hidden');
+    }else{ddBanner.classList.add('hidden');ddBanner.textContent='';}
     document.getElementById('qd-cat').textContent=GS.category||'';
     document.getElementById('qd-val').textContent=GS.value?'$'+GS.value.toLocaleString():'WAGER';
     document.getElementById('qd-text').textContent=GS.questionText||'';
@@ -583,6 +591,12 @@ function showQuestion(){
     updateQuestion();
 }
 function updateQuestion(){
+    const ddBanner=document.getElementById('qd-dd-banner');
+    if(GS.dailyDouble&&GS.ddTeam){
+        const tn=teams[GS.ddTeam]?teams[GS.ddTeam].name:GS.ddTeam;
+        ddBanner.textContent='Only '+tn+' can answer (Daily Double)';
+        ddBanner.classList.remove('hidden');
+    }else{ddBanner.classList.add('hidden');ddBanner.textContent='';}
     document.getElementById('qd-text').textContent=GS.questionText||'';
     const img=document.getElementById('qd-img');
     if(GS.imageUrl){img.src=GS.imageUrl;img.classList.remove('hidden');}else{img.classList.add('hidden');img.src='';}

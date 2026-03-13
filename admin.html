@@ -793,7 +793,7 @@ function updateStatus() {
     if(GS.accepting){btn.textContent='Stop Clock & Close Answers';btn.className='toggle-accept closed';btn.title='Stop the timer and prevent teams from submitting answers';btn.disabled=false;pill.textContent='ACCEPTING';pill.className='status-pill a';}
     else{
         const {eligible,locked}=getWagerEligible();
-        const wagersReady=eligible.length===0||locked.length===eligible.length;
+        const wagersReady=eligible.length===0||locked.length===eligible.length||(isDD&&GS.fjQuestionRevealed);
         btn.disabled=!wagersReady;
         btn.textContent='Open for Answers';btn.className='toggle-accept open';
         btn.title=!wagersReady?(isDD?'Lock in the Daily Double wager first':'Lock in all wagers first'):'Start the timer and allow teams to submit answers';
