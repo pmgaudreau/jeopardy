@@ -371,12 +371,13 @@
                 <button class="toggle-accept open" id="toggle-btn" onclick="toggleAccepting()">Open for Answers</button>
             </div>
         </div>
-        <div class="qcard">
+        <div class="qcard" id="answer-qcard">
             <h3>Answer</h3>
             <div class="ans-reveal" id="ans-reveal" onclick="revealAnswer()">
                 <div class="lbl" id="ans-lbl">Click to reveal answer</div>
                 <div class="atxt hidden" id="ans-txt"></div>
             </div>
+            <div class="ans-dd-ref hidden" id="ans-dd-ref" style="font-size:.9rem;color:var(--text-muted);margin-top:.5rem;"></div>
         </div>
         <div class="qcard">
             <div class="ans-header"><h3>Team Answers</h3><span class="cnt-badge" id="ans-count">0</span><span style="font-size:.75rem;color:var(--text-muted);margin-left:.5rem;" id="ans-of-total"></span></div>
@@ -746,6 +747,8 @@ function activateQ(key,q,isDD,ddTk) {
     document.getElementById('ans-txt').textContent=q.answerText;
     document.getElementById('ans-txt').classList.add('hidden');
     document.getElementById('ans-lbl').classList.remove('hidden');
+    const ddRef=document.getElementById('ans-dd-ref');
+    if(ddRef){ddRef.classList.toggle('hidden',!isDD);ddRef.textContent=isDD?'For grading: "'+q.answerText+'"':'';}
     document.getElementById('qv-dd').classList.toggle('hidden',!isDD);
     document.getElementById('dd-team-info').classList.toggle('hidden',!isDD);
     if(isDD) document.getElementById('dd-team-name').textContent=(teams[ddTk]&&teams[ddTk].name)||ddTk;
@@ -802,11 +805,22 @@ function updateStatus() {
         btn.title=!wagersReady?(isDD?'Lock in the Daily Double wager first':'Lock in all wagers first'):'Start the timer and allow teams to submit answers';
         const has=Object.keys(curAnswers).length>0;pill.textContent=has?'CLOSED — GRADE':'WAITING';pill.className=has?'status-pill c':'status-pill w';
     }
-    const ar=document.getElementById('ans-reveal'),albl=document.getElementById('ans-lbl');
+    const ar=document.getElementById('ans-reveal'),albl=document.getElementById('ans-lbl'),atxt=document.getElementById('ans-txt');
     if(ar&&albl&&!GS.answerRevealed){
-        const canReveal=GS.answersWereOpened&&!GS.accepting;
-        ar.classList.toggle('disabled',!canReveal);
-        albl.textContent=canReveal?'Click to reveal answer':'Open for answers first to reveal';
+        if(isDD){
+            ar.classList.add('disabled');
+            ar.onclick=null;
+            albl.textContent='Daily Double — grade above, then use Show Daily Double Reveal';
+            if(atxt){atxt.classList.add('hidden');atxt.textContent='';}
+        }else{
+            ar.onclick=revealAnswer;
+            const canReveal=GS.answersWereOpened&&!GS.accepting;
+            ar.classList.toggle('disabled',!canReveal);
+            albl.textContent=canReveal?'Click to reveal answer':'Open for answers first to reveal';
+            if(atxt)atxt.classList.add('hidden');
+            const ddRef=document.getElementById('ans-dd-ref');
+            if(ddRef)ddRef.classList.add('hidden');
+        }
     }
     wBtn.classList.add('hidden');
     const isFJ=GS.round===3&&GS.questionKey==='final';
@@ -835,6 +849,7 @@ function updateWagerProgress(){
 
 // ── Answer Reveal ──
 function revealAnswer() {
+    if(GS.dailyDouble&&GS.ddTeam){alert('Daily Double: Grade and apply scores, then use Show Daily Double Reveal.');return;}
     if(GS.accepting){alert('Close answers before revealing the answer.');return;}
     if(!GS.answersWereOpened){alert('Open for answers first before revealing.');return;}
     document.getElementById('ans-txt').classList.remove('hidden');
@@ -1126,10 +1141,10 @@ function startDDReveal() {
     const t = teams[ddTk];
     const wager = t.wager || 0;
     const passed = curAnswers[ddTk] && curAnswers[ddTk].passed;
-    const correct = passed ? false : (grading[ddTk] === true);
+    const correct = passed ? false : (scoresApplied ? (appliedPoints[ddTk] > 0) : (grading[ddTk] === true));
     const answer = passed ? '(passed)' : ((curAnswers[ddTk] && curAnswers[ddTk].answer) || '(no answer)');
     const currentScore = t.score || 0;
-    const preScore = scoresApplied ? (passed ? currentScore : (correct ? currentScore - wager : currentScore + wager)) : currentScore;
+    const preScore = currentScore;
     const finalScore = passed ? currentScore : (correct ? currentScore + wager : currentScore - wager);
     const ddRevealData = {
         team: { key: ddTk, name: t.name || ddTk, avatar: t.avatar || '', preScore, wager, answer, correct, finalScore },
@@ -1169,12 +1184,15 @@ function startFinalReveal() {
     renderRevealAdmin();
 }
 
+let ddRevealCompleted = false;
 function advanceDDReveal() {
     roomRef.child('ddReveal').once('value', s => {
         const d = s.val();
         if (!d || !d.team) return;
         let stage = (d.stage || 1) + 1;
         if (stage > 5) {
+            if (ddRevealCompleted) return;
+            ddRevealCompleted = true;
             const k = GS.questionKey;
             if (k && k !== 'final') roomRef.child('board/' + k + '/completed').set(true);
             if (GS.dailyDouble && GS.ddTeam) resetWagers([GS.ddTeam]);
@@ -1186,6 +1204,7 @@ function advanceDDReveal() {
             grading = {};
             scoresApplied = false;
             appliedPoints = {};
+            ddRevealCompleted = false;
             showView('board-view');
             renderBoard();
             return;
@@ -1366,7 +1385,7 @@ document.addEventListener('keydown',e=>{
     const qv=document.getElementById('question-view');
     if(!qv||!qv.classList.contains('active'))return;
     if(e.code==='Space'){e.preventDefault();toggleAccepting();}
-    else if(e.code==='KeyR'){e.preventDefault();revealAnswer();}
+    else if(e.code==='KeyR'&&!(GS.dailyDouble&&GS.ddTeam)){e.preventDefault();revealAnswer();}
     else if(e.code==='Enter'){e.preventDefault();completeAndReturn(true);}
 });
 
