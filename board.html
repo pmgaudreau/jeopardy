@@ -405,7 +405,7 @@ function startListening(){
     roomRef.child('state').on('value',s=>{const v=s.val();if(!v)return;GS=v;onStateChange();if(GS.phase==='question'){showScreen('question-display');updateQuestion();}});
     roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScores();renderLobbyTeams();renderBoardControl();});
     roomRef.child('currentAnswers').on('value',s=>{answerCount=s.val()?Object.keys(s.val()).length:0;updateAnswerCount();});
-    roomRef.child('board').on('value',s=>{boardQ=s.val()||{};if(GS.phase==='board')renderGrid();});
+    roomRef.child('board').on('value',s=>{boardQ=s.val()||{};if(GS.phase==='board')renderGrid();else if(GS.phase==='question')updateQuestion();});
     roomRef.child('categories').on('value',s=>{categories=s.val()||{};if(GS.phase==='board')renderGrid();});
     roomRef.child('finalReveal').on('value',s=>{finalReveal=s.val();if(GS.phase==='final-reveal')renderFinalReveal();if(GS.phase==='final-rankings')showFinalRankings();});
     roomRef.child('ddReveal').on('value',s=>{ddReveal=s.val();if(GS.phase==='dd-reveal')renderDDReveal();});
@@ -572,6 +572,14 @@ function showDailyDouble(){
 }
 
 // ═══ QUESTION ═══
+function getClueForDisplay(){
+    let t=GS.questionText||'', u=GS.imageUrl||'';
+    if(!t&&GS.questionKey&&GS.questionKey!=='final'){
+        const q=boardQ[GS.questionKey];
+        if(q){t=q.questionText||'';u=u||(q.imageUrl||'');}
+    }
+    return{t,u};
+}
 function showQuestion(){
     showScreen('question-display');
     const ddBanner=document.getElementById('qd-dd-banner');
@@ -582,9 +590,10 @@ function showQuestion(){
     }else{ddBanner.classList.add('hidden');ddBanner.textContent='';}
     document.getElementById('qd-cat').textContent=GS.category||'';
     document.getElementById('qd-val').textContent=GS.value?'$'+GS.value.toLocaleString():'WAGER';
-    document.getElementById('qd-text').textContent=GS.questionText||'';
+    const clue=getClueForDisplay();
+    document.getElementById('qd-text').textContent=clue.t;
     const img=document.getElementById('qd-img');
-    if(GS.imageUrl){img.src=GS.imageUrl;img.classList.remove('hidden');}else{img.classList.add('hidden');img.src='';}
+    if(clue.u){img.src=clue.u;img.classList.remove('hidden');}else{img.classList.add('hidden');img.src='';}
     document.getElementById('qd-answer').textContent='';
     document.getElementById('qd-answer').classList.remove('show');
     document.getElementById('qd-timer').classList.add('hidden');
@@ -598,9 +607,19 @@ function updateQuestion(){
         ddBanner.textContent='Only '+tn+' can respond (Daily Double)';
         ddBanner.classList.remove('hidden');
     }else{ddBanner.classList.add('hidden');ddBanner.textContent='';}
-    document.getElementById('qd-text').textContent=GS.questionText||'';
+    let clueText=GS.questionText||'';
+    let clueImg=GS.imageUrl||'';
+    if(!clueText&&GS.questionKey){
+        if(GS.questionKey==='final'){
+            roomRef.child('final').once('value',s=>{const f=s.val();if(f){document.getElementById('qd-text').textContent=f.questionText||'';const i=document.getElementById('qd-img');if(f.imageUrl){i.src=f.imageUrl;i.classList.remove('hidden');}else{i.classList.add('hidden');i.src='';}}});
+        }else{
+            const q=boardQ[GS.questionKey];
+            if(q){clueText=q.questionText||'';clueImg=clueImg||(q.imageUrl||'');}
+        }
+    }
+    document.getElementById('qd-text').textContent=clueText;
     const img=document.getElementById('qd-img');
-    if(GS.imageUrl){img.src=GS.imageUrl;img.classList.remove('hidden');}else{img.classList.add('hidden');img.src='';}
+    if(clueImg){img.src=clueImg;img.classList.remove('hidden');}else{img.classList.add('hidden');img.src='';}
     const ans=document.getElementById('qd-answer');
     if(GS.answerRevealed){
         if(GS.answerText){ans.textContent=GS.answerText;ans.classList.add('show');}
