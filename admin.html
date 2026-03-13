@@ -645,6 +645,8 @@ function syncView() {
         } else {
             showView('board-view');document.getElementById('end-game-btn').style.display='none';renderBoard();
         }
+    } else if(GS.phase==='question'){
+        updateStatus();
     }
     renderBoardControl();
 }
