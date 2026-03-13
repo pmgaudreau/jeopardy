@@ -962,9 +962,6 @@ function applyScores() {
         else scoreSnap[tk]=teams[tk].score||0;
     });
     hist.scores=scoreSnap;
-    Object.keys(teams).forEach(tk=>{
-        if(upd['teams/'+tk+'/score']===undefined&&(isDD&&tk===GS.ddTeam||isFJ))upd['teams/'+tk+'/score']=scoreSnap[tk];
-    });
     upd['history/q'+Date.now()]=hist;
     const newControl=determineBoardControl(grading,curAnswers);
     if(newControl)upd['state/boardControl']=newControl;
@@ -1163,9 +1160,8 @@ function startDDReveal() {
     const passed = curAnswers[ddTk] && curAnswers[ddTk].passed;
     const correct = passed ? false : (scoresApplied ? (appliedPoints[ddTk] > 0) : (grading[ddTk] === true));
     const answer = passed ? '(passed)' : ((curAnswers[ddTk] && curAnswers[ddTk].answer) || '(no answer)');
-    const currentScore = t.score || 0;
-    const preScore = currentScore;
-    const finalScore = passed ? currentScore : (correct ? currentScore + wager : currentScore - wager);
+    const preScore = t.score || 0;
+    const finalScore = passed ? preScore - wager : (correct ? preScore + wager : preScore - wager);
     const ddRevealData = {
         team: { key: ddTk, name: t.name || ddTk, avatar: t.avatar || '', preScore, wager, answer, correct, finalScore },
         questionText: GS.questionText || '', category: GS.category || '', value: GS.value || 0,
