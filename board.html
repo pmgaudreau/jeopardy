@@ -612,7 +612,7 @@ function updateQuestion(){
     const timerEl=document.getElementById('qd-timer');
     const acEl=document.getElementById('qd-answer-count');
     if(GS.accepting){
-        status.textContent='ANSWERS OPEN';status.style.color='var(--green)';status.classList.remove('hidden');
+        status.textContent='RESPONSES OPEN';status.style.color='var(--green)';status.classList.remove('hidden');
     } else if(GS.answerRevealed){
         status.classList.add('hidden');
         timerEl.classList.add('hidden');

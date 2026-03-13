@@ -338,7 +338,7 @@
             <div id="qv-dd" class="hidden"><span class="dd-badge">★ DAILY DOUBLE ★</span></div>
         </div>
         <div class="qcard">
-            <h3>Question</h3>
+            <h3>The Clue</h3>
             <div class="q-text" id="qv-qtxt"></div>
             <img id="qv-img" class="hidden" style="max-width:100%;max-height:300px;border-radius:var(--radius);margin-top:.75rem;display:block;margin-left:auto;margin-right:auto;" alt="Question image">
         </div>
@@ -346,7 +346,7 @@
             <div id="dd-team-info" class="hidden" style="text-align:center;margin-bottom:.75rem;">
                 <span style="color:var(--text-muted);font-size:.85rem;">Only </span>
                 <span style="color:var(--gold);font-weight:700;" id="dd-team-name"></span>
-                <span style="color:var(--text-muted);font-size:.85rem;"> can answer (Daily Double)</span>
+                <span style="color:var(--text-muted);font-size:.85rem;"> can respond (Daily Double)</span>
             </div>
             <div class="timer-section">
                 <div class="timer-display" id="timer-display">0:30</div>
@@ -365,26 +365,26 @@
             </div>
             <div id="wager-progress" class="hidden" style="text-align:center;margin-bottom:.5rem;font-size:.8rem;color:var(--text-sec);"><span id="wager-count-text"></span><br><button class="btn btn-outline btn-sm" onclick="reopenWagers()" title="Clear all wagers and re-open for teams to enter new wagers" style="margin-top:.4rem;">Re-open Wagers</button></div>
             <div class="toggle-bar hidden" id="fj-reveal-q-bar" style="margin-bottom:.4rem;">
-                <button class="btn btn-gold btn-lg" onclick="revealFJQuestion()" title="Send the question to all screens — wagers should be locked first" style="width:100%;">Reveal Question to Teams</button>
+                <button class="btn btn-gold btn-lg" onclick="revealFJQuestion()" title="Send the clue to all screens — wagers should be locked first" style="width:100%;">Reveal Clue to Teams</button>
             </div>
             <div class="toggle-bar">
-                <button class="toggle-accept open" id="toggle-btn" onclick="toggleAccepting()">Open for Answers</button>
+                <button class="toggle-accept open" id="toggle-btn" onclick="toggleAccepting()">Open for Responses</button>
             </div>
         </div>
         <div class="qcard" id="answer-qcard">
-            <h3>Answer</h3>
+            <h3>Correct Response</h3>
             <div class="ans-reveal" id="ans-reveal" onclick="revealAnswer()">
-                <div class="lbl" id="ans-lbl">Click to reveal answer</div>
+                <div class="lbl" id="ans-lbl">Click to reveal correct response</div>
                 <div class="atxt hidden" id="ans-txt"></div>
             </div>
             <div class="ans-dd-ref hidden" id="ans-dd-ref" style="font-size:.9rem;color:var(--text-muted);margin-top:.5rem;"></div>
         </div>
         <div class="qcard">
-            <div class="ans-header"><h3>Team Answers</h3><span class="cnt-badge" id="ans-count">0</span><span style="font-size:.75rem;color:var(--text-muted);margin-left:.5rem;" id="ans-of-total"></span></div>
+            <div class="ans-header"><h3>Team Responses</h3><span class="cnt-badge" id="ans-count">0</span><span style="font-size:.75rem;color:var(--text-muted);margin-left:.5rem;" id="ans-of-total"></span></div>
             <div id="waiting-list" class="hidden" style="margin-bottom:.75rem;padding:.5rem .75rem;background:rgba(255,215,0,.04);border:1px solid var(--border);border-radius:var(--radius);font-size:.8rem;color:var(--text-sec);"><span style="color:var(--text-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Still waiting: </span><span id="waiting-names"></span></div>
             <div id="answers-list"></div>
             <div class="apply-row">
-                <button class="btn btn-green" id="apply-btn" onclick="applyScores()" title="Apply all graded scores — correct answers earn points, incorrect answers lose points">Apply Scores</button>
+                <button class="btn btn-green" id="apply-btn" onclick="applyScores()" title="Apply all graded scores — correct responses earn points, incorrect responses lose points">Apply Scores</button>
                 <button class="btn btn-outline" onclick="clearGrading()" title="Clear all correct/incorrect markings without applying scores">Reset</button>
             </div>
         </div>
@@ -394,14 +394,14 @@
         <div style="text-align:center;margin-top:1rem;" id="dd-reveal-start" class="hidden">
             <div style="border:2px solid var(--gold);border-radius:var(--radius);padding:1.25rem;background:rgba(255,215,0,.04);margin-bottom:.75rem;">
                 <div style="font-family:var(--fh);color:var(--gold);font-size:1rem;text-transform:uppercase;margin-bottom:.4rem;">Daily Double Reveal</div>
-                <div style="font-size:.85rem;color:var(--text-sec);margin-bottom:1rem;">Show score → wager → question → answer → result on the projector.</div>
+                <div style="font-size:.85rem;color:var(--text-sec);margin-bottom:1rem;">Show score → wager → clue → response → result on the projector.</div>
                 <button class="btn btn-gold btn-lg" onclick="startDDReveal()" title="Begin the Daily Double reveal ceremony on the projector">Show Daily Double Reveal →</button>
             </div>
         </div>
         <div style="text-align:center;margin-top:1rem;" id="fj-reveal-start" class="hidden">
             <div style="border:2px solid var(--gold);border-radius:var(--radius);padding:1.25rem;background:rgba(255,215,0,.04);margin-bottom:.75rem;">
                 <div style="font-family:var(--fh);color:var(--gold);font-size:1rem;text-transform:uppercase;margin-bottom:.4rem;">Ready for the Reveal?</div>
-                <div style="font-size:.85rem;color:var(--text-sec);margin-bottom:1rem;">Grade all answers above first. Then start the ceremony — scores will be revealed team-by-team on the projector.</div>
+                <div style="font-size:.85rem;color:var(--text-sec);margin-bottom:1rem;">Grade all responses above first. Then start the ceremony — scores will be revealed team-by-team on the projector.</div>
                 <button class="btn btn-gold btn-lg" id="fj-reveal-btn" onclick="startFinalReveal()" title="Begin the team-by-team Final Jeopardy score reveal ceremony on the projector">Start End of Game Reveal →</button>
             </div>
         </div>
@@ -763,7 +763,7 @@ function toggleAccepting() {
         const {eligible,locked}=getWagerEligible();
         if(eligible.length>0&&locked.length<eligible.length){
             const isDD=GS.dailyDouble;
-            alert((isDD?'The Daily Double team must lock in their wager':'All teams must lock in their wagers')+' before opening for answers.');
+            alert((isDD?'The Daily Double team must lock in their wager':'All teams must lock in their wagers')+' before opening for responses.');
             return;
         }
         const end=Date.now()+timerSec*1000;
@@ -796,13 +796,13 @@ function updateStatus() {
     const wBtn=document.getElementById('wager-toggle-btn');
     const isDD=GS.dailyDouble;
     const isFJ=GS.round===3&&GS.questionKey==='final';
-    if(GS.accepting){btn.textContent='Stop Clock & Close Answers';btn.className='toggle-accept closed';btn.title='Stop the timer and prevent teams from submitting answers';btn.disabled=false;pill.textContent='ACCEPTING';pill.className='status-pill a';}
+    if(GS.accepting){btn.textContent='Stop Clock & Close Responses';btn.className='toggle-accept closed';btn.title='Stop the timer and prevent teams from submitting responses';btn.disabled=false;pill.textContent='ACCEPTING';pill.className='status-pill a';}
     else{
         const {eligible,locked}=getWagerEligible();
         const wagersReady=GS.fjQuestionRevealed&&(eligible.length===0||locked.length===eligible.length);
         btn.disabled=!wagersReady;
         btn.textContent='Open for Answers';btn.className='toggle-accept open';
-        btn.title=!wagersReady?(!GS.fjQuestionRevealed?'Reveal the question first':(isDD?'Lock in the Daily Double wager first':'Lock in all wagers first')):'Start the timer and allow teams to submit answers';
+        btn.title=!wagersReady?(!GS.fjQuestionRevealed?'Reveal the clue first':(isDD?'Lock in the Daily Double wager first':'Lock in all wagers first')):'Start the timer and allow teams to submit responses';
         const has=Object.keys(curAnswers).length>0;pill.textContent=has?'CLOSED — GRADE':'WAITING';pill.className=has?'status-pill c':'status-pill w';
     }
     const ar=document.getElementById('ans-reveal'),albl=document.getElementById('ans-lbl'),atxt=document.getElementById('ans-txt');
@@ -823,7 +823,7 @@ function updateStatus() {
             ar.onclick=revealAnswer;
             const canReveal=GS.answersWereOpened&&!GS.accepting;
             ar.classList.toggle('disabled',!canReveal);
-            albl.textContent=canReveal?'Click to reveal answer':'Open for answers first to reveal';
+            albl.textContent=canReveal?'Click to reveal correct response':'Open for responses first to reveal';
             if(atxt)atxt.classList.add('hidden');
             const ddRef=document.getElementById('ans-dd-ref');
             if(ddRef)ddRef.classList.add('hidden');
@@ -857,8 +857,8 @@ function updateWagerProgress(){
 function revealAnswer() {
     if(GS.dailyDouble&&GS.ddTeam){alert('Daily Double: Grade and apply scores, then use Show Daily Double Reveal.');return;}
     if(GS.round===3&&GS.questionKey==='final'){alert('Final Jeopardy: Grade and apply scores, then use Start End of Game Reveal.');return;}
-    if(GS.accepting){alert('Close answers before revealing the answer.');return;}
-    if(!GS.answersWereOpened){alert('Open for answers first before revealing.');return;}
+    if(GS.accepting){alert('Close responses before revealing the correct response.');return;}
+    if(!GS.answersWereOpened){alert('Open for responses first before revealing.');return;}
     document.getElementById('ans-txt').classList.remove('hidden');
     document.getElementById('ans-lbl').classList.add('hidden');
     roomRef.child('state/answerRevealed').set(true);
@@ -887,7 +887,7 @@ function renderAnswers() {
         stopLocalTimer();
     }
 
-    if(!keys.length){list.innerHTML='<div class="no-ans">No answers yet.</div>';updateStatus();return;}
+    if(!keys.length){list.innerHTML='<div class="no-ans">No responses yet.</div>';updateStatus();return;}
     list.innerHTML=keys.map(tk=>{const a=curAnswers[tk],nm=(teams[tk]&&teams[tk].name)||tk,av=teams[tk]&&teams[tk].avatar;
         if(a.passed){
             const ptsDisplay=scoresApplied?' <span class="a-pts" style="color:var(--text-muted);font-weight:600;">(Passed)</span>':'';
@@ -905,7 +905,7 @@ function renderAnswers() {
     if(applyBtn){
         applyBtn.disabled=scoresApplied||!allGraded;
         applyBtn.textContent=scoresApplied?'Scores Applied':'Apply Scores';
-        applyBtn.title=scoresApplied?'Scores have been applied':!allGraded?'Mark every answer as correct or incorrect first':'Apply all graded scores — correct answers earn points, incorrect answers lose points';
+        applyBtn.title=scoresApplied?'Scores have been applied':!allGraded?'Mark every response as correct or incorrect first':'Apply all graded scores — correct responses earn points, incorrect responses lose points';
     }
     updateStatus();
 }
@@ -920,7 +920,7 @@ function clearGrading(){grading={};renderAnswers();}
 function applyScores() {
     if(scoresApplied)return;
     const allGraded=Object.keys(curAnswers).every(tk=>curAnswers[tk].passed||grading[tk]===true||grading[tk]===false);
-    if(!allGraded){alert('Mark every submitted answer as correct or incorrect before applying scores.');return;}
+    if(!allGraded){alert('Mark every submitted response as correct or incorrect before applying scores.');return;}
     const upd={}, hist={round:GS.round,category:GS.category,value:GS.value,questionText:GS.questionText||'',acceptedAt:GS.acceptedAt||0,answers:{}};
     const isDD=GS.dailyDouble, isFJ=GS.round===3&&GS.questionKey==='final';
     appliedPoints={};
@@ -955,11 +955,14 @@ function applyScores() {
     const scoreSnap={};
     Object.keys(teams).forEach(tk=>{
         if(upd['teams/'+tk+'/score']!==undefined)scoreSnap[tk]=upd['teams/'+tk+'/score'];
-        else if(isDD&&tk===GS.ddTeam){const a=curAnswers[tk];const p=a&&a.passed;const c=p?false:(grading[tk]===true);const w=(teams[tk]&&teams[tk].wager)||0;scoreSnap[tk]=(teams[tk].score||0)+(p?0:(c?w:-w));}
+        else if(isDD&&tk===GS.ddTeam){const a=curAnswers[tk];const p=a&&a.passed;const c=p?false:(grading[tk]===true);const w=(teams[tk]&&teams[tk].wager)||0;scoreSnap[tk]=(teams[tk].score||0)+((p&&isDD)?-w:(p?0:(c?w:-w)));}
         else if(isFJ){const c=grading[tk]===true;const w=(teams[tk]&&teams[tk].wager)||0;const cur=teams[tk].score||0;const answered=curAnswers[tk]&&curAnswers[tk].answer;scoreSnap[tk]=answered?(c?cur+w:cur-w):(w>0?cur-w:cur);}
         else scoreSnap[tk]=teams[tk].score||0;
     });
     hist.scores=scoreSnap;
+    Object.keys(teams).forEach(tk=>{
+        if(upd['teams/'+tk+'/score']===undefined&&(isDD&&tk===GS.ddTeam||isFJ))upd['teams/'+tk+'/score']=scoreSnap[tk];
+    });
     upd['history/q'+Date.now()]=hist;
     const newControl=determineBoardControl(grading,curAnswers);
     if(newControl)upd['state/boardControl']=newControl;
@@ -994,7 +997,7 @@ function assignInitialControl(){
 
 // ── Complete ──
 function completeAndReturn(fromKeyboard){
-    if(GS.accepting){alert('Close answers before completing this question.');return;}
+    if(GS.accepting){alert('Close responses before completing this clue.');return;}
     const answered=Object.keys(curAnswers);
     if(answered.length>0&&!scoresApplied){
         const graded=Object.keys(grading).length;
@@ -1015,7 +1018,7 @@ function completeAndReturn(fromKeyboard){
 function returnToBoard(){
     const hasUnscored=Object.keys(curAnswers).length>0&&!scoresApplied;
     if(hasUnscored){
-        if(!confirm('There are unscored answers. Leave this question?\n\nYou can re-select it from the board to continue.'))return;
+        if(!confirm('There are unscored responses. Leave this clue?\n\nYou can re-select it from the board to continue.'))return;
     }
     goToBoard();
 }
@@ -1070,8 +1073,8 @@ function revealFJQuestion(){
     if(!allLocked){
         const waiting=eligible.length-locked.length;
         const msg=waiting===1
-            ?'1 team has not locked in their wager. Reveal the question anyway?'
-            :waiting+' teams have not locked in their wagers. Reveal the question anyway?';
+            ?'1 team has not locked in their wager. Reveal the clue anyway?'
+            :waiting+' teams have not locked in their wagers. Reveal the clue anyway?';
         if(!confirm(msg))return;
     }
     const isFJ=GS.round===3&&GS.questionKey==='final';
@@ -1146,7 +1149,7 @@ function showFJRevealButton() {
     if (fjBtn && isFJ) {
         const allGraded = Object.keys(curAnswers).every(tk => curAnswers[tk].passed || grading[tk] === true || grading[tk] === false);
         fjBtn.disabled = !allGraded;
-        fjBtn.title = !allGraded ? 'Grade every answer as correct or incorrect first' : 'Begin the team-by-team Final Jeopardy score reveal ceremony on the projector';
+        fjBtn.title = !allGraded ? 'Grade every response as correct or incorrect first' : 'Begin the team-by-team Final Jeopardy score reveal ceremony on the projector';
     }
 }
 
@@ -1175,7 +1178,7 @@ function startDDReveal() {
 
 function startFinalReveal() {
     const allGraded = Object.keys(curAnswers).every(tk => curAnswers[tk].passed || grading[tk] === true || grading[tk] === false);
-    if (!allGraded) { alert('Grade every answer as correct or incorrect before starting the reveal.'); return; }
+    if (!allGraded) { alert('Grade every response as correct or incorrect before starting the reveal.'); return; }
     const sorted = Object.entries(teams).sort((a,b) => (a[1].score||0) - (b[1].score||0));
     const revealTeams = sorted.map(([k,t]) => {
         const currentScore = t.score||0;

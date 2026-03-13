@@ -155,9 +155,9 @@
         <div class="phone-timer hidden" id="phone-timer"><div class="time" id="phone-time">0:30</div></div>
 
         <div class="state-card" id="wait-card"><div class="wait"><div class="dots">• • •</div><div class="msg" id="wait-msg">Waiting for the host...</div></div></div>
-        <div class="state-card hidden" id="dd-spec-card"><div class="dd-spec"><div class="star">★</div><div class="msg">Daily Double!</div><div class="tn" id="dd-spec-team"></div><div class="msg">is answering this question</div></div></div>
-        <div class="state-card hidden" id="answer-card"><div class="answer-area" style="display:flex;flex-direction:column;gap:.75rem;flex:1;"><textarea id="answer-input" placeholder="Type your answer..." autocomplete="off" autocorrect="off"></textarea><button class="btn btn-green" id="submit-btn" onclick="submitAnswer()">Submit Answer</button><button class="btn" id="pass-btn" onclick="passAnswer()" style="background:var(--elev);color:var(--tmut);font-size:.9rem;padding:.7rem;">Pass — I don't know</button></div></div>
-        <div class="state-card hidden" id="submitted-card"><div class="submitted"><div class="check" id="submitted-icon">✓</div><div class="label" id="submitted-label">Answer Submitted!</div><div class="echo" id="answer-echo"></div></div></div>
+        <div class="state-card hidden" id="dd-spec-card"><div class="dd-spec"><div class="star">★</div><div class="msg">Daily Double!</div><div class="tn" id="dd-spec-team"></div><div class="msg">is responding to this clue</div></div></div>
+        <div class="state-card hidden" id="answer-card"><div class="answer-area" style="display:flex;flex-direction:column;gap:.75rem;flex:1;"><div class="what-is-prompt" style="font-family:var(--fh);font-size:1.3rem;color:var(--gold);font-weight:700;text-align:center;margin-bottom:.25rem;">What is...</div><textarea id="answer-input" placeholder="Your response in question form" autocomplete="off" autocorrect="off"></textarea><button class="btn btn-green" id="submit-btn" onclick="submitAnswer()">Submit Response</button><button class="btn" id="pass-btn" onclick="passAnswer()" style="background:var(--elev);color:var(--tmut);font-size:.9rem;padding:.7rem;">Pass — I don't know</button></div></div>
+        <div class="state-card hidden" id="submitted-card"><div class="submitted"><div class="check" id="submitted-icon">✓</div><div class="label" id="submitted-label">Response Submitted!</div><div class="echo" id="answer-echo"></div></div></div>
         <div class="wager-card hidden" id="wager-card">
             <h3>Set Your Wager</h3>
             <div class="note" id="wager-note">You can wager up to your current score</div>
@@ -293,7 +293,7 @@ function setupListeners(){
         const t=teamSnap.val();
         if(t){cachedScore=t.score||0;if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}}
         const a=ansSnap.val();
-        if(a){if(a.passed){hasSubmitted=true;hasPassed=true;}else if(a.answer){hasSubmitted=true;document.getElementById('answer-echo').textContent='Your answer: "'+a.answer+'"';}}
+        if(a){if(a.passed){hasSubmitted=true;hasPassed=true;}else if(a.answer){hasSubmitted=true;document.getElementById('answer-echo').textContent='Your response: "'+a.answer+'"';}}
         render();startPhoneTimer();
 
         roomRef.child('state').on('value',snap=>{
@@ -306,7 +306,7 @@ function setupListeners(){
                         if(as.exists()&&as.val()){
                             const v=as.val();
                             if(v.passed){hasSubmitted=true;hasPassed=true;}
-                            else if(v.answer){hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your answer: "'+v.answer+'"';}
+                            else if(v.answer){hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your response: "'+v.answer+'"';}
                         }
                         render();
                     });
@@ -324,7 +324,7 @@ function setupListeners(){
             if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}else{wagerLocked=false;resetWagerUI();}
         });
         roomRef.child('currentAnswers/'+teamKey).on('value',snap=>{
-            if(snap.exists()&&snap.val()){const v=snap.val();if(v.passed){hasSubmitted=true;hasPassed=true;}else if(v.answer){hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your answer: "'+v.answer+'"';}}
+            if(snap.exists()&&snap.val()){const v=snap.val();if(v.passed){hasSubmitted=true;hasPassed=true;}else if(v.answer){hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your response: "'+v.answer+'"';}}
             render();
         });
     });
@@ -371,7 +371,7 @@ function render(){
         document.getElementById('wait-msg').textContent='Intermission — grab a snack and stretch your legs!';
     } else if(phase==='board'||phase==='round-transition'||!category){
         show('wait-card');
-        document.getElementById('wait-msg').textContent=phase==='round-transition'?'Scores are being tallied...':'Waiting for the host to select a question...';
+        document.getElementById('wait-msg').textContent=phase==='round-transition'?'Scores are being tallied...':'Waiting for the host to select a clue...';
     } else if(canWager){
         show('wager-card');
         const boardMax=round===1?1000:2000;
@@ -379,7 +379,7 @@ function render(){
         document.getElementById('wager-note').textContent='Wager up to $'+maxWager.toLocaleString();
     } else if(!GS.fjQuestionRevealed && !accepting){
         show('wait-card');
-        document.getElementById('wait-msg').textContent=wagerLocked?'Wager locked in. Waiting for the host to reveal the question...':'Waiting for the host to reveal the question...';
+        document.getElementById('wait-msg').textContent=wagerLocked?'Wager locked in. Waiting for the host to reveal the clue...':'Waiting for the host to reveal the clue...';
     } else if(isFJ && cachedScore <= 0 && !hasSubmitted){
         show('wait-card');
         document.getElementById('wait-msg').textContent='You don\'t have enough points to wager in Final Jeopardy. Watch the big screen!';
@@ -388,20 +388,20 @@ function render(){
         roomRef.child('teams/'+ddTeam+'/name').once('value',s=>{document.getElementById('dd-spec-team').textContent=s.val()||ddTeam;});
     } else if(hasSubmitted){
         document.getElementById('submitted-icon').textContent=hasPassed?'⏭':'✓';
-        document.getElementById('submitted-label').textContent=hasPassed?'Passed':'Answer Submitted!';
+        document.getElementById('submitted-label').textContent=hasPassed?'Passed':'Response Submitted!';
         document.getElementById('answer-echo').textContent=hasPassed?'You skipped this question.':'';
         show('submitted-card');
     } else if(accepting){
         show('answer-card'); show('phone-timer');
         if(!answerCardShown){document.getElementById('answer-input').value='';answerCardShown=true;try{navigator.vibrate([100,50,100]);}catch(e){}}
         document.getElementById('submit-btn').disabled=false;
-        document.getElementById('submit-btn').textContent='Submit Answer';
+        document.getElementById('submit-btn').textContent='Submit Response';
         const passBtn=document.getElementById('pass-btn');
         passBtn.disabled=false;passBtn.textContent='Pass \u2014 I don\u2019t know';
         passBtn.style.display=(dailyDouble||isFJ)?'none':'block';
     } else if(phase==='question'){
         show('wait-card');
-        document.getElementById('wait-msg').textContent='Waiting for the host to open answers...';
+        document.getElementById('wait-msg').textContent='Waiting for the host to open for responses...';
     } else {
         show('wait-card');
         document.getElementById('wait-msg').textContent='Waiting...';
@@ -431,8 +431,8 @@ function submitAnswer(){
     const btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='Submitting...';
     document.getElementById('pass-btn').disabled=true;
     roomRef.child('currentAnswers/'+teamKey).set({answer,timestamp:firebase.database.ServerValue.TIMESTAMP})
-        .then(()=>{hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your answer: "'+answer+'"';render();})
-        .catch(()=>{btn.disabled=false;btn.textContent='Submit Answer';document.getElementById('pass-btn').disabled=false;alert('Error. Try again.');});
+        .then(()=>{hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your response: "'+answer+'"';render();})
+        .catch(()=>{btn.disabled=false;btn.textContent='Submit Response';document.getElementById('pass-btn').disabled=false;alert('Error. Try again.');});
 }
 function passAnswer(){
     const btn=document.getElementById('pass-btn');btn.disabled=true;btn.textContent='Passing...';
