@@ -251,21 +251,32 @@ function enterGame(av){
     setupListeners();
 }
 
-// Auto-rejoin on page refresh
+// URL room takes precedence; auto-rejoin only if it matches
 (function(){
+    const urlRoom=(new URLSearchParams(window.location.search)).get('room');
+    const urlRoomNorm=urlRoom?urlRoom.trim().toUpperCase().replace(/[^A-Z0-9]/g,''):'';
+    if(urlRoom){
+        const inp=document.getElementById('inp-room');
+        inp.value=urlRoomNorm;
+        inp.dispatchEvent(new Event('input',{bubbles:true}));
+    }
     try{
         const saved=JSON.parse(sessionStorage.getItem('trivia_session')||'null');
         if(saved&&saved.roomCode&&saved.teamKey){
-            roomCode=saved.roomCode;teamName=saved.teamName;teamKey=saved.teamKey;selectedAvatar=saved.avatar;playerCount=saved.players||1;
-            roomRef=db.ref('trivia-rooms/'+roomCode);
-            roomRef.child('state').once('value',snap=>{
-                if(!snap.exists())return;
-                roomRef.child('teams/'+teamKey).once('value',ts=>{
-                    if(!ts.exists())return;
-                    const av=AVATARS.find(a=>a.id===saved.avatar);
-                    enterGame(av);
+            const savedRoom=(saved.roomCode||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+            if(urlRoomNorm&&savedRoom!==urlRoomNorm){sessionStorage.removeItem('trivia_session');return;}
+            if(!urlRoomNorm||savedRoom===urlRoomNorm){
+                roomCode=saved.roomCode;teamName=saved.teamName;teamKey=saved.teamKey;selectedAvatar=saved.avatar;playerCount=saved.players||1;
+                roomRef=db.ref('trivia-rooms/'+roomCode);
+                roomRef.child('state').once('value',snap=>{
+                    if(!snap.exists())return;
+                    roomRef.child('teams/'+teamKey).once('value',ts=>{
+                        if(!ts.exists())return;
+                        const av=AVATARS.find(a=>a.id===saved.avatar);
+                        enterGame(av);
+                    });
                 });
-            });
+            }
         }
     }catch(e){}
 })();
@@ -447,12 +458,6 @@ function lockWager(){
 }
 function showLockedWager(amt){document.getElementById('wager-input-area').classList.add('hidden');document.getElementById('wager-locked').classList.remove('hidden');document.getElementById('wager-locked-amt').textContent='$'+amt.toLocaleString();}
 function resetWagerUI(){document.getElementById('wager-input-area').classList.remove('hidden');document.getElementById('wager-locked').classList.add('hidden');document.getElementById('wager-input').value='';}
-
-(function(){
-    const p=new URLSearchParams(window.location.search);
-    const r=p.get('room');
-    if(r)document.getElementById('inp-room').value=r.toUpperCase();
-})();
 </script>
 </body>
 </html>
