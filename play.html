@@ -377,9 +377,9 @@ function render(){
         const boardMax=round===1?1000:2000;
         const maxWager=isFJ?Math.max(cachedScore,0):Math.max(cachedScore,boardMax);
         document.getElementById('wager-note').textContent='Wager up to $'+maxWager.toLocaleString();
-    } else if(wagerLocked && !accepting && !(GS.fjQuestionRevealed)){
+    } else if(!GS.fjQuestionRevealed && !accepting){
         show('wait-card');
-        document.getElementById('wait-msg').textContent='Wager locked in. Waiting for the host to reveal the question...';
+        document.getElementById('wait-msg').textContent=wagerLocked?'Wager locked in. Waiting for the host to reveal the question...':'Waiting for the host to reveal the question...';
     } else if(isFJ && cachedScore <= 0 && !hasSubmitted){
         show('wait-card');
         document.getElementById('wait-msg').textContent='You don\'t have enough points to wager in Final Jeopardy. Watch the big screen!';

@@ -730,9 +730,8 @@ function activateQ(key,q,isDD,ddTk) {
     if(roundTransTimeout){clearTimeout(roundTransTimeout);roundTransTimeout=null;}
     const isReentry=(key===lastQuestionKey);
     const val=q.value;
-    const hideQ=isDD;
-    pendingQuestion=hideQ?{questionText:q.questionText,imageUrl:q.imageUrl||''}:null;
-    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isReentry?false:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD,answersWereOpened:false});
+    pendingQuestion={questionText:q.questionText,imageUrl:q.imageUrl||''};
+    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:'',accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isReentry?false:isDD,imageUrl:'',fjQuestionRevealed:false,answersWereOpened:false});
     if(!isReentry){
         roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false; appliedPoints={};
         if(isDD){resetWagers([ddTk]);}
@@ -800,10 +799,10 @@ function updateStatus() {
     if(GS.accepting){btn.textContent='Stop Clock & Close Answers';btn.className='toggle-accept closed';btn.title='Stop the timer and prevent teams from submitting answers';btn.disabled=false;pill.textContent='ACCEPTING';pill.className='status-pill a';}
     else{
         const {eligible,locked}=getWagerEligible();
-        const wagersReady=eligible.length===0||locked.length===eligible.length||(isDD&&GS.fjQuestionRevealed);
+        const wagersReady=GS.fjQuestionRevealed&&(eligible.length===0||locked.length===eligible.length);
         btn.disabled=!wagersReady;
         btn.textContent='Open for Answers';btn.className='toggle-accept open';
-        btn.title=!wagersReady?(isDD?'Lock in the Daily Double wager first':'Lock in all wagers first'):'Start the timer and allow teams to submit answers';
+        btn.title=!wagersReady?(!GS.fjQuestionRevealed?'Reveal the question first':(isDD?'Lock in the Daily Double wager first':'Lock in all wagers first')):'Start the timer and allow teams to submit answers';
         const has=Object.keys(curAnswers).length>0;pill.textContent=has?'CLOSED — GRADE':'WAITING';pill.className=has?'status-pill c':'status-pill w';
     }
     const ar=document.getElementById('ans-reveal'),albl=document.getElementById('ans-lbl'),atxt=document.getElementById('ans-txt');
@@ -832,7 +831,7 @@ function updateStatus() {
     }
     wBtn.classList.add('hidden');
     const fjRevealBar=document.getElementById('fj-reveal-q-bar');
-    fjRevealBar.classList.toggle('hidden',!((isFJ||isDD)&&!GS.fjQuestionRevealed));
+    fjRevealBar.classList.toggle('hidden',!!GS.fjQuestionRevealed);
     updateWagerProgress();
     showFJRevealButton();
 }
@@ -1077,17 +1076,17 @@ function revealFJQuestion(){
     }
     const isFJ=GS.round===3&&GS.questionKey==='final';
     const isDD=GS.dailyDouble;
-    if(isDD&&GS.questionKey&&GS.questionKey!=='final'){
-        roomRef.child('board/'+GS.questionKey).once('value',s=>{
-            const q=s.val();if(!q)return;
-            roomRef.child('state').update({questionText:q.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:q.imageUrl||''});
-            pendingQuestion=null;
-        });
-    } else if(isFJ){
+    if(isFJ){
         roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
             roomRef.child('state').update({questionText:f.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:f.imageUrl||''});
             pendingQuestion=null;
         });
+    } else if(GS.questionKey){
+        const q=boardQ[GS.questionKey]||null;
+        if(q){
+            roomRef.child('state').update({questionText:q.questionText,fjQuestionRevealed:true,wageringOpen:isDD?false:GS.wageringOpen,imageUrl:q.imageUrl||''});
+            pendingQuestion=null;
+        }
     }
 }
 
