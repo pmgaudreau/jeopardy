@@ -411,7 +411,7 @@ function startListening(){
 
 // ═══ QR CODE ═══
 function generateQR(){
-    const base=window.location.href.replace(/\/[^\/]*$/,'/');
+    const base=(typeof BASE_URL==='string'&&BASE_URL)?BASE_URL.replace(/\/?$/,'/'):window.location.href.replace(/\/[^\/]*$/,'/');
     const url=base+'play.html?room='+roomCode;
     document.getElementById('qr-url').textContent=url;
     document.getElementById('qr-room').textContent=roomCode;

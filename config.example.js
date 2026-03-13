@@ -2,7 +2,13 @@
  *
  * Copy this file to config.js and fill in your Firebase credentials.
  * config.js is gitignored and will not be committed.
+ *
+ * BASE_URL (optional): Set to your deployed URL (e.g. https://yoursite.github.io/trivia/)
+ * so the QR code works when scanned by phones. If unset, uses current page location
+ * (which fails for file:// or localhost — phones can't reach those).
  */
+
+const BASE_URL = ''; // e.g. 'https://pmgaudreau.github.io/jeopardy/'
 
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
