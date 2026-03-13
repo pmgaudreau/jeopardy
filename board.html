@@ -602,9 +602,8 @@ function updateQuestion(){
     if(GS.imageUrl){img.src=GS.imageUrl;img.classList.remove('hidden');}else{img.classList.add('hidden');img.src='';}
     const ans=document.getElementById('qd-answer');
     if(GS.answerRevealed){
-        roomRef.child(GS.questionKey==='final'?'final/answerText':`board/${GS.questionKey}/answerText`).once('value',s=>{
-            if(s.val()){ans.textContent=s.val();ans.classList.add('show');}
-        });
+        if(GS.answerText){ans.textContent=GS.answerText;ans.classList.add('show');}
+        else{roomRef.child(GS.questionKey==='final'?'final/answerText':`board/${GS.questionKey}/answerText`).once('value',s=>{if(s.val()){ans.textContent=s.val();ans.classList.add('show');}});}
     } else {
         ans.classList.remove('show');
     }

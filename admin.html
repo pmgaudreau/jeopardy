@@ -861,7 +861,8 @@ function revealAnswer() {
     if(!GS.answersWereOpened){alert('Open for responses first before revealing.');return;}
     document.getElementById('ans-txt').classList.remove('hidden');
     document.getElementById('ans-lbl').classList.add('hidden');
-    roomRef.child('state/answerRevealed').set(true);
+    const answerText=document.getElementById('ans-txt').textContent||'';
+    roomRef.child('state').update({answerRevealed:true,answerText});
 }
 
 // ── Answers ──
