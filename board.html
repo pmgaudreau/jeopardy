@@ -402,7 +402,7 @@ function startListening(){
     document.getElementById('lobby-code').textContent=roomCode;
     showScreen('lobby');
     generateQR();
-    roomRef.child('state').on('value',s=>{const v=s.val();if(!v)return;GS=v;onStateChange();});
+    roomRef.child('state').on('value',s=>{const v=s.val();if(!v)return;GS=v;onStateChange();if(GS.phase==='question')updateQuestion();});
     roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScores();renderLobbyTeams();renderBoardControl();});
     roomRef.child('currentAnswers').on('value',s=>{answerCount=s.val()?Object.keys(s.val()).length:0;updateAnswerCount();});
     roomRef.child('board').on('value',s=>{boardQ=s.val()||{};if(GS.phase==='board')renderGrid();});
@@ -576,7 +576,7 @@ function showQuestion(){
     const ddBanner=document.getElementById('qd-dd-banner');
     if(GS.dailyDouble&&GS.ddTeam){
         const tn=teams[GS.ddTeam]?teams[GS.ddTeam].name:GS.ddTeam;
-        ddBanner.textContent='Only '+tn+' can answer (Daily Double)';
+        ddBanner.textContent='Only '+tn+' can respond (Daily Double)';
         ddBanner.classList.remove('hidden');
     }else{ddBanner.classList.add('hidden');ddBanner.textContent='';}
     document.getElementById('qd-cat').textContent=GS.category||'';
@@ -594,7 +594,7 @@ function updateQuestion(){
     const ddBanner=document.getElementById('qd-dd-banner');
     if(GS.dailyDouble&&GS.ddTeam){
         const tn=teams[GS.ddTeam]?teams[GS.ddTeam].name:GS.ddTeam;
-        ddBanner.textContent='Only '+tn+' can answer (Daily Double)';
+        ddBanner.textContent='Only '+tn+' can respond (Daily Double)';
         ddBanner.classList.remove('hidden');
     }else{ddBanner.classList.add('hidden');ddBanner.textContent='';}
     document.getElementById('qd-text').textContent=GS.questionText||'';
