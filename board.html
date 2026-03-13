@@ -573,6 +573,10 @@ function showDailyDouble(){
 
 // ═══ QUESTION ═══
 function getClueForDisplay(){
+    const isDD=GS.dailyDouble;
+    const isFJ=GS.round===3&&GS.questionKey==='final';
+    const clueHidden=(isDD||isFJ)&&!GS.fjQuestionRevealed;
+    if(clueHidden)return{t:'Lock in wagers to reveal the clue',u:''};
     let t=GS.questionText||'', u=GS.imageUrl||'';
     if(!t&&GS.questionKey&&GS.questionKey!=='final'){
         const q=boardQ[GS.questionKey];
@@ -607,14 +611,20 @@ function updateQuestion(){
         ddBanner.textContent='Only '+tn+' can respond (Daily Double)';
         ddBanner.classList.remove('hidden');
     }else{ddBanner.classList.add('hidden');ddBanner.textContent='';}
-    let clueText=GS.questionText||'';
-    let clueImg=GS.imageUrl||'';
-    if(!clueText&&GS.questionKey){
-        if(GS.questionKey==='final'){
-            roomRef.child('final').once('value',s=>{const f=s.val();if(f){document.getElementById('qd-text').textContent=f.questionText||'';const i=document.getElementById('qd-img');if(f.imageUrl){i.src=f.imageUrl;i.classList.remove('hidden');}else{i.classList.add('hidden');i.src='';}}});
-        }else{
-            const q=boardQ[GS.questionKey];
-            if(q){clueText=q.questionText||'';clueImg=clueImg||(q.imageUrl||'');}
+    const isDD=GS.dailyDouble;
+    const isFJ=GS.round===3&&GS.questionKey==='final';
+    const clueHidden=(isDD||isFJ)&&!GS.fjQuestionRevealed;
+    let clueText=clueHidden?'Lock in wagers to reveal the clue':'', clueImg='';
+    if(!clueHidden){
+        clueText=GS.questionText||'';
+        clueImg=GS.imageUrl||'';
+        if(!clueText&&GS.questionKey){
+            if(GS.questionKey==='final'){
+                roomRef.child('final').once('value',s=>{const f=s.val();if(f){document.getElementById('qd-text').textContent=f.questionText||'';const i=document.getElementById('qd-img');if(f.imageUrl){i.src=f.imageUrl;i.classList.remove('hidden');}else{i.classList.add('hidden');i.src='';}}});
+            }else{
+                const q=boardQ[GS.questionKey];
+                if(q){clueText=q.questionText||'';clueImg=clueImg||(q.imageUrl||'');}
+            }
         }
     }
     document.getElementById('qd-text').textContent=clueText;
