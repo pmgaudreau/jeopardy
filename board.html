@@ -431,6 +431,7 @@ function onStateChange(){
     } else if(phase==='round-transition'&&prevPhase!=='round-transition'){
         showTransition();SFX.roundEnd();
     } else if(phase==='dd-reveal'){
+        showScreen('reveal-display');
         renderDDReveal();
     } else if(phase==='final-reveal'){
         renderFinalReveal();
