@@ -1,0 +1,3 @@
+# Prevent caching so updates deploy immediately
+/*
+  Cache-Control: public, max-age=0, must-revalidate
