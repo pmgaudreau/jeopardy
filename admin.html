@@ -177,6 +177,7 @@
         .ans-reveal:hover { border-color: var(--gold-dim); }
         .ans-reveal .lbl { color: var(--text-muted); font-size: .9rem; }
         .ans-reveal .atxt { font-size: 1.15rem; color: var(--green); font-weight: 600; }
+        .ans-reveal.disabled { opacity: .6; cursor: not-allowed; pointer-events: none; }
 
         .timer-section { text-align: center; margin-bottom: 1rem; }
         .timer-display { font-family: var(--fh); font-size: 3rem; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
@@ -474,7 +475,7 @@
 <script src="config.js"></script>
 <script>
 let roomCode = null, roomRef = null;
-let GS = { round:1, phase:'board', category:'', value:0, questionText:'', accepting:false, dailyDouble:false, ddTeam:'', questionKey:'', showQR:false, timerEnd:0, timerRunning:false, answerRevealed:false, wageringOpen:false, imageUrl:'' };
+let GS = { round:1, phase:'board', category:'', value:0, questionText:'', accepting:false, dailyDouble:false, ddTeam:'', questionKey:'', showQR:false, timerEnd:0, timerRunning:false, answerRevealed:false, wageringOpen:false, imageUrl:'', answersWereOpened:false };
 let teams = {}, curAnswers = {}, grading = {}, boardQ = {}, parsedCSV = null, scoresApplied = false, appliedPoints = {};
 let timerInterval = null, timerSec = 30, roundTransTimeout = null, lastQuestionKey = null;
 const VALS = { 1:[200,400,600,800,1000], 2:[400,800,1200,1600,2000] };
@@ -565,7 +566,7 @@ function createRoom() {
     const code=document.getElementById('inp-room').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
     if(!code){document.getElementById('setup-err').textContent='Enter a room code.';return;}
     roomCode=code; roomRef=db.ref('trivia-rooms/'+roomCode);
-    const init={state:{round:1,phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',showQR:false,timerEnd:0,timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:'',boardControl:''},teams:{},currentAnswers:{},history:{}};
+    const init={state:{round:1,phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',showQR:false,timerEnd:0,timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:'',boardControl:'',answersWereOpened:false},teams:{},currentAnswers:{},history:{}};
     if(parsedCSV){init.board=parsedCSV.questions;init.categories=parsedCSV.categories;if(parsedCSV.final)init.final=parsedCSV.final;}
     roomRef.set(init).then(()=>enterGame()).catch(e=>{document.getElementById('setup-err').textContent='Error: '+e.message;});
 }
@@ -676,7 +677,7 @@ function confirmEndRound() {
     closeRoundModal();
     const nextRound = GS.round + 1;
     if (nextRound > 3) return;
-    roomRef.child('state').update({round:nextRound,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
+    roomRef.child('state').update({round:nextRound,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:'',answersWereOpened:false});
     roomRef.child('currentAnswers').remove(); grading={}; lastQuestionKey=null;
     resetWagers(Object.keys(teams));
     if(roundTransTimeout)clearTimeout(roundTransTimeout);
@@ -726,7 +727,7 @@ function activateQ(key,q,isDD,ddTk) {
     const val=q.value;
     const hideQ=isDD;
     pendingQuestion=hideQ?{questionText:q.questionText,imageUrl:q.imageUrl||''}:null;
-    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isReentry?false:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD});
+    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isReentry?false:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD,answersWereOpened:false});
     if(!isReentry){
         roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false; appliedPoints={};
         if(isDD){resetWagers([ddTk]);}
@@ -754,7 +755,7 @@ function toggleAccepting() {
     const a=!GS.accepting;
     if(a){
         const end=Date.now()+timerSec*1000;
-        roomRef.child('state').update({accepting:true,timerEnd:end,timerRunning:true,wageringOpen:false,acceptedAt:firebase.database.ServerValue.TIMESTAMP});
+        roomRef.child('state').update({accepting:true,timerEnd:end,timerRunning:true,wageringOpen:false,acceptedAt:firebase.database.ServerValue.TIMESTAMP,answersWereOpened:true});
         startLocalTimer();
     } else {
         roomRef.child('state').update({accepting:false,timerRunning:false});
@@ -784,6 +785,12 @@ function updateStatus() {
     if(GS.accepting){btn.textContent='Stop Clock & Close Answers';btn.className='toggle-accept closed';btn.title='Stop the timer and prevent teams from submitting answers';pill.textContent='ACCEPTING';pill.className='status-pill a';}
     else{btn.textContent='Open for Answers';btn.className='toggle-accept open';btn.title='Start the timer and allow teams to submit answers';
         const has=Object.keys(curAnswers).length>0;pill.textContent=has?'CLOSED — GRADE':'WAITING';pill.className=has?'status-pill c':'status-pill w';}
+    const ar=document.getElementById('ans-reveal'),albl=document.getElementById('ans-lbl');
+    if(ar&&albl&&!GS.answerRevealed){
+        const canReveal=GS.answersWereOpened&&!GS.accepting;
+        ar.classList.toggle('disabled',!canReveal);
+        albl.textContent=canReveal?'Click to reveal answer':'Open for answers first to reveal';
+    }
     wBtn.classList.add('hidden');
     const isFJ=GS.round===3&&GS.questionKey==='final';
     const isDD=GS.dailyDouble;
@@ -812,6 +819,7 @@ function updateWagerProgress(){
 // ── Answer Reveal ──
 function revealAnswer() {
     if(GS.accepting){alert('Close answers before revealing the answer.');return;}
+    if(!GS.answersWereOpened){alert('Open for answers first before revealing.');return;}
     document.getElementById('ans-txt').classList.remove('hidden');
     document.getElementById('ans-lbl').classList.add('hidden');
     roomRef.child('state/answerRevealed').set(true);
@@ -970,7 +978,7 @@ function returnToBoard(){
     goToBoard();
 }
 function goToBoard(){
-    roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
+    roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:'',answersWereOpened:false});
     showView('board-view');stopLocalTimer();resetTimerDisp();
 }
 
@@ -985,7 +993,9 @@ function startFinal(){
         }
         lastQuestionKey='final';
         const wasRevealed=isReentry&&!pendingQuestion;
-        roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:wasRevealed?f.questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:isReentry?false:true,imageUrl:wasRevealed?(f.imageUrl||''):'',fjQuestionRevealed:wasRevealed});
+        const fjUpd={round:3,phase:'question',category:f.category,value:0,questionText:wasRevealed?f.questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:isReentry?false:true,imageUrl:wasRevealed?(f.imageUrl||''):'',fjQuestionRevealed:wasRevealed};
+        if(!wasRevealed)fjUpd.answersWereOpened=false;
+        roomRef.child('state').update(fjUpd);
         showView('question-view');
         document.getElementById('qv-rl').textContent='Final Jeopardy';
         document.getElementById('qv-cat').textContent=f.category;
