@@ -149,7 +149,7 @@
             <div class="val" id="g-val">—</div>
             <div id="g-dd" class="hidden"><span class="dd-lbl">★ DAILY DOUBLE ★</span></div>
         </div>
-        <div class="q-txt-card hidden" id="q-txt-card"><div class="question" id="g-qtxt"></div></div>
+        <div class="q-txt-card hidden" id="q-txt-card"><div class="question" id="g-qtxt"></div><img id="g-img" class="hidden" style="max-width:100%;max-height:50vh;width:100%;object-fit:contain;border-radius:var(--radius);margin-top:.75rem;" alt=""></div>
 
         <!-- Phone timer -->
         <div class="phone-timer hidden" id="phone-timer"><div class="time" id="phone-time">0:30</div></div>
@@ -301,7 +301,7 @@ function setupListeners(){
                     });
                     roomRef.child('teams/'+teamKey).once('value',ts=>{
                         const t=ts.val();
-                        if(t&&t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
+                        if(t&&t.wager>0){wagerLocked=true;showLockedWager(t.wager);}else{wagerLocked=false;resetWagerUI();}
                     });
                 }
             }
@@ -310,7 +310,7 @@ function setupListeners(){
         roomRef.child('teams/'+teamKey).on('value',snap=>{
             const t=snap.val();if(!t)return;cachedScore=t.score||0;
             document.getElementById('my-score').textContent='$'+cachedScore.toLocaleString();
-            if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
+            if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}else{wagerLocked=false;resetWagerUI();}
         });
         roomRef.child('currentAnswers/'+teamKey).on('value',snap=>{
             if(snap.exists()&&snap.val()){const v=snap.val();if(v.passed){hasSubmitted=true;hasPassed=true;}else if(v.answer){hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your answer: "'+v.answer+'"';}}
@@ -333,7 +333,12 @@ function render(){
     document.getElementById('g-dd').classList.toggle('hidden',!dailyDouble);
 
     const qtc=document.getElementById('q-txt-card');
-    if(questionText&&phase!=='board'&&phase!=='round-transition'&&phase!=='intermission'&&phase!=='final-reveal'&&phase!=='final-rankings'&&phase!=='recap'&&phase!=='gameover'){qtc.classList.remove('hidden');document.getElementById('g-qtxt').textContent=questionText;}
+    if((questionText||GS.imageUrl)&&phase!=='board'&&phase!=='round-transition'&&phase!=='intermission'&&phase!=='dd-reveal'&&phase!=='final-reveal'&&phase!=='final-rankings'&&phase!=='recap'&&phase!=='gameover'){
+        qtc.classList.remove('hidden');
+        document.getElementById('g-qtxt').textContent=questionText||'';
+        const gImg=document.getElementById('g-img');
+        if(GS.imageUrl){gImg.src=GS.imageUrl;gImg.classList.remove('hidden');}else{gImg.classList.add('hidden');gImg.src='';}
+    }
     else qtc.classList.add('hidden');
 
     const cards=['wait-card','answer-card','submitted-card','dd-spec-card','wager-card','phone-timer'];
@@ -347,9 +352,9 @@ function render(){
     );
     const isDDSpectator=dailyDouble && ddTeam && ddTeam !== teamKey;
 
-    if(phase==='final-reveal'||phase==='final-rankings'||phase==='recap'||phase==='gameover'){
+    if(phase==='dd-reveal'||phase==='final-reveal'||phase==='final-rankings'||phase==='recap'||phase==='gameover'){
         show('wait-card');
-        document.getElementById('wait-msg').textContent=phase==='gameover'?'Thanks for playing! See you next time!':phase==='recap'?'Check out the game recap on the big screen!':phase==='final-rankings'?'Final standings are on the big screen!':'Final scores are being revealed — look at the big screen!';
+        document.getElementById('wait-msg').textContent=phase==='dd-reveal'?'Daily Double result is being revealed — look at the big screen!':phase==='gameover'?'Thanks for playing! See you next time!':phase==='recap'?'Check out the game recap on the big screen!':phase==='final-rankings'?'Final standings are on the big screen!':'Final scores are being revealed — look at the big screen!';
     } else if(phase==='intermission'){
         show('wait-card');
         document.getElementById('wait-msg').textContent='Intermission — grab a snack and stretch your legs!';

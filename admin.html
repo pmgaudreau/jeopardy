@@ -253,6 +253,13 @@
             <div class="icon">📄</div>
             <div class="lbl">Drag &amp; drop a CSV or <strong>click to browse</strong></div>
         </div>
+        <div class="fg" style="margin-top:.5rem;">
+            <label style="font-size:.75rem;">Character encoding (if é, ñ, etc. appear wrong)</label>
+            <select id="csv-encoding" style="padding:.4rem .6rem;font-size:.85rem;">
+                <option value="utf-8">UTF-8 (recommended)</option>
+                <option value="iso-8859-1">Windows-1252 / Latin-1 (Excel export)</option>
+            </select>
+        </div>
         <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSV(this.files[0])">
         <div class="csv-status hidden" id="csv-status"></div>
         <div style="text-align:center"><button class="btn btn-outline btn-sm" onclick="downloadTemplate()" title="Download a blank CSV template with the correct column headers for importing questions">Download Template CSV</button></div>
@@ -353,7 +360,7 @@
             <div class="toggle-bar" style="margin-bottom:.4rem;">
                 <button class="toggle-accept open hidden" id="wager-toggle-btn" onclick="toggleWagering()">Open for Wagers</button>
             </div>
-            <div id="wager-progress" class="hidden" style="text-align:center;margin-bottom:.5rem;font-size:.8rem;color:var(--text-sec);"><span id="wager-count-text"></span></div>
+            <div id="wager-progress" class="hidden" style="text-align:center;margin-bottom:.5rem;font-size:.8rem;color:var(--text-sec);"><span id="wager-count-text"></span><br><button class="btn btn-outline btn-sm" onclick="reopenWagers()" title="Clear all wagers and re-open for teams to enter new wagers" style="margin-top:.4rem;">Re-open Wagers</button></div>
             <div class="toggle-bar hidden" id="fj-reveal-q-bar" style="margin-bottom:.4rem;">
                 <button class="btn btn-gold btn-lg" onclick="revealFJQuestion()" title="Send the question to all screens — wagers should be locked first" style="width:100%;">Reveal Question to Teams</button>
             </div>
@@ -379,6 +386,13 @@
         </div>
         <div style="text-align:center;margin-top:1rem;" id="q-bottom-btns">
             <button class="btn btn-gold btn-lg" onclick="completeAndReturn()" title="Mark this question as completed and return to the board grid">Complete &amp; Return to Board →</button>
+        </div>
+        <div style="text-align:center;margin-top:1rem;" id="dd-reveal-start" class="hidden">
+            <div style="border:2px solid var(--gold);border-radius:var(--radius);padding:1.25rem;background:rgba(255,215,0,.04);margin-bottom:.75rem;">
+                <div style="font-family:var(--fh);color:var(--gold);font-size:1rem;text-transform:uppercase;margin-bottom:.4rem;">Daily Double Reveal</div>
+                <div style="font-size:.85rem;color:var(--text-sec);margin-bottom:1rem;">Show score → wager → question → answer → result on the projector.</div>
+                <button class="btn btn-gold btn-lg" onclick="startDDReveal()" title="Begin the Daily Double reveal ceremony on the projector">Show Daily Double Reveal →</button>
+            </div>
         </div>
         <div style="text-align:center;margin-top:1rem;" id="fj-reveal-start" class="hidden">
             <div style="border:2px solid var(--gold);border-radius:var(--radius);padding:1.25rem;background:rgba(255,215,0,.04);margin-bottom:.75rem;">
@@ -461,7 +475,7 @@
 <script>
 let roomCode = null, roomRef = null;
 let GS = { round:1, phase:'board', category:'', value:0, questionText:'', accepting:false, dailyDouble:false, ddTeam:'', questionKey:'', showQR:false, timerEnd:0, timerRunning:false, answerRevealed:false, wageringOpen:false, imageUrl:'' };
-let teams = {}, curAnswers = {}, grading = {}, boardQ = {}, parsedCSV = null, scoresApplied = false;
+let teams = {}, curAnswers = {}, grading = {}, boardQ = {}, parsedCSV = null, scoresApplied = false, appliedPoints = {};
 let timerInterval = null, timerSec = 30, roundTransTimeout = null, lastQuestionKey = null;
 const VALS = { 1:[200,400,600,800,1000], 2:[400,800,1200,1600,2000] };
 
@@ -491,7 +505,7 @@ function parseCSV(text) {
               qt=(c[cm.qt]||'').trim(), at=(c[cm.at]||'').trim(), ddr=(c[cm.dd]||'').trim().toLowerCase(),
               dd=ddr==='true'||ddr==='1'||ddr==='yes',
               img=(cm.img!==undefined?(c[cm.img]||'').trim():'');
-        if(round&&cat&&qn&&qt)qs.push({round,category:cat,questionNumber:qn,questionText:qt,answerText:at,dailyDouble:dd,imageUrl:img});
+        if(round&&cat&&qn&&(qt||img))qs.push({round,category:cat,questionNumber:qn,questionText:qt||'',answerText:at,dailyDouble:dd,imageUrl:img});
     }
     return qs;
 }
@@ -534,11 +548,11 @@ function handleCSV(file) {
         if(warnings.length>0){
             s.innerHTML=s.textContent+'<br><span style="color:var(--red);font-size:.75rem;">⚠ '+warnings.join('<br>⚠ ')+'</span>';
         }
-    }; reader.readAsText(file);
+    }; reader.readAsText(file,document.getElementById('csv-encoding').value||'utf-8');
 }
 function downloadTemplate() {
-    const csv=`round,category,question_number,question_text,answer_text,daily_double_flag,image_url\n1,History,1,"Who was the first President?","George Washington",FALSE\n1,History,2,"What year did WWII end?","1945",FALSE\n1,History,3,"Which civilization built Machu Picchu?","The Inca",TRUE\n1,History,4,"What document starts with We the People?","The Constitution",FALSE\n1,History,5,"British monarch during the Revolution?","King George III",FALSE\n1,Science,1,"What planet is the Red Planet?","Mars",FALSE\n1,Science,2,"Chemical symbol for gold?","Au",FALSE\n1,Science,3,"Bones in the adult human body?","206",FALSE\n1,Science,4,"Gas plants absorb from the air?","Carbon Dioxide",FALSE\n1,Science,5,"Speed of light in miles per second?","186000",FALSE\n1,Pop Culture,1,"Fictional school in Harry Potter?","Hogwarts",FALSE\n1,Pop Culture,2,"Who played Iron Man in the MCU?","Robert Downey Jr.",FALSE\n1,Pop Culture,3,"Year the first iPhone released?","2007",FALSE\n1,Pop Culture,4,"Best-selling video game ever?","Minecraft",FALSE\n1,Pop Culture,5,"Author of Game of Thrones books?","George R.R. Martin",FALSE\n1,Sports,1,"Players on a basketball court per team?","5",FALSE\n1,Sports,2,"Country with most FIFA World Cups?","Brazil",FALSE\n1,Sports,3,"Sport with a slam dunk?","Basketball",FALSE\n1,Sports,4,"Holes in a standard golf round?","18",FALSE\n1,Sports,5,"NHL regulation period length?","20 minutes",FALSE\n1,Movies,1,"Movie: Here is looking at you kid?","Casablanca",FALSE\n1,Movies,2,"Who directed Jurassic Park?","Steven Spielberg",FALSE\n1,Movies,3,"Highest-grossing film (unadjusted)?","Avatar",FALSE\n1,Movies,4,"Color pill Neo takes in The Matrix?","Red",FALSE\n1,Movies,5,"1994 film set in Shawshank prison?","The Shawshank Redemption",FALSE\n2,Geography,1,"Smallest country in the world?","Vatican City",FALSE\n2,Geography,2,"River through Egypt?","The Nile",FALSE\n2,Geography,3,"Capital of Australia?","Canberra",TRUE\n2,Geography,4,"Tallest mountain in the world?","Mount Everest",FALSE\n2,Geography,5,"US state with the most coastline?","Alaska",FALSE\n2,Music,1,"Known as the King of Pop?","Michael Jackson",FALSE\n2,Music,2,"Instrument with 88 keys?","Piano",FALSE\n2,Music,3,"Band behind Bohemian Rhapsody?","Queen",FALSE\n2,Music,4,"Genre that originated in New Orleans?","Jazz",FALSE\n2,Music,5,"Strings on a standard guitar?","6",FALSE\n2,Food,1,"Country of origin for sushi?","Japan",FALSE\n2,Food,2,"Nut used to make marzipan?","Almond",FALSE\n2,Food,3,"Spice that makes curry yellow?","Turmeric",FALSE\n2,Food,4,"Most consumed fruit in the world?","Banana",FALSE\n2,Food,5,"Country where french fries originated?","Belgium",FALSE\n2,Technology,1,"What does HTTP stand for?","HyperText Transfer Protocol",FALSE\n2,Technology,2,"Co-founded Apple with Steve Jobs?","Steve Wozniak",FALSE\n2,Technology,3,"Year Google was founded?","1998",TRUE\n2,Technology,4,"What does CPU stand for?","Central Processing Unit",FALSE\n2,Technology,5,"Programming language named after an island?","Java",FALSE\n2,Literature,1,"Who wrote Romeo and Juliet?","Shakespeare",FALSE\n2,Literature,2,"First book of the Bible?","Genesis",FALSE\n2,Literature,3,"Who wrote 1984?","George Orwell",FALSE\n2,Literature,4,"Detective at 221B Baker Street?","Sherlock Holmes",FALSE\n2,Literature,5,"Who wrote The Great Gatsby?","F. Scott Fitzgerald",FALSE\n3,Potpourri,1,"What is the rarest blood type?","AB Negative",FALSE`;
-    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    const csv='\ufeff'+`round,category,question_number,question_text,answer_text,daily_double_flag,image_url\n1,History,1,"Who was the first President?","George Washington",FALSE\n1,History,2,"What year did WWII end?","1945",FALSE\n1,History,3,"Which civilization built Machu Picchu?","The Inca",TRUE\n1,History,4,"What document starts with We the People?","The Constitution",FALSE\n1,History,5,"British monarch during the Revolution?","King George III",FALSE\n1,Science,1,"What planet is the Red Planet?","Mars",FALSE\n1,Science,2,"Chemical symbol for gold?","Au",FALSE\n1,Science,3,"Bones in the adult human body?","206",FALSE\n1,Science,4,"Gas plants absorb from the air?","Carbon Dioxide",FALSE\n1,Science,5,"Speed of light in miles per second?","186000",FALSE\n1,Pop Culture,1,"Fictional school in Harry Potter?","Hogwarts",FALSE\n1,Pop Culture,2,"Who played Iron Man in the MCU?","Robert Downey Jr.",FALSE\n1,Pop Culture,3,"Year the first iPhone released?","2007",FALSE\n1,Pop Culture,4,"Best-selling video game ever?","Minecraft",FALSE\n1,Pop Culture,5,"Author of Game of Thrones books?","George R.R. Martin",FALSE\n1,Sports,1,"Players on a basketball court per team?","5",FALSE\n1,Sports,2,"Country with most FIFA World Cups?","Brazil",FALSE\n1,Sports,3,"Sport with a slam dunk?","Basketball",FALSE\n1,Sports,4,"Holes in a standard golf round?","18",FALSE\n1,Sports,5,"NHL regulation period length?","20 minutes",FALSE\n1,Movies,1,"Movie: Here is looking at you kid?","Casablanca",FALSE\n1,Movies,2,"Who directed Jurassic Park?","Steven Spielberg",FALSE\n1,Movies,3,"Highest-grossing film (unadjusted)?","Avatar",FALSE\n1,Movies,4,"Color pill Neo takes in The Matrix?","Red",FALSE\n1,Movies,5,"1994 film set in Shawshank prison?","The Shawshank Redemption",FALSE\n2,Geography,1,"Smallest country in the world?","Vatican City",FALSE\n2,Geography,2,"River through Egypt?","The Nile",FALSE\n2,Geography,3,"Capital of Australia?","Canberra",TRUE\n2,Geography,4,"Tallest mountain in the world?","Mount Everest",FALSE\n2,Geography,5,"US state with the most coastline?","Alaska",FALSE\n2,Music,1,"Known as the King of Pop?","Michael Jackson",FALSE\n2,Music,2,"Instrument with 88 keys?","Piano",FALSE\n2,Music,3,"Band behind Bohemian Rhapsody?","Queen",FALSE\n2,Music,4,"Genre that originated in New Orleans?","Jazz",FALSE\n2,Music,5,"Strings on a standard guitar?","6",FALSE\n2,Food,1,"Country of origin for sushi?","Japan",FALSE\n2,Food,2,"Nut used to make marzipan?","Almond",FALSE\n2,Food,3,"Spice that makes curry yellow?","Turmeric",FALSE\n2,Food,4,"Most consumed fruit in the world?","Banana",FALSE\n2,Food,5,"Country where french fries originated?","Belgium",FALSE\n2,Technology,1,"What does HTTP stand for?","HyperText Transfer Protocol",FALSE\n2,Technology,2,"Co-founded Apple with Steve Jobs?","Steve Wozniak",FALSE\n2,Technology,3,"Year Google was founded?","1998",TRUE\n2,Technology,4,"What does CPU stand for?","Central Processing Unit",FALSE\n2,Technology,5,"Programming language named after an island?","Java",FALSE\n2,Literature,1,"Who wrote Romeo and Juliet?","Shakespeare",FALSE\n2,Literature,2,"First book of the Bible?","Genesis",FALSE\n2,Literature,3,"Who wrote 1984?","George Orwell",FALSE\n2,Literature,4,"Detective at 221B Baker Street?","Sherlock Holmes",FALSE\n2,Literature,5,"Who wrote The Great Gatsby?","F. Scott Fitzgerald",FALSE\n3,Potpourri,1,"What is the rarest blood type?","AB Negative",FALSE`;
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
     a.download='trivia_template.csv'; a.click();
 }
 const cz=document.getElementById('csv-zone');
@@ -605,7 +619,11 @@ function syncView() {
         endIntBtn.style.display='none';
         stopIntCountdown();
     }
-    if(GS.phase==='final-reveal'||GS.phase==='final-rankings'||GS.phase==='recap'||GS.phase==='gameover'){
+    if(GS.phase==='dd-reveal'){
+        document.getElementById('rv-room').textContent=roomCode;
+        showView('reveal-view');
+        renderDDRevealAdmin();
+    } else if(GS.phase==='final-reveal'||GS.phase==='final-rankings'||GS.phase==='recap'||GS.phase==='gameover'){
         if(!revealData){
             roomRef.child('finalReveal').once('value',s=>{
                 const fr=s.val();if(!fr||!fr.teams)return;
@@ -660,6 +678,7 @@ function confirmEndRound() {
     if (nextRound > 3) return;
     roomRef.child('state').update({round:nextRound,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
     roomRef.child('currentAnswers').remove(); grading={}; lastQuestionKey=null;
+    resetWagers(Object.keys(teams));
     if(roundTransTimeout)clearTimeout(roundTransTimeout);
     roundTransTimeout=setTimeout(()=>{ roundTransTimeout=null; roomRef.child('state/phase').set('board'); }, 8000);
 }
@@ -709,7 +728,7 @@ function activateQ(key,q,isDD,ddTk) {
     pendingQuestion=hideQ?{questionText:q.questionText,imageUrl:q.imageUrl||''}:null;
     roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isReentry?false:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD});
     if(!isReentry){
-        roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false;
+        roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false; appliedPoints={};
         if(isDD){resetWagers([ddTk]);}
     }
     lastQuestionKey=key;
@@ -744,6 +763,15 @@ function toggleAccepting() {
 }
 function toggleWagering() {
     roomRef.child('state/wageringOpen').set(false);
+}
+function reopenWagers() {
+    const isFJ=GS.round===3&&GS.questionKey==='final';
+    const isDD=GS.dailyDouble;
+    if(!isDD&&!isFJ)return;
+    const eligible=isDD&&GS.ddTeam?[GS.ddTeam]:isFJ?Object.keys(teams).filter(tk=>(teams[tk].score||0)>0):[];
+    resetWagers(eligible);
+    roomRef.child('state/wageringOpen').set(true);
+    updateWagerProgress();
 }
 function resetWagers(teamKeys){
     const upd={};
@@ -814,10 +842,20 @@ function renderAnswers() {
 
     if(!keys.length){list.innerHTML='<div class="no-ans">No answers yet.</div>';updateStatus();return;}
     list.innerHTML=keys.map(tk=>{const a=curAnswers[tk],nm=(teams[tk]&&teams[tk].name)||tk,av=teams[tk]&&teams[tk].avatar;
-        if(a.passed){return`<div class="acard passed"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text" style="color:var(--tmut);font-style:italic;">Passed</span></div>`;}
+        if(a.passed){
+            const ptsDisplay=scoresApplied?' <span class="a-pts" style="color:var(--text-muted);font-weight:600;">(Passed)</span>':'';
+            return`<div class="acard passed"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}${ptsDisplay}</span><span class="a-text" style="color:var(--tmut);font-style:italic;">Passed</span></div>`;
+        }
         const gc=grading[tk]===true?'correct':grading[tk]===false?'incorrect':'';
-        return`<div class="acard ${gc}"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text">${esc(a.answer||'(blank)')}</span><button class="gbtn ${grading[tk]===true?'ca':''}" onclick="grade('${tk}',true)" title="Mark as correct — team earns points">✓</button><button class="gbtn ${grading[tk]===false?'ia':''}" onclick="grade('${tk}',false)" title="Mark as incorrect — team loses points">✕</button></div>`;
-    }).join(''); updateStatus();
+        const ptsDisplay=scoresApplied&&appliedPoints[tk]!==undefined?
+            ` <span class="a-pts" style="color:${appliedPoints[tk]>0?'var(--green)':'var(--red)'};font-weight:700;font-variant-numeric:tabular-nums;">(${appliedPoints[tk]>=0?'+':''}$${appliedPoints[tk].toLocaleString()})</span>`:
+            '';
+        const gradeBtns=scoresApplied?'':`<button class="gbtn ${grading[tk]===true?'ca':''}" onclick="grade('${tk}',true)" title="Mark as correct">✓</button><button class="gbtn ${grading[tk]===false?'ia':''}" onclick="grade('${tk}',false)" title="Mark as incorrect">✕</button>`;
+        return`<div class="acard ${gc}"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}${ptsDisplay}</span><span class="a-text">${esc(a.answer||'(blank)')}</span>${gradeBtns}</div>`;
+    }).join('');
+    const applyBtn=document.getElementById('apply-btn');
+    if(applyBtn){applyBtn.disabled=scoresApplied;applyBtn.textContent=scoresApplied?'Scores Applied':'Apply Scores';}
+    updateStatus();
 }
 function getEligibleTeams(){
     const all=Object.keys(teams);
@@ -828,13 +866,16 @@ function getEligibleTeams(){
 function grade(tk,c){grading[tk]=grading[tk]===c?undefined:c;renderAnswers();}
 function clearGrading(){grading={};renderAnswers();}
 function applyScores() {
+    if(scoresApplied)return;
     const upd={}, hist={round:GS.round,category:GS.category,value:GS.value,questionText:GS.questionText||'',acceptedAt:GS.acceptedAt||0,answers:{}};
     const isDD=GS.dailyDouble, isFJ=GS.round===3&&GS.questionKey==='final';
+    appliedPoints={};
     Object.keys(curAnswers).forEach(tk=>{
         const ts=curAnswers[tk].timestamp||0;
         if(curAnswers[tk].passed){
             upd['teams/'+tk+'/streak']=0;
             hist.answers[tk]={answer:null,correct:null,points:0,passed:true,ts};
+            appliedPoints[tk]=0;
             return;
         }
         const c=grading[tk]; if(c===undefined)return;
@@ -845,6 +886,7 @@ function applyScores() {
         } else {
             pts=c?GS.value:-GS.value;
         }
+        appliedPoints[tk]=pts;
         const cur=(teams[tk]&&teams[tk].score)||0;
         upd['teams/'+tk+'/score']=cur+pts;
         const streak=(teams[tk]&&teams[tk].streak)||0;
@@ -868,7 +910,7 @@ function applyScores() {
     if(applyBtn){applyBtn.disabled=true;applyBtn.textContent='Applying...';}
     roomRef.update(upd).then(()=>{
         grading={};scoresApplied=true;renderAnswers();
-        if(applyBtn){applyBtn.disabled=false;applyBtn.textContent='Apply Scores';applyBtn.style.boxShadow='0 0 12px var(--green)';setTimeout(()=>{applyBtn.style.boxShadow='';},2000);}
+        if(applyBtn){applyBtn.disabled=true;applyBtn.textContent='Scores Applied';}
     });
 }
 function determineBoardControl(gradingMap,answers){
@@ -908,7 +950,9 @@ function completeAndReturn(fromKeyboard){
         if(!confirm('No answers were submitted. Return to the board?'))return;
     }
     const k=GS.questionKey;if(k&&k!=='final')roomRef.child('board/'+k+'/completed').set(true);
-    roomRef.child('currentAnswers').remove();grading={};scoresApplied=false;lastQuestionKey=null;
+    roomRef.child('currentAnswers').remove();grading={};scoresApplied=false;appliedPoints={};lastQuestionKey=null;
+    if(GS.dailyDouble&&GS.ddTeam)resetWagers([GS.ddTeam]);
+    else if(GS.round===3&&GS.questionKey==='final')resetWagers(Object.keys(teams));
     goToBoard();
 }
 function returnToBoard(){
@@ -929,7 +973,7 @@ function startFinal(){
         const isReentry=(lastQuestionKey==='final');
         if(!isReentry){
             resetWagers(Object.keys(teams));
-            roomRef.child('currentAnswers').remove();grading={};scoresApplied=false;
+            roomRef.child('currentAnswers').remove();grading={};scoresApplied=false;appliedPoints={};
             pendingQuestion={questionText:f.questionText,imageUrl:f.imageUrl||''};
         }
         lastQuestionKey='final';
@@ -1033,8 +1077,32 @@ let revealData = null;
 
 function showFJRevealButton() {
     const isFJ = GS.round === 3 && GS.questionKey === 'final';
+    const isDD = GS.dailyDouble && GS.ddTeam;
     document.getElementById('fj-reveal-start').classList.toggle('hidden', !isFJ);
+    document.getElementById('dd-reveal-start').classList.toggle('hidden', !(isDD && scoresApplied));
     document.getElementById('q-bottom-btns').classList.toggle('hidden', isFJ);
+}
+
+function startDDReveal() {
+    const ddTk = GS.ddTeam;
+    if (!ddTk || !teams[ddTk]) return;
+    const t = teams[ddTk];
+    const wager = t.wager || 0;
+    const passed = curAnswers[ddTk] && curAnswers[ddTk].passed;
+    const correct = passed ? false : (grading[ddTk] === true);
+    const answer = passed ? '(passed)' : ((curAnswers[ddTk] && curAnswers[ddTk].answer) || '(no answer)');
+    const currentScore = t.score || 0;
+    const preScore = scoresApplied ? (passed ? currentScore : (correct ? currentScore - wager : currentScore + wager)) : currentScore;
+    const ddRevealData = {
+        team: { key: ddTk, name: t.name || ddTk, avatar: t.avatar || '', preScore, wager, answer, correct, finalScore: currentScore },
+        questionText: GS.questionText || '', category: GS.category || '', value: GS.value || 0,
+        stage: 1
+    };
+    roomRef.child('ddReveal').set(ddRevealData);
+    roomRef.child('state').update({ phase: 'dd-reveal' });
+    document.getElementById('rv-room').textContent = roomCode;
+    showView('reveal-view');
+    renderDDRevealAdmin();
 }
 
 function startFinalReveal() {
@@ -1062,7 +1130,62 @@ function startFinalReveal() {
     renderRevealAdmin();
 }
 
+function advanceDDReveal() {
+    roomRef.child('ddReveal').once('value', s => {
+        const d = s.val();
+        if (!d || !d.team) return;
+        let stage = (d.stage || 1) + 1;
+        if (stage > 5) {
+            const k = GS.questionKey;
+            if (k && k !== 'final') roomRef.child('board/' + k + '/completed').set(true);
+            if (GS.dailyDouble && GS.ddTeam) resetWagers([GS.ddTeam]);
+            roomRef.child('ddReveal').remove();
+            roomRef.child('currentAnswers').remove();
+            roomRef.child('state').update({ phase: 'board', category: '', value: 0, questionText: '', accepting: false, dailyDouble: false, ddTeam: '', questionKey: '', timerRunning: false, answerRevealed: false, wageringOpen: false, imageUrl: '' });
+            lastQuestionKey = null;
+            grading = {};
+            scoresApplied = false;
+            appliedPoints = {};
+            showView('board-view');
+            renderBoard();
+            return;
+        }
+        roomRef.child('ddReveal/stage').set(stage).then(()=>renderDDRevealAdmin(stage));
+    });
+}
+
+function renderDDRevealAdmin(overrideStage) {
+    roomRef.child('ddReveal').once('value', s => {
+        const d = s.val();
+        if (!d || !d.team) return;
+        const t = d.team, stage = overrideStage !== undefined ? overrideStage : (d.stage || 1);
+        document.getElementById('rv-room').textContent = roomCode;
+        document.querySelector('#reveal-view h1').textContent='Daily Double Reveal';
+        document.getElementById('rv-progress').textContent = `Stage ${stage} of 5`;
+        document.getElementById('rv-team-name').textContent = t.name;
+        document.getElementById('rv-avatar').innerHTML = avatarImg(t.avatar, 36);
+        const stageLabels = { 1: 'Score before question', 2: 'Their wager', 3: 'The question', 4: 'Their answer', 5: 'Final result' };
+        document.getElementById('rv-stage-label').textContent = stageLabels[stage];
+        let detail = '';
+        if (stage === 1) detail = '$' + t.preScore.toLocaleString();
+        if (stage === 2) detail = '$' + t.wager.toLocaleString();
+        if (stage === 3) detail = d.questionText || '(no question text)';
+        if (stage === 4) detail = '"' + t.answer + '" — ' + (t.correct ? '✓ Correct' : '✕ Incorrect');
+        if (stage === 5) {
+            const sign = t.correct ? '+' : '−';
+            detail = '$' + t.preScore.toLocaleString() + ' ' + sign + '$' + t.wager.toLocaleString() + ' = $' + t.finalScore.toLocaleString();
+        }
+        document.getElementById('rv-detail').textContent = detail;
+        document.getElementById('rv-detail').style.color = (stage === 4 && !t.correct) ? 'var(--red)' : (stage === 4 && t.correct) ? 'var(--green)' : 'var(--gold-bright)';
+        document.getElementById('rv-standings').innerHTML = '';
+        const btn = document.querySelector('#reveal-view .btn-gold');
+        btn.textContent = stage >= 5 ? 'Return to Board →' : 'Next →';
+        btn.onclick = stage >= 5 ? () => advanceDDReveal() : advanceDDReveal;
+    });
+}
+
 function advanceReveal() {
+    if (GS.phase === 'dd-reveal') { advanceDDReveal(); return; }
     if (!revealData) return;
     revealData.stage++;
     if (revealData.stage > 4) {
@@ -1088,6 +1211,7 @@ function advanceReveal() {
 
 function renderRevealAdmin() {
     if (!revealData) return;
+    document.querySelector('#reveal-view h1').textContent='Final Reveal';
     const { teams: rt, index, stage } = revealData;
     if (index >= rt.length) {
         document.getElementById('rv-progress').textContent = 'ALL TEAMS REVEALED';

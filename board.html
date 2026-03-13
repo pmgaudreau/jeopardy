@@ -250,7 +250,7 @@
     <div class="qd-cat" id="qd-cat"></div>
     <div class="qd-val" id="qd-val"></div>
     <div class="qd-text" id="qd-text"></div>
-    <img id="qd-img" class="hidden" style="max-height:30vh;max-width:60vw;border-radius:12px;margin-top:1.5vw;object-fit:contain;" alt="">
+    <img id="qd-img" class="hidden" style="max-height:75vh;max-width:75vw;width:75vw;height:auto;border-radius:12px;margin-top:1.5vw;object-fit:contain;" alt="">
     <div class="qd-answer" id="qd-answer"></div>
     <div class="qd-timer hidden" id="qd-timer"><div class="time" id="qd-time">0:30</div><div class="bar-wrap"><div class="bar" id="qd-bar" style="width:100%"></div></div></div>
     <div class="qd-status hidden" id="qd-status"></div>
@@ -334,6 +334,7 @@ let winnerPlayed=false;
 let prevScores={};
 let timerInterval=null,timerDuration=30;
 let finalReveal=null,prevFRKey='';
+let ddReveal=null,prevDDKey='';
 let thinkMusicPlaying=false;
 let answerCount=0;
 
@@ -405,6 +406,7 @@ function startListening(){
     roomRef.child('board').on('value',s=>{boardQ=s.val()||{};if(GS.phase==='board')renderGrid();});
     roomRef.child('categories').on('value',s=>{categories=s.val()||{};if(GS.phase==='board')renderGrid();});
     roomRef.child('finalReveal').on('value',s=>{finalReveal=s.val();if(GS.phase==='final-reveal')renderFinalReveal();if(GS.phase==='final-rankings')showFinalRankings();});
+    roomRef.child('ddReveal').on('value',s=>{ddReveal=s.val();if(GS.phase==='dd-reveal')renderDDReveal();});
 }
 
 // ═══ QR CODE ═══
@@ -428,6 +430,8 @@ function onStateChange(){
         showIntermission();
     } else if(phase==='round-transition'&&prevPhase!=='round-transition'){
         showTransition();SFX.roundEnd();
+    } else if(phase==='dd-reveal'){
+        renderDDReveal();
     } else if(phase==='final-reveal'){
         renderFinalReveal();
     } else if(phase==='final-rankings'){
@@ -722,6 +726,62 @@ function renderFinalReveal(){
     }
 
     updateRevealLeader(rt, idx, stage);
+}
+
+// ═══ DAILY DOUBLE REVEAL ═══
+function renderDDReveal(){
+    if(!ddReveal||!ddReveal.team)return;
+    showScreen('reveal-display');
+    const {team:t,questionText,category,value,stage}=ddReveal;
+    const ddKey='dd_'+stage;
+    const isNew=ddKey!==prevDDKey;
+    prevDDKey=ddKey;
+
+    const card=document.getElementById('fr-card');
+    if(isNew){card.style.animation='none';card.offsetHeight;card.style.animation='';}
+
+    document.getElementById('fr-avatar').innerHTML=avatarImg(t.avatar,'8vw');
+    const col=avatarColor(t.avatar);
+    document.getElementById('fr-name').textContent=t.name;
+    document.getElementById('fr-name').style.color=col;
+
+    const lbl=document.getElementById('fr-stage-label');
+    const detail=document.getElementById('fr-detail');
+    const math=document.getElementById('fr-math');
+    detail.className='fr-detail';
+    detail.style.fontSize='';
+    math.textContent='';
+    document.getElementById('fr-leader-name').textContent='—';
+    document.getElementById('fr-leader-score').textContent='';
+
+    if(stage===1){
+        lbl.textContent='Score before question';
+        detail.textContent='$'+t.preScore.toLocaleString();
+        if(isNew)SFX.revealTeam();
+    } else if(stage===2){
+        lbl.textContent='Their Wager';
+        detail.textContent='$'+t.wager.toLocaleString();
+        if(isNew)SFX.revealTeam();
+    } else if(stage===3){
+        lbl.textContent=category+(value?' for $'+value.toLocaleString():'');
+        detail.textContent=questionText||'(no question text)';
+        detail.style.fontSize='2.5vw';
+        detail.style.maxWidth='80vw';
+        detail.style.textAlign='center';
+        if(isNew)SFX.questionReveal();
+    } else if(stage===4){
+        lbl.textContent='Their Answer';
+        detail.textContent='"'+t.answer+'"';
+        detail.classList.add(t.correct?'correct':'incorrect');
+        if(isNew){if(t.correct)SFX.correct();else SFX.wrongBuzz();}
+    } else if(stage===5){
+        lbl.textContent='Final Result';
+        const sign=t.correct?'+':'−';
+        math.textContent='$'+t.preScore.toLocaleString()+' '+sign+' $'+t.wager.toLocaleString()+' = $'+t.finalScore.toLocaleString();
+        detail.textContent='$'+t.finalScore.toLocaleString();
+        detail.classList.add(t.correct?'correct':'incorrect');
+        if(isNew)SFX.revealScore();
+    }
 }
 
 function updateRevealLeader(rt, currentIdx, currentStage){
