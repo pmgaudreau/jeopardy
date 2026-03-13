@@ -853,8 +853,13 @@ function renderAnswers() {
         const gradeBtns=scoresApplied?'':`<button class="gbtn ${grading[tk]===true?'ca':''}" onclick="grade('${tk}',true)" title="Mark as correct">✓</button><button class="gbtn ${grading[tk]===false?'ia':''}" onclick="grade('${tk}',false)" title="Mark as incorrect">✕</button>`;
         return`<div class="acard ${gc}"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}${ptsDisplay}</span><span class="a-text">${esc(a.answer||'(blank)')}</span>${gradeBtns}</div>`;
     }).join('');
+    const allGraded=Object.keys(curAnswers).every(tk=>curAnswers[tk].passed||grading[tk]===true||grading[tk]===false);
     const applyBtn=document.getElementById('apply-btn');
-    if(applyBtn){applyBtn.disabled=scoresApplied;applyBtn.textContent=scoresApplied?'Scores Applied':'Apply Scores';}
+    if(applyBtn){
+        applyBtn.disabled=scoresApplied||!allGraded;
+        applyBtn.textContent=scoresApplied?'Scores Applied':'Apply Scores';
+        applyBtn.title=scoresApplied?'Scores have been applied':!allGraded?'Mark every answer as correct or incorrect first':'Apply all graded scores — correct answers earn points, incorrect answers lose points';
+    }
     updateStatus();
 }
 function getEligibleTeams(){
@@ -867,6 +872,8 @@ function grade(tk,c){grading[tk]=grading[tk]===c?undefined:c;renderAnswers();}
 function clearGrading(){grading={};renderAnswers();}
 function applyScores() {
     if(scoresApplied)return;
+    const allGraded=Object.keys(curAnswers).every(tk=>curAnswers[tk].passed||grading[tk]===true||grading[tk]===false);
+    if(!allGraded){alert('Mark every submitted answer as correct or incorrect before applying scores.');return;}
     const upd={}, hist={round:GS.round,category:GS.category,value:GS.value,questionText:GS.questionText||'',acceptedAt:GS.acceptedAt||0,answers:{}};
     const isDD=GS.dailyDouble, isFJ=GS.round===3&&GS.questionKey==='final';
     appliedPoints={};
