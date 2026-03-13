@@ -402,7 +402,7 @@ function startListening(){
     document.getElementById('lobby-code').textContent=roomCode;
     showScreen('lobby');
     generateQR();
-    roomRef.child('state').on('value',s=>{const v=s.val();if(!v)return;GS=v;onStateChange();if(GS.phase==='question')updateQuestion();});
+    roomRef.child('state').on('value',s=>{const v=s.val();if(!v)return;GS=v;onStateChange();if(GS.phase==='question'){showScreen('question-display');updateQuestion();}});
     roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScores();renderLobbyTeams();renderBoardControl();});
     roomRef.child('currentAnswers').on('value',s=>{answerCount=s.val()?Object.keys(s.val()).length:0;updateAnswerCount();});
     roomRef.child('board').on('value',s=>{boardQ=s.val()||{};if(GS.phase==='board')renderGrid();});
@@ -449,6 +449,7 @@ function onStateChange(){
     } else if(phase==='question'&&!dailyDouble&&GS.questionKey!==prevQKey){
         showQuestion();SFX.questionReveal();
     } else if(phase==='question'){
+        showScreen('question-display');
         updateQuestion();
     } else if(phase==='board'){
         showBoard();
