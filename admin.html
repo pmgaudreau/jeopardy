@@ -274,6 +274,7 @@
         <span class="room-badge" id="disp-room"></span>
         <h1>Trivia Night</h1>
         <div class="top-controls">
+            <button class="btn btn-outline btn-sm" onclick="leaveRoom()" title="Leave this room and return to setup">← Back to Setup</button>
             <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
             <button class="qr-toggle" id="qr-toggle" onclick="toggleQR()" title="Toggle QR on projector">QR</button>
             <button class="btn-intermission" id="intermission-btn" onclick="promptIntermission()" title="Start a timed intermission break — shows a countdown and scoreboard on all screens">☕ Break</button>
@@ -313,6 +314,7 @@
         <span class="room-badge" id="qv-room"></span>
         <h1>Trivia Night</h1>
         <div class="top-controls">
+            <button class="btn btn-outline btn-sm" onclick="leaveRoom()" title="Leave this room and return to setup">← Back to Setup</button>
             <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
         </div>
     </div>
@@ -393,6 +395,7 @@
         <span class="room-badge" id="rv-room"></span>
         <h1>Final Reveal</h1>
         <div class="top-controls">
+            <button class="btn btn-outline btn-sm" onclick="leaveRoom()" title="Leave this room and return to setup">← Back to Setup</button>
             <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
         </div>
     </div>
@@ -562,6 +565,10 @@ function enterGame() {
     const base=window.location.href.replace(/\/[^\/]*$/,'/');
     document.getElementById('board-url-note').innerHTML=`Open on projector:<br><code>${base}board.html?room=${roomCode}</code>`;
     showView('board-view'); setupListeners();
+    window.history.replaceState({},'',window.location.pathname+'?room='+roomCode);
+}
+function leaveRoom() {
+    window.location.href=window.location.pathname;
 }
 function openBoardInNewTab() {
     if(!roomCode)return;
@@ -1198,6 +1205,24 @@ document.addEventListener('keydown',e=>{
 });
 
 resetTimerDisp();
+
+// ── Init: join room from URL if ?room= present ──
+(function(){
+    const params=new URLSearchParams(window.location.search);
+    const r=params.get('room');
+    if(!r)return;
+    const code=r.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(!code)return;
+    roomCode=code; roomRef=db.ref('trivia-rooms/'+roomCode);
+    roomRef.child('state').once('value',s=>{
+        if(s.exists())enterGame();
+        else{
+            document.getElementById('setup-err').textContent='Room not found.';
+            document.getElementById('inp-rejoin').value=code;
+            roomCode=null;roomRef=null;
+        }
+    });
+})();
 </script>
 </body>
 </html>
