@@ -32,7 +32,7 @@
 
         .btn {
             display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
-            padding: .6rem 1.2rem; border: none; border-radius: 999px;
+            padding: .6rem 1.2rem; border: none; border-radius: var(--radius);
             font-family: var(--fs); font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .2s;
         }
         .btn:active { transform: scale(.97); } .btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -147,7 +147,7 @@
         .score-name { flex: 1; font-weight: 600; font-size: .85rem; }
         .score-val { font-weight: 800; color: var(--gold); font-size: .9rem; font-variant-numeric: tabular-nums; }
         .adj-btn {
-            width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 4px;
+            width: 20px; height: 20px; border: 1px solid var(--border); border-radius: var(--radius);
             background: transparent; color: var(--text-muted); font-size: .7rem;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
@@ -236,7 +236,8 @@
 
 <!-- ═══ SETUP ═══ -->
 <div class="view active" id="setup-view">
-<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;">
+<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;position:relative;">
+<div style="position:absolute;top:1rem;right:1.5rem;"><a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a></div>
 <div class="setup-card">
     <h1>PDK NINE</h1>
     <div class="sub">Trivia Night — Host Control Panel</div>
@@ -273,6 +274,7 @@
         <span class="room-badge" id="disp-room"></span>
         <h1>Trivia Night</h1>
         <div class="top-controls">
+            <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
             <button class="qr-toggle" id="qr-toggle" onclick="toggleQR()" title="Toggle QR on projector">QR</button>
             <button class="btn-intermission" id="intermission-btn" onclick="promptIntermission()" title="Start a timed intermission break — shows a countdown and scoreboard on all screens">☕ Break</button>
             <button class="btn-intermission end" id="end-intermission-btn" onclick="endIntermission()" title="End the intermission immediately and return to the board" style="display:none;">■ End Break <span id="intermission-countdown"></span></button>
@@ -299,6 +301,7 @@
             <div class="side-panel">
                 <h2>Projector Display</h2>
                 <div class="board-url-note" id="board-url-note">Open <code>board.html</code> on your projector/TV</div>
+                <button class="btn btn-outline btn-sm" onclick="openBoardInNewTab()" title="Open the board display in a new tab with this room code" style="margin-top:.5rem;width:100%;">Open Board in New Tab</button>
             </div>
         </div>
     </div>
@@ -309,7 +312,9 @@
     <div class="top-bar">
         <span class="room-badge" id="qv-room"></span>
         <h1>Trivia Night</h1>
-        <div></div>
+        <div class="top-controls">
+            <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
+        </div>
     </div>
     <div class="qc">
         <div class="q-back"><button class="btn btn-outline btn-sm" onclick="returnToBoard()" title="Return to the board without completing this question">← Back to Board</button></div>
@@ -387,7 +392,9 @@
     <div class="top-bar">
         <span class="room-badge" id="rv-room"></span>
         <h1>Final Reveal</h1>
-        <div></div>
+        <div class="top-controls">
+            <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
+        </div>
     </div>
     <div class="qc">
         <div class="qcard" style="text-align:center;">
@@ -555,6 +562,11 @@ function enterGame() {
     const base=window.location.href.replace(/\/[^\/]*$/,'/');
     document.getElementById('board-url-note').innerHTML=`Open on projector:<br><code>${base}board.html?room=${roomCode}</code>`;
     showView('board-view'); setupListeners();
+}
+function openBoardInNewTab() {
+    if(!roomCode)return;
+    const base=window.location.href.replace(/\/[^\/]*$/,'/');
+    window.open(base+'board.html?room='+roomCode,'_blank');
 }
 
 // ── Listeners ──
@@ -928,13 +940,38 @@ function startFinal(){
         resetTimerDisp(); updateStatus(); showFJRevealButton();
     });
 }
+function getWagerEligible(){
+    const isFJ=GS.round===3&&GS.questionKey==='final';
+    const isDD=GS.dailyDouble;
+    if(!isDD&&!isFJ)return {eligible:[],locked:[]};
+    const eligible=isDD&&GS.ddTeam?[GS.ddTeam]:
+        isFJ?Object.keys(teams).filter(tk=>(teams[tk].score||0)>0):
+        Object.keys(teams);
+    const locked=eligible.filter(tk=>teams[tk]&&teams[tk].wager>0);
+    return {eligible,locked};
+}
 function revealFJQuestion(){
-    if(pendingQuestion){
-        roomRef.child('state').update({questionText:pendingQuestion.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:pendingQuestion.imageUrl||''});
-        pendingQuestion=null;
-    } else {
+    const {eligible,locked}=getWagerEligible();
+    const allLocked=eligible.length===0||locked.length===eligible.length;
+    if(!allLocked){
+        const waiting=eligible.length-locked.length;
+        const msg=waiting===1
+            ?'1 team has not locked in their wager. Reveal the question anyway?'
+            :waiting+' teams have not locked in their wagers. Reveal the question anyway?';
+        if(!confirm(msg))return;
+    }
+    const isFJ=GS.round===3&&GS.questionKey==='final';
+    const isDD=GS.dailyDouble;
+    if(isDD&&GS.questionKey&&GS.questionKey!=='final'){
+        roomRef.child('board/'+GS.questionKey).once('value',s=>{
+            const q=s.val();if(!q)return;
+            roomRef.child('state').update({questionText:q.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:q.imageUrl||''});
+            pendingQuestion=null;
+        });
+    } else if(isFJ){
         roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
             roomRef.child('state').update({questionText:f.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:f.imageUrl||''});
+            pendingQuestion=null;
         });
     }
 }
