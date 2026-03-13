@@ -256,10 +256,11 @@
             <div class="lbl">Drag &amp; drop a CSV or <strong>click to browse</strong></div>
         </div>
         <div class="fg" style="margin-top:.5rem;">
-            <label style="font-size:.75rem;">Character encoding (if é, ñ, etc. appear wrong)</label>
+            <label style="font-size:.75rem;">Character encoding — pick before uploading</label>
             <select id="csv-encoding" style="padding:.4rem .6rem;font-size:.85rem;">
-                <option value="utf-8">UTF-8 (recommended)</option>
-                <option value="iso-8859-1">Windows-1252 / Latin-1 (Excel export)</option>
+                <option value="utf-8">UTF-8 (Numbers, Google Sheets, most Mac apps)</option>
+                <option value="iso-8859-1">Windows-1252 (Excel on Windows)</option>
+                <option value="macintosh">MacRoman (older Mac Excel / legacy)</option>
             </select>
         </div>
         <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSV(this.files[0])">

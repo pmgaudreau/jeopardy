@@ -107,7 +107,7 @@ round,category,question_number,question_text,answer_text,daily_double_flag,image
 - **round**: 1 (Round 1), 2 (Double Jeopardy), 3 (Final Jeopardy)
 - **category**: Category name (5 per round)
 - **question_number**: 1–5 (maps to dollar value)
-- **question_text / answer_text**: The Q&A content
+- **question_text / answer_text**: The Q&A content. For accented characters (é, ñ, etc.): use **UTF-8** if from Google Sheets/Mac; use **Windows-1252** if from Excel on Windows (select before uploading).
 - **daily_double_flag**: TRUE/FALSE (or 1/0, yes/no)
 - **image_url** (optional): URL to an image shown alongside the question. Use a full URL (e.g. `https://example.com/photo.jpg`). Images display at 75% of the screen on the projector. For image-only questions, leave question_text empty and provide image_url.
 
