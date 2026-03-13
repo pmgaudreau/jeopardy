@@ -22,6 +22,7 @@
         }
         body { font-family: var(--fb); background: var(--bg); color: var(--text); min-height: 100vh; }
         .view { display: none; } .view.active { display: block; }
+        .view:not(.active) { display: none !important; }
         .hidden { display: none !important; }
 
         input[type="text"], input[type="number"], select {
@@ -46,7 +47,7 @@
         .btn-block { width: 100%; }
 
         /* ═══ SETUP ═══ */
-        #setup-view { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+        #setup-view.view.active { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
         .setup-card {
             background: var(--bg-card); border: 1px solid var(--border);
             border-radius: 16px; padding: 2.5rem 2rem; max-width: 520px; width: 100%; text-align: center;
@@ -467,9 +468,10 @@ const VALS = { 1:[200,400,600,800,1000], 2:[400,800,1200,1600,2000] };
 function showView(id) { document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
 // ── CSV ──
+function isQuote(c){return c==='"'||c==='\u201C'||c==='\u201D'||c==='\u201E'||c==='\u201F';}
 function parseCSVLine(line) {
     const r=[]; let cur='', inQ=false;
-    for(let i=0;i<line.length;i++){const c=line[i]; if(inQ){if(c==='"'&&line[i+1]==='"'){cur+='"';i++;}else if(c==='"')inQ=false;else cur+=c;}else{if(c==='"')inQ=true;else if(c===','){r.push(cur.trim());cur='';}else cur+=c;}}
+    for(let i=0;i<line.length;i++){const c=line[i]; if(inQ){if(isQuote(c)&&isQuote(line[i+1])){cur+='"';i++;}else if(isQuote(c))inQ=false;else cur+=c;}else{if(isQuote(c))inQ=true;else if(c===','){r.push(cur.trim());cur='';}else cur+=c;}}
     r.push(cur.trim()); return r;
 }
 function parseCSV(text) {
