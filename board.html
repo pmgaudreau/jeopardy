@@ -93,9 +93,16 @@
         @keyframes ddPulse{from{transform:scale(.9);opacity:.7;}to{transform:scale(1.1);opacity:1;}}
 
         /* ═══ ROUND TRANSITION ═══ */
-        #transition-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:4vw;gap:2vw;}
-        .tr-title{font-family:var(--fh);font-size:4vw;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;animation:fadeDown .6s ease;}
-        .tr-scores{display:flex;flex-direction:column;gap:.6vw;width:70vw;max-width:900px;max-height:70vh;overflow-y:auto;}
+        #transition-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:4vw;gap:1.25vw;min-height:0;}
+        .tr-title{font-family:var(--fh);font-size:4vw;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;animation:fadeDown .6s ease;flex-shrink:0;}
+        .tr-scores-wrap{
+            width:70vw;max-width:900px;flex:1 1 auto;min-height:120px;max-height:min(58vh,70vw);
+            overflow:hidden;position:relative;
+            mask-image:linear-gradient(to bottom,transparent 0%,black 6%,black 94%,transparent 100%);
+            -webkit-mask-image:linear-gradient(to bottom,transparent 0%,black 6%,black 94%,transparent 100%);
+        }
+        .tr-scroll{display:flex;flex-direction:column;gap:.6vw;will-change:transform;}
+        .tr-scroll .tr-row{animation:none;}
         .tr-row{
             display:flex;align-items:center;gap:.8vw;background:var(--card);border:1px solid var(--border);
             border-radius:10px;padding:.7vw 1.5vw;animation:slideIn .5s ease;animation-fill-mode:both;
@@ -105,7 +112,7 @@
         .tr-row .av img{width:2vw;height:2vw;border-radius:50%;object-fit:cover;}
         .tr-row .nm{flex:1;font-family:var(--fs);font-weight:700;font-size:1.4vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
         .tr-row .sc{font-family:var(--fh);font-weight:800;font-size:1.8vw;color:var(--gold);}
-        .tr-next{font-family:var(--fh);font-size:2.5vw;color:var(--gold-bright);text-transform:uppercase;animation:fadeDown 1s ease 1.5s;animation-fill-mode:both;}
+        .tr-next{font-family:var(--fh);font-size:2.5vw;color:var(--gold-bright);text-transform:uppercase;animation:fadeDown 1s ease 1.5s;animation-fill-mode:both;flex-shrink:0;}
         @keyframes fadeDown{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
         @keyframes slideIn{from{opacity:0;transform:translateX(-30px);}to{opacity:1;transform:translateX(0);}}
 
@@ -387,7 +394,9 @@
 <!-- Round transition scoreboard -->
 <div id="transition-display" class="hidden">
     <div class="tr-title" id="tr-title">Round Complete</div>
-    <div class="tr-scores" id="tr-scores"></div>
+    <div class="tr-scores-wrap">
+        <div class="tr-scroll" id="tr-scroll"></div>
+    </div>
     <div class="tr-next" id="tr-next">Double Jeopardy Coming Up...</div>
 </div>
 
@@ -991,9 +1000,31 @@ function showTransition(){
     document.getElementById('tr-title').textContent=titles[prev]||'Round Complete';
     document.getElementById('tr-next').textContent=nexts[round]||'';
     const sorted=Object.entries(teams).sort((a,b)=>(b[1].score||0)-(a[1].score||0));
-    document.getElementById('tr-scores').innerHTML=sorted.map(([k,t],i)=>
-        `<div class="tr-row" style="animation-delay:${i*.15}s;border-left:4px solid ${avatarColor(t.avatar)}"><span class="rank">${i+1}</span><span class="av">${avatarImg(t.avatar,'2.5vw')}</span><span class="nm" style="color:${avatarColor(t.avatar)}">${esc(t.name||k)}</span><span class="sc">$${(t.score||0).toLocaleString()}</span></div>`
+    const rowsHtml=sorted.map(([k,t],i)=>
+        `<div class="tr-row" style="border-left:4px solid ${avatarColor(t.avatar)}"><span class="rank">${i+1}</span><span class="av">${avatarImg(t.avatar,'2.5vw')}</span><span class="nm" style="color:${avatarColor(t.avatar)}">${esc(t.name||k)}</span><span class="sc">$${(t.score||0).toLocaleString()}</span></div>`
     ).join('');
+    const scrollEl=document.getElementById('tr-scroll');
+    scrollEl.innerHTML=rowsHtml+rowsHtml;
+    startTransitionScroll(scrollEl);
+}
+function startTransitionScroll(el){
+    const scrollH=el.scrollHeight/2;
+    if(scrollH<=0){setTimeout(()=>startTransitionScroll(el),300);return;}
+    document.getElementById('transition-scroll-style')?.remove();
+    el.style.animation='none';
+    el.offsetHeight;
+    if(scrollH<80){
+        el.style.transform='none';
+        el.style.animation='none';
+        return;
+    }
+    const speed=35;
+    const dur=scrollH/speed;
+    const style=document.createElement('style');
+    style.id='transition-scroll-style';
+    style.textContent='@keyframes transitionScroll{0%{transform:translateY(0)}100%{transform:translateY(-'+scrollH+'px)}}';
+    document.head.appendChild(style);
+    el.style.animation='transitionScroll '+dur+'s linear infinite';
 }
 
 // ═══ INTERMISSION ═══

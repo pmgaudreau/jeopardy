@@ -753,9 +753,16 @@ function activateQ(key,q,isDD,ddTk) {
     const val=q.value;
     const hideQ=isDD;
     pendingQuestion=hideQ?{questionText:q.questionText,imageUrl:q.imageUrl||''}:null;
-    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD});
+    const statePatch={
+        phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,
+        dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,
+        wageringOpen:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD
+    };
+    const flat={};
+    Object.keys(statePatch).forEach(k=>{flat['state/'+k]=statePatch[k];});
+    if(isDD&&ddTk){flat['teams/'+ddTk+'/wager']=0;}
+    roomRef.update(flat);
     roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false;
-    if(isDD){resetWagers([ddTk]);}
     showView('question-view');
     const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
     document.getElementById('qv-rl').textContent=rl[q.round]||'';
@@ -899,6 +906,8 @@ function applyScores() {
             upd['teams/'+tk+'/streak']=0;
         }
     });
+    if(isDD&&GS.ddTeam){upd['teams/'+GS.ddTeam+'/wager']=0;}
+    if(isFJ){Object.keys(teams).forEach(tk=>{upd['teams/'+tk+'/wager']=0;});}
     const scoreSnap={};
     Object.keys(teams).forEach(tk=>{
         scoreSnap[tk]=(upd['teams/'+tk+'/score']!==undefined)?upd['teams/'+tk+'/score']:(teams[tk].score||0);
@@ -955,6 +964,7 @@ function completeAndReturn(fromKeyboard){
 function returnToBoard(){
     roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
     roomRef.child('currentAnswers').remove();grading={};showView('board-view');stopLocalTimer();resetTimerDisp();
+    resetWagers(Object.keys(teams));
 }
 
 // ── Final ──
