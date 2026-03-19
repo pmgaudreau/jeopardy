@@ -45,8 +45,14 @@
         .btn-sm { padding: .4rem .8rem; font-size: .8rem; }
         .btn-block { width: 100%; }
 
-        /* ═══ SETUP ═══ */
-        #setup-view { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+        /* ═══ SETUP ═══ (only when .active — otherwise #setup-view would override .view { display:none } and stay visible) */
+        #setup-view.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
         .setup-card {
             background: var(--bg-card); border: 1px solid var(--border);
             border-radius: 16px; padding: 2.5rem 2rem; max-width: 520px; width: 100%; text-align: center;
