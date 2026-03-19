@@ -53,6 +53,12 @@
             min-height: 100vh;
             padding: 2rem;
         }
+        .setup-superadmin-link {
+            position: fixed;
+            top: 1rem;
+            right: 1.5rem;
+            z-index: 60;
+        }
         .setup-card {
             background: var(--bg-card); border: 1px solid var(--border);
             border-radius: 16px; padding: 2.5rem 2rem; max-width: 520px; width: 100%; text-align: center;
@@ -247,6 +253,7 @@
 
 <!-- ═══ SETUP ═══ -->
 <div class="view active" id="setup-view">
+<a href="superadmin.html" class="btn btn-outline btn-sm setup-superadmin-link" title="Manage all game rooms">Super Admin</a>
 <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;">
 <div class="setup-card">
     <h1>PDK NINE</h1>
@@ -293,6 +300,7 @@
             <button class="btn-intermission end" id="end-intermission-btn" onclick="endIntermission()" title="End the intermission immediately and return to the board" style="display:none;">■ End Break <span id="intermission-countdown"></span></button>
             <span class="current-round-badge" id="current-round-badge">Round 1</span>
             <button class="btn btn-sm btn-end-round" id="end-round-btn" onclick="promptEndRound()" title="End the current round, show the scoreboard, and advance to the next round">End Round →</button>
+            <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
         </div>
     </div>
     <div class="board-layout">
@@ -325,7 +333,9 @@
     <div class="top-bar">
         <span class="room-badge" id="qv-room"></span>
         <h1>Trivia Night</h1>
-        <div></div>
+        <div class="top-controls">
+            <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
+        </div>
     </div>
     <div class="qc">
         <div class="q-back"><button class="btn btn-outline btn-sm" onclick="returnToBoard()" title="Return to the board without completing this question">← Back to Board</button></div>
@@ -403,7 +413,9 @@
     <div class="top-bar">
         <span class="room-badge" id="rv-room"></span>
         <h1>Final Reveal</h1>
-        <div></div>
+        <div class="top-controls">
+            <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
+        </div>
     </div>
     <div class="qc">
         <div class="qcard" style="text-align:center;">
