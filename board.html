@@ -212,30 +212,53 @@
         #game-start-display .im-sub{font-family:var(--fs);font-size:2.2vw;color:var(--tsec);letter-spacing:.08em;text-transform:uppercase;}
         #game-start-display .im-soon{font-family:var(--fh);font-size:3vw;color:var(--gold-bright);letter-spacing:.06em;margin-top:1vw;animation:fadeDown .8s ease .2s both;}
         #qr-projector-display{
-            flex:1;display:none;flex-direction:column;min-height:0;background:var(--bg);
+            position:relative;flex:1;display:none;flex-direction:column;min-height:0;background:var(--bg);
             padding:clamp(.5rem,1.2vw,1rem) clamp(.75rem,2vw,1.5rem) clamp(.75rem,2vw,1.5rem);
             overflow:hidden;gap:clamp(.35rem,1vw,.75rem);
         }
-        .qr-proj-top{text-align:center;flex-shrink:0;padding:0 .25rem;max-width:100%;}
+        .qr-proj-logo-corner{
+            position:absolute;top:clamp(.45rem,1vw,.85rem);left:clamp(.5rem,1.5vw,1.25rem);z-index:5;
+            width:clamp(44px,7vw,100px);height:auto;pointer-events:none;
+            filter:drop-shadow(0 0 16px rgba(255,215,0,.22));opacity:.95;
+        }
+        .qr-proj-top{text-align:center;flex-shrink:0;padding:0 .25rem 0 clamp(3.5rem,12vw,7.5rem);max-width:100%;}
         .qr-proj-top h3{font-family:var(--fh);font-size:clamp(1.1rem,3.2vw,2.5rem);color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:0 0 .25rem;}
         .qr-team-count-pill{display:inline-flex;align-items:center;gap:.35rem;font-family:var(--fs);font-size:clamp(.75rem,1.35vw,1.1rem);font-weight:700;color:var(--gold-bright);background:rgba(255,215,0,.1);border:2px solid var(--gold-dim);border-radius:999px;padding:.25rem .85rem;letter-spacing:.04em;max-width:100%;flex-wrap:wrap;justify-content:center;}
         .qr-team-count-pill .n{font-family:var(--fh);font-size:clamp(.85rem,1.6vw,1.25rem);color:var(--gold);}
         .qr-proj-body{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;}
-        .qr-radial-stage{flex:1;position:relative;min-height:180px;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-        .qr-radial-teams{position:absolute;inset:0;pointer-events:none;z-index:1;}
+        .qr-radial-stage{flex:1;position:relative;min-height:180px;width:100%;display:flex;flex-direction:column;align-items:stretch;justify-content:center;overflow:hidden;}
+        .qr-proj-columns{
+            display:flex;flex-direction:row;align-items:flex-start;justify-content:center;width:100%;max-width:min(96vw,1100px);
+            gap:clamp(.2rem,1.2vw,.75rem);min-height:0;flex:1;
+        }
+        .qr-proj-side{
+            flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center;align-items:center;
+            gap:var(--qr-team-gap,5px);padding:.15rem 0;pointer-events:none;overflow-y:auto;overflow-x:hidden;
+            max-height:100%;
+        }
+        .qr-proj-side-left{align-items:flex-end;padding-right:clamp(2px,.4vw,6px);}
+        .qr-proj-side-right{align-items:flex-start;padding-left:clamp(2px,.4vw,6px);}
+        /* Zigzag: alternate in/out toward the QR column */
+        .qr-proj-side-left .qr-proj-team:nth-child(odd){transform:translateX(calc(-1 * var(--qr-zig,10px)));}
+        .qr-proj-side-left .qr-proj-team:nth-child(even){transform:translateX(var(--qr-zig,10px));}
+        .qr-proj-side-right .qr-proj-team:nth-child(odd){transform:translateX(var(--qr-zig,10px));}
+        .qr-proj-side-right .qr-proj-team:nth-child(even){transform:translateX(calc(-1 * var(--qr-zig,10px)));}
+        .qr-proj-qr-stack{
+            flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+            gap:clamp(.25rem,.7vw,.5rem);min-width:0;max-width:min(96vw,780px);
+        }
         .qr-proj-team{
-            position:absolute;display:flex;flex-direction:column;align-items:center;gap:1px;text-align:center;transform:translate(-50%,-50%);
-            width:var(--qr-slot,96px);max-width:min(var(--qr-slot,96px),28vw);
+            position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;text-align:center;flex-shrink:0;
+            width:var(--qr-slot,96px);max-width:min(var(--qr-slot,96px),36vw);
         }
         .qr-proj-team .av-wrap{width:var(--qr-av,44px);height:var(--qr-av,44px);flex-shrink:0;margin:0 auto;}
         .qr-proj-team .av-wrap img{width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;border-radius:50%;object-fit:cover;border:2px solid var(--gold-dim);box-shadow:0 0 12px rgba(255,215,0,.12);}
         .qr-proj-team .nm{font-family:var(--fs);font-size:var(--qr-fs-name,.68rem);font-weight:700;color:var(--text);line-height:1.1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
         .qr-proj-team .sc{font-family:var(--fh);font-size:var(--qr-fs-score,.75rem);font-weight:800;color:var(--gold);line-height:1;}
         .qr-radial-center{
-            position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(.25rem,.7vw,.5rem);
-            pointer-events:auto;max-width:min(96vw,780px);width:100%;padding:clamp(.15rem,.5vw,.35rem);
+            position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:clamp(.35rem,.9vw,.55rem);
+            pointer-events:auto;width:100%;min-height:0;flex:1;max-width:100%;padding:clamp(.15rem,.5vw,.35rem);
         }
-        .qr-radial-center .qr-logo{width:clamp(48px,6vw,96px);height:auto;filter:drop-shadow(0 0 24px rgba(255,215,0,.2));opacity:.95;}
         #qr-box-projector{background:#fff;padding:clamp(12px,1.8vmin,22px);border-radius:18px;box-shadow:0 0 72px rgba(255,215,0,.28);line-height:0;max-width:min(88vmin,100%);width:fit-content;}
         #qr-box-projector canvas,#qr-box-projector img{display:block;border-radius:4px;max-width:min(82vmin,640px);width:auto!important;height:auto!important;}
         #qr-url-projector{font-family:var(--fh);font-size:clamp(.7rem,1.65vw,1.15rem);color:var(--gold-bright);letter-spacing:.03em;max-width:100%;word-break:break-all;padding:0 .25rem;}
@@ -270,19 +293,24 @@
 
 <!-- Full-screen QR join (host-controlled while on board) -->
 <div id="qr-projector-display" class="hidden">
+    <img src="Logo transparent.png" alt="" class="qr-proj-logo-corner">
     <div class="qr-proj-top">
         <h3>Join the Game!</h3>
         <div class="qr-team-count-pill" id="qr-team-count-wrap"><span id="qr-team-count-num" class="n">0</span><span id="qr-team-count-label"> teams joined</span></div>
     </div>
     <div class="qr-proj-body">
     <div class="qr-radial-stage" id="qr-radial-stage">
-        <div class="qr-radial-teams" id="qr-radial-teams" aria-hidden="true"></div>
         <div class="qr-radial-center" id="qr-radial-center">
-            <img src="Logo transparent.png" alt="" class="qr-logo">
-            <div id="qr-box-projector"></div>
-            <div class="url" id="qr-url-projector"></div>
-            <div class="room-hint">Room Code: <span id="qr-room-projector" style="color:var(--gold);font-family:var(--fh);font-weight:700;font-size:1.65vw;letter-spacing:2px;"></span></div>
-            <div style="font-family:var(--fb);font-size:clamp(.55rem,1vw,.85rem);color:var(--tmut);text-align:center;">Scan with your phone's camera to join</div>
+            <div class="qr-proj-columns" id="qr-proj-columns">
+                <div class="qr-proj-side qr-proj-side-left" id="qr-proj-side-left" aria-hidden="true"></div>
+                <div class="qr-proj-qr-stack" id="qr-proj-qr-stack">
+                    <div id="qr-box-projector"></div>
+                    <div class="url" id="qr-url-projector"></div>
+                    <div class="room-hint">Room Code: <span id="qr-room-projector" style="color:var(--gold);font-family:var(--fh);font-weight:700;font-size:1.65vw;letter-spacing:2px;"></span></div>
+                    <div style="font-family:var(--fb);font-size:clamp(.55rem,1vw,.85rem);color:var(--tmut);text-align:center;">Scan with your phone's camera to join</div>
+                </div>
+                <div class="qr-proj-side qr-proj-side-right" id="qr-proj-side-right" aria-hidden="true"></div>
+            </div>
         </div>
     </div>
     </div>
@@ -553,89 +581,60 @@ function updateQR(){
     document.getElementById('qr-overlay').classList.remove('show');
 }
 function renderQRProjectorTeams(){
-    const wrap=document.getElementById('qr-radial-teams');
+    const leftEl=document.getElementById('qr-proj-side-left');
+    const rightEl=document.getElementById('qr-proj-side-right');
+    const colsEl=document.getElementById('qr-proj-columns');
     const stage=document.getElementById('qr-radial-stage');
     const centerEl=document.getElementById('qr-radial-center');
     const numEl=document.getElementById('qr-team-count-num');
     const lblEl=document.getElementById('qr-team-count-label');
-    if(!wrap||!stage||!centerEl)return;
+    if(!leftEl||!rightEl||!stage||!centerEl)return;
     const n=Object.keys(teams).length;
     if(numEl)numEl.textContent=String(n);
     if(lblEl)lblEl.textContent=n===1?' team joined':' teams joined';
     const sorted=Object.entries(teams).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||''));
-    if(sorted.length===0){wrap.innerHTML='';return;}
+    if(sorted.length===0){leftEl.innerHTML='';rightEl.innerHTML='';return;}
     const place=()=>{
         const sRect=stage.getBoundingClientRect();
-        const cRect=centerEl.getBoundingClientRect();
         if(sRect.width<80||sRect.height<80)return;
         const sw=sRect.width;
         const sh=sRect.height;
-        const cx=cRect.left+cRect.width/2-sRect.left;
-        const cy=cRect.top+cRect.height/2-sRect.top;
-        const halfW=cRect.width/2;
-        const halfH=cRect.height/2;
-        const innerR=Math.sqrt(halfW*halfW+halfH*halfH);
         const m=sorted.length;
-        const pad=14;
-        const margin=10;
-        const gapChord=8;
-        const kIn=0.58;
-        const kOut=0.58;
-        const minEdge=Math.min(cx,cy,sw-cx,sh-cy);
-        function chordNeed(s){return m>=2?(s+gapChord)/(2*Math.sin(Math.PI/m)):0;}
-        function radialNeed(s){return innerR+margin+s*kIn;}
-        function outerMax(s){return Math.max(48,minEdge-pad-s*kOut);}
-        let slot=Math.min(96,Math.min(sw,sh)*0.22);
-        let av,fsName,fsScore;
-        for(let iter=0;iter<64;iter++){
-            av=Math.max(18,Math.min(slot*0.46,slot*0.5));
-            fsName=Math.max(7,Math.min(13,slot*0.115));
-            fsScore=Math.max(8,Math.min(15,slot*0.13));
-            const Rneed=Math.max(chordNeed(slot),radialNeed(slot),52);
-            const Rmax=outerMax(slot);
-            if(Rneed<=Rmax+0.5)break;
-            slot*=0.9;
-            if(slot<18){slot=18;break;}
-        }
-        av=Math.max(18,Math.min(slot*0.46,slot*0.5));
-        fsName=Math.max(7,Math.min(13,slot*0.115));
-        fsScore=Math.max(8,Math.min(15,slot*0.13));
-        let R=Math.max(chordNeed(slot),radialNeed(slot),52);
-        let Rcap=outerMax(slot);
-        R=Math.min(R,Rcap);
-        while(m>=2&&2*R*Math.sin(Math.PI/m)<slot+gapChord-0.5&&slot>18){
-            slot*=0.92;
-            av=Math.max(18,slot*0.46);
-            fsName=Math.max(7,Math.min(13,slot*0.115));
-            fsScore=Math.max(8,Math.min(15,slot*0.13));
-            R=Math.min(Math.max(chordNeed(slot),radialNeed(slot),52),outerMax(slot));
-        }
-        let fitGuard=0;
-        while(slot>18&&Math.max(chordNeed(slot),radialNeed(slot),52)>outerMax(slot)+0.5&&fitGuard++<48){
-            slot*=0.92;
-            av=Math.max(18,slot*0.46);
-            fsName=Math.max(7,Math.min(13,slot*0.115));
-            fsScore=Math.max(8,Math.min(15,slot*0.13));
-            R=Math.min(Math.max(chordNeed(slot),radialNeed(slot),52),outerMax(slot));
-        }
-        wrap.style.setProperty('--qr-slot',slot+'px');
-        wrap.style.setProperty('--qr-av',av+'px');
-        wrap.style.setProperty('--qr-fs-name',fsName+'px');
-        wrap.style.setProperty('--qr-fs-score',fsScore+'px');
-        /* Large QR for distance scanning — team ring shrinks instead of shrinking the code */
+        const leftTeams=sorted.filter((_,i)=>i%2===0);
+        const rightTeams=sorted.filter((_,i)=>i%2===1);
+        const maxCol=Math.max(leftTeams.length,rightTeams.length,1);
         const targetQr=Math.max(200,Math.min(640,Math.floor(Math.min(sw,sh)*0.62)));
         const prevQr=typeof window._qrProjLastQrPx==='number'?window._qrProjLastQrPx:0;
         if(Math.abs(targetQr-prevQr)>8){
             window._qrProjLastQrPx=targetQr;
             fillProjectorQRBox(targetQr);
         }
-        wrap.innerHTML=sorted.map(([k,t],i)=>{
-            const ang=(2*Math.PI*i)/m-Math.PI/2;
-            const x=cx+R*Math.cos(ang);
-            const y=cy+R*Math.sin(ang);
+        const qrBox=document.getElementById('qr-box-projector');
+        const qrRect=qrBox?qrBox.getBoundingClientRect():{width:0,height:0};
+        const qrW=qrRect.width>48?qrRect.width:targetQr;
+        const gapCols=Math.min(24,sw*0.02);
+        const colAvail=Math.max(60,(sw-qrW-gapCols*4)/2);
+        const availH=Math.max(80,sh*0.88);
+        let slot=Math.min(100,colAvail*0.92,(availH/Math.max(maxCol,1))-6);
+        slot=Math.max(18,Math.min(100,Math.floor(slot)));
+        let av=Math.max(18,Math.min(slot*0.46,slot*0.5));
+        let fsName=Math.max(7,Math.min(13,slot*0.115));
+        let fsScore=Math.max(8,Math.min(15,slot*0.13));
+        const teamGap=Math.max(2,Math.min(8,Math.floor(slot*0.06)));
+        const zig=Math.max(6,Math.min(16,Math.floor(slot*0.14)));
+        const host=colsEl||centerEl;
+        host.style.setProperty('--qr-slot',slot+'px');
+        host.style.setProperty('--qr-av',av+'px');
+        host.style.setProperty('--qr-fs-name',fsName+'px');
+        host.style.setProperty('--qr-fs-score',fsScore+'px');
+        host.style.setProperty('--qr-team-gap',teamGap+'px');
+        host.style.setProperty('--qr-zig',zig+'px');
+        function teamHtml([k,t]){
             const col=avatarColor(t.avatar);
-            return`<div class="qr-proj-team" style="left:${x}px;top:${y}px"><span class="av-wrap">${avatarImg(t.avatar,'100%')}</span><span class="nm" style="color:${col}">${esc(t.name||k)}</span><span class="sc">$${(t.score||0).toLocaleString()}</span></div>`;
-        }).join('');
+            return`<div class="qr-proj-team"><span class="av-wrap">${avatarImg(t.avatar,'100%')}</span><span class="nm" style="color:${col}">${esc(t.name||k)}</span><span class="sc">$${(t.score||0).toLocaleString()}</span></div>`;
+        }
+        leftEl.innerHTML=leftTeams.map(teamHtml).join('');
+        rightEl.innerHTML=rightTeams.map(teamHtml).join('');
     };
     place();
     requestAnimationFrame(()=>{
