@@ -26,19 +26,25 @@
         .lobby-team .lt-name{font-family:var(--fs);font-size:1.2vw;font-weight:700;white-space:nowrap;max-width:8vw;overflow:hidden;text-overflow:ellipsis;}
 
         /* ═══ BOARD CONTROL ═══ */
-        .bd-control{text-align:center;padding:.6vw 1.5vw;font-family:var(--fs);font-size:1.2vw;background:var(--elev);border:1px solid var(--gold-dim);border-radius:10px;margin:0 auto .8vw;display:inline-flex;align-items:center;gap:.6vw;}
-        .bd-control-wrap{text-align:center;}
-        .bd-control-label{color:var(--tsec);text-transform:uppercase;font-size:1.1vw;letter-spacing:.06em;font-weight:600;}
+        .bd-control{padding:.45vw 1.2vw;font-family:var(--fs);font-size:1.1vw;background:var(--elev);border:1px solid var(--gold-dim);border-radius:10px;margin:0;display:inline-flex;align-items:center;gap:.5vw;max-width:100%;white-space:nowrap;}
+        .bd-control-label{color:var(--tsec);text-transform:uppercase;font-size:1vw;letter-spacing:.06em;font-weight:600;}
         .bd-control img{vertical-align:middle;border-radius:50%;border:2px solid var(--gold-dim);}
-        #bd-control-name{color:var(--gold);font-weight:700;font-family:var(--fh);font-size:1.6vw;}
+        #bd-control-name{color:var(--gold);font-weight:700;font-family:var(--fh);font-size:1.4vw;}
 
         /* ═══ BOARD VIEW ═══ */
-        #board-display{flex:1;display:none;flex-direction:column;padding:1.5vw;}
-        .bd-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1vw;}
-        .bd-title{font-family:var(--fh);font-size:2.2vw;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;}
-        .bd-round{font-family:var(--fs);font-size:1.3vw;color:var(--tsec);text-transform:uppercase;letter-spacing:.06em;}
+        #board-display{flex:1;display:none;flex-direction:column;padding:clamp(.5rem,.8vw,.75rem) 1.2vw;min-height:0;}
+        .bd-header{
+            display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:.5vw 1vw;
+            margin-bottom:.5vw;flex-shrink:0;width:100%;
+        }
+        .bd-header-left{justify-self:start;min-width:0;display:flex;align-items:center;}
+        .bd-header-mid{justify-self:center;display:flex;align-items:center;justify-content:center;min-width:0;max-width:42vw;}
+        .bd-header-right{justify-self:end;text-align:right;min-width:0;}
+        .bd-title{font-family:var(--fh);font-size:clamp(1rem,2vw,2.2vw);color:var(--gold);text-transform:uppercase;letter-spacing:.08em;display:inline-flex;align-items:center;gap:.4vw;}
+        .bd-title img{width:clamp(28px,2.8vw,40px);height:clamp(28px,2.8vw,40px);object-fit:contain;flex-shrink:0;}
+        .bd-round{font-family:var(--fs);font-size:clamp(.75rem,1.25vw,1.35vw);color:var(--tsec);text-transform:uppercase;letter-spacing:.06em;}
 
-        .jeopardy-board{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;flex:1;margin-bottom:1vw;}
+        .jeopardy-board{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;flex:1;min-height:0;margin-bottom:.5vw;}
         .bd-cat{
             background:var(--elev);padding:1vw .5vw;text-align:center;
             font-family:var(--fh);font-size:1.6vw;font-weight:700;color:var(--gold);
@@ -343,12 +349,16 @@
 
 <!-- Board grid -->
 <div id="board-display" class="hidden">
-    <div class="bd-control-wrap" id="bd-control-wrap" style="display:none;">
-        <div class="bd-control" id="bd-control"><span class="bd-control-label">Board Control:</span> <span id="bd-control-name"></span></div>
-    </div>
     <div class="bd-header">
-        <span class="bd-title"><img src="Logo transparent.png" alt="" style="width:3vw;height:3vw;object-fit:contain;vertical-align:middle;margin-right:.5vw;">PDK NINE TRIVIA</span>
-        <span class="bd-round" id="bd-round">Round 1</span>
+        <div class="bd-header-left">
+            <span class="bd-title"><img src="Logo transparent.png" alt="">PDK NINE TRIVIA</span>
+        </div>
+        <div class="bd-header-mid" id="bd-control-wrap">
+            <div class="bd-control" id="bd-control" style="display:none;"><span class="bd-control-label">Board Control:</span> <span id="bd-control-name"></span></div>
+        </div>
+        <div class="bd-header-right">
+            <span class="bd-round" id="bd-round">Round 1</span>
+        </div>
     </div>
     <div class="jeopardy-board" id="bd-grid"></div>
     <div class="bd-scores" id="bd-scores"></div>
@@ -800,13 +810,13 @@ function showBoard(){
     renderBoardControl();
 }
 function renderBoardControl(){
-    const wrap=document.getElementById('bd-control-wrap');
+    const el=document.getElementById('bd-control');
     const tk=GS.boardControl;
     if(tk&&teams[tk]){
-        wrap.style.display='block';
+        el.style.display='inline-flex';
         document.getElementById('bd-control-name').innerHTML=avatarImg(teams[tk].avatar,'1.8vw')+' '+esc(teams[tk].name||tk);
     } else {
-        wrap.style.display='none';
+        el.style.display='none';
     }
 }
 
