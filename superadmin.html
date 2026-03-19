@@ -175,7 +175,7 @@ function clearRoom(code) {
     if (!confirm('Clear all data in room "' + code + '"?\n\nThis will remove all teams, scores, answers, and board data. The room code will still exist but will be empty.')) return;
     const ref = db.ref('trivia-rooms/' + code);
     ref.set({
-        state: { round: 1, phase: 'board', category: '', value: 0, questionText: '', accepting: false, dailyDouble: false, ddTeam: '', questionKey: '', showQR: false, timerEnd: 0, timerRunning: false, answerRevealed: false, wageringOpen: false, imageUrl: '', boardControl: '', intermissionEnd: 0 }
+        state: { round: 1, phase: 'board', category: '', value: 0, questionText: '', accepting: false, dailyDouble: false, ddTeam: '', questionKey: '', showQR: false, boardProjectorMode: 'gameStart', timerEnd: 0, timerRunning: false, answerRevealed: false, wageringOpen: false, imageUrl: '', boardControl: '', intermissionEnd: 0 }
     });
 }
 

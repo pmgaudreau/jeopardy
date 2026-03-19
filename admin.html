@@ -22,7 +22,6 @@
         }
         body { font-family: var(--fb); background: var(--bg); color: var(--text); min-height: 100vh; }
         .view { display: none; } .view.active { display: block; }
-        .view:not(.active) { display: none !important; }
         .hidden { display: none !important; }
 
         input[type="text"], input[type="number"], select {
@@ -33,7 +32,7 @@
 
         .btn {
             display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
-            padding: .6rem 1.2rem; border: none; border-radius: var(--radius);
+            padding: .6rem 1.2rem; border: none; border-radius: 999px;
             font-family: var(--fs); font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .2s;
         }
         .btn:active { transform: scale(.97); } .btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -47,7 +46,7 @@
         .btn-block { width: 100%; }
 
         /* ═══ SETUP ═══ */
-        #setup-view.view.active { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+        #setup-view { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
         .setup-card {
             background: var(--bg-card); border: 1px solid var(--border);
             border-radius: 16px; padding: 2.5rem 2rem; max-width: 520px; width: 100%; text-align: center;
@@ -93,12 +92,17 @@
         }
         .btn-end-round:hover { background: var(--red); color: #fff; }
 
-        .qr-toggle {
-            padding: .35rem .7rem; border: 1px solid var(--border); border-radius: var(--radius);
-            background: transparent; color: var(--text-muted); font-size: .85rem; cursor: pointer; transition: all .2s;
+        .projector-mode-wrap {
+            display: flex; align-items: stretch; border: 1px solid var(--border); border-radius: var(--radius);
+            overflow: hidden; font-family: var(--fs); font-size: .72rem; font-weight: 600;
         }
-        .qr-toggle:hover { border-color: var(--gold-dim); color: var(--gold); }
-        .qr-toggle.on { background: var(--gold); color: #000; border-color: var(--gold); }
+        .projector-mode-wrap button {
+            padding: .35rem .55rem; border: none; background: transparent; color: var(--text-muted);
+            cursor: pointer; transition: all .15s; white-space: nowrap;
+        }
+        .projector-mode-wrap button:hover { color: var(--gold); background: rgba(255,215,0,.06); }
+        .projector-mode-wrap button.active { background: var(--gold); color: #000; }
+        .projector-mode-wrap button + button { border-left: 1px solid var(--border); }
 
         .btn-intermission {
             padding: .35rem .7rem; border: 1px solid var(--border); border-radius: var(--radius);
@@ -148,7 +152,7 @@
         .score-name { flex: 1; font-weight: 600; font-size: .85rem; }
         .score-val { font-weight: 800; color: var(--gold); font-size: .9rem; font-variant-numeric: tabular-nums; }
         .adj-btn {
-            width: 20px; height: 20px; border: 1px solid var(--border); border-radius: var(--radius);
+            width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 4px;
             background: transparent; color: var(--text-muted); font-size: .7rem;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
@@ -177,7 +181,6 @@
         .ans-reveal:hover { border-color: var(--gold-dim); }
         .ans-reveal .lbl { color: var(--text-muted); font-size: .9rem; }
         .ans-reveal .atxt { font-size: 1.15rem; color: var(--green); font-weight: 600; }
-        .ans-reveal.disabled { opacity: .6; cursor: not-allowed; pointer-events: none; }
 
         .timer-section { text-align: center; margin-bottom: 1rem; }
         .timer-display { font-family: var(--fh); font-size: 3rem; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
@@ -190,7 +193,6 @@
         }
         .toggle-accept.open { background: var(--green); color: #fff; }
         .toggle-accept.closed { background: var(--red); color: #fff; }
-        .toggle-accept:disabled { opacity: .5; cursor: not-allowed; }
         .status-pill { display: inline-block; padding: .3rem .8rem; border-radius: 999px; font-family: var(--fs); font-size: .8rem; font-weight: 600; margin-bottom: .75rem; }
         .status-pill.w { background: rgba(102,102,102,.2); color: var(--text-muted); }
         .status-pill.a { background: rgba(46,204,113,.15); color: var(--green); }
@@ -239,8 +241,7 @@
 
 <!-- ═══ SETUP ═══ -->
 <div class="view active" id="setup-view">
-<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;position:relative;">
-<div style="position:absolute;top:1rem;right:1.5rem;"><a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a></div>
+<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;">
 <div class="setup-card">
     <h1>PDK NINE</h1>
     <div class="sub">Trivia Night — Host Control Panel</div>
@@ -254,14 +255,6 @@
         <div class="csv-zone" id="csv-zone" onclick="document.getElementById('csv-file').click()">
             <div class="icon">📄</div>
             <div class="lbl">Drag &amp; drop a CSV or <strong>click to browse</strong></div>
-        </div>
-        <div class="fg" style="margin-top:.5rem;">
-            <label style="font-size:.75rem;">Character encoding — pick before uploading</label>
-            <select id="csv-encoding" style="padding:.4rem .6rem;font-size:.85rem;">
-                <option value="utf-8">UTF-8 (Numbers, Google Sheets, most Mac apps)</option>
-                <option value="iso-8859-1">Windows-1252 (Excel on Windows)</option>
-                <option value="macintosh">MacRoman (older Mac Excel / legacy)</option>
-            </select>
         </div>
         <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSV(this.files[0])">
         <div class="csv-status hidden" id="csv-status"></div>
@@ -285,9 +278,11 @@
         <span class="room-badge" id="disp-room"></span>
         <h1>Trivia Night</h1>
         <div class="top-controls">
-            <button class="btn btn-outline btn-sm" onclick="leaveRoom()" title="Leave this room and return to setup">← Back to Setup</button>
-            <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
-            <button class="qr-toggle" id="qr-toggle" onclick="toggleQR()" title="Toggle QR on projector">QR</button>
+            <div class="projector-mode-wrap" title="What the projector shows while on the board">
+                <button type="button" id="pm-gameStart" onclick="setBoardProjectorMode('gameStart')" title="Logo &amp; &quot;Game starting soon&quot;">Game start</button>
+                <button type="button" id="pm-qr" onclick="setBoardProjectorMode('qr')" title="Full-screen QR to join">QR</button>
+                <button type="button" id="pm-main" onclick="setBoardProjectorMode('main')" title="Board grid &amp; scores">Board</button>
+            </div>
             <button class="btn-intermission" id="intermission-btn" onclick="promptIntermission()" title="Start a timed intermission break — shows a countdown and scoreboard on all screens">☕ Break</button>
             <button class="btn-intermission end" id="end-intermission-btn" onclick="endIntermission()" title="End the intermission immediately and return to the board" style="display:none;">■ End Break <span id="intermission-countdown"></span></button>
             <span class="current-round-badge" id="current-round-badge">Round 1</span>
@@ -312,8 +307,8 @@
             </div>
             <div class="side-panel">
                 <h2>Projector Display</h2>
+                <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:.5rem;line-height:1.35;">Use <strong>Game start</strong> / <strong>QR</strong> / <strong>Board</strong> in the top bar to choose what the projector shows while you’re on the board (before a clue is selected).</p>
                 <div class="board-url-note" id="board-url-note">Open <code>board.html</code> on your projector/TV</div>
-                <button class="btn btn-outline btn-sm" onclick="openBoardInNewTab()" title="Open the board display in a new tab with this room code" style="margin-top:.5rem;width:100%;">Open Board in New Tab</button>
             </div>
         </div>
     </div>
@@ -324,10 +319,7 @@
     <div class="top-bar">
         <span class="room-badge" id="qv-room"></span>
         <h1>Trivia Night</h1>
-        <div class="top-controls">
-            <button class="btn btn-outline btn-sm" onclick="leaveRoom()" title="Leave this room and return to setup">← Back to Setup</button>
-            <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
-        </div>
+        <div></div>
     </div>
     <div class="qc">
         <div class="q-back"><button class="btn btn-outline btn-sm" onclick="returnToBoard()" title="Return to the board without completing this question">← Back to Board</button></div>
@@ -338,7 +330,7 @@
             <div id="qv-dd" class="hidden"><span class="dd-badge">★ DAILY DOUBLE ★</span></div>
         </div>
         <div class="qcard">
-            <h3>The Clue</h3>
+            <h3>Question</h3>
             <div class="q-text" id="qv-qtxt"></div>
             <img id="qv-img" class="hidden" style="max-width:100%;max-height:300px;border-radius:var(--radius);margin-top:.75rem;display:block;margin-left:auto;margin-right:auto;" alt="Question image">
         </div>
@@ -346,7 +338,7 @@
             <div id="dd-team-info" class="hidden" style="text-align:center;margin-bottom:.75rem;">
                 <span style="color:var(--text-muted);font-size:.85rem;">Only </span>
                 <span style="color:var(--gold);font-weight:700;" id="dd-team-name"></span>
-                <span style="color:var(--text-muted);font-size:.85rem;"> can respond (Daily Double)</span>
+                <span style="color:var(--text-muted);font-size:.85rem;"> can answer (Daily Double)</span>
             </div>
             <div class="timer-section">
                 <div class="timer-display" id="timer-display">0:30</div>
@@ -363,46 +355,38 @@
             <div class="toggle-bar" style="margin-bottom:.4rem;">
                 <button class="toggle-accept open hidden" id="wager-toggle-btn" onclick="toggleWagering()">Open for Wagers</button>
             </div>
-            <div id="wager-progress" class="hidden" style="text-align:center;margin-bottom:.5rem;font-size:.8rem;color:var(--text-sec);"><span id="wager-count-text"></span><br><button class="btn btn-outline btn-sm" onclick="reopenWagers()" title="Clear all wagers and re-open for teams to enter new wagers" style="margin-top:.4rem;">Re-open Wagers</button></div>
+            <div id="wager-progress" class="hidden" style="text-align:center;margin-bottom:.5rem;font-size:.8rem;color:var(--text-sec);"><span id="wager-count-text"></span></div>
             <div class="toggle-bar hidden" id="fj-reveal-q-bar" style="margin-bottom:.4rem;">
-                <button class="btn btn-gold btn-lg" onclick="revealFJQuestion()" title="Send the clue to all screens — wagers should be locked first" style="width:100%;">Reveal Clue to Teams</button>
+                <button class="btn btn-gold btn-lg" onclick="revealFJQuestion()" title="Send the question to all screens — wagers should be locked first" style="width:100%;">Reveal Question to Teams</button>
             </div>
             <div class="toggle-bar">
-                <button class="toggle-accept open" id="toggle-btn" onclick="toggleAccepting()">Open for Responses</button>
+                <button class="toggle-accept open" id="toggle-btn" onclick="toggleAccepting()">Open for Answers</button>
             </div>
-        </div>
-        <div class="qcard" id="answer-qcard">
-            <h3>Correct Response</h3>
-            <div class="ans-reveal" id="ans-reveal" onclick="revealAnswer()">
-                <div class="lbl" id="ans-lbl">Click to reveal correct response</div>
-                <div class="atxt hidden" id="ans-txt"></div>
-            </div>
-            <div class="ans-dd-ref hidden" id="ans-dd-ref" style="font-size:.9rem;color:var(--text-muted);margin-top:.5rem;"></div>
         </div>
         <div class="qcard">
-            <div class="ans-header"><h3>Team Responses</h3><span class="cnt-badge" id="ans-count">0</span><span style="font-size:.75rem;color:var(--text-muted);margin-left:.5rem;" id="ans-of-total"></span></div>
+            <h3>Answer</h3>
+            <div class="ans-reveal" id="ans-reveal" onclick="revealAnswer()">
+                <div class="lbl" id="ans-lbl">Click to reveal answer</div>
+                <div class="atxt hidden" id="ans-txt"></div>
+            </div>
+        </div>
+        <div class="qcard">
+            <div class="ans-header"><h3>Team Answers</h3><span class="cnt-badge" id="ans-count">0</span><span style="font-size:.75rem;color:var(--text-muted);margin-left:.5rem;" id="ans-of-total"></span></div>
             <div id="waiting-list" class="hidden" style="margin-bottom:.75rem;padding:.5rem .75rem;background:rgba(255,215,0,.04);border:1px solid var(--border);border-radius:var(--radius);font-size:.8rem;color:var(--text-sec);"><span style="color:var(--text-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Still waiting: </span><span id="waiting-names"></span></div>
             <div id="answers-list"></div>
             <div class="apply-row">
-                <button class="btn btn-green" id="apply-btn" onclick="applyScores()" title="Apply all graded scores — correct responses earn points, incorrect responses lose points">Apply Scores</button>
+                <button class="btn btn-green" id="apply-btn" onclick="applyScores()" title="Apply all graded scores — correct answers earn points, incorrect answers lose points">Apply Scores</button>
                 <button class="btn btn-outline" onclick="clearGrading()" title="Clear all correct/incorrect markings without applying scores">Reset</button>
             </div>
         </div>
         <div style="text-align:center;margin-top:1rem;" id="q-bottom-btns">
             <button class="btn btn-gold btn-lg" onclick="completeAndReturn()" title="Mark this question as completed and return to the board grid">Complete &amp; Return to Board →</button>
         </div>
-        <div style="text-align:center;margin-top:1rem;" id="dd-reveal-start" class="hidden">
-            <div style="border:2px solid var(--gold);border-radius:var(--radius);padding:1.25rem;background:rgba(255,215,0,.04);margin-bottom:.75rem;">
-                <div style="font-family:var(--fh);color:var(--gold);font-size:1rem;text-transform:uppercase;margin-bottom:.4rem;">Daily Double Reveal</div>
-                <div style="font-size:.85rem;color:var(--text-sec);margin-bottom:1rem;">Show score → wager → clue → response → result on the projector.</div>
-                <button class="btn btn-gold btn-lg" onclick="startDDReveal()" title="Begin the Daily Double reveal ceremony on the projector">Show Daily Double Reveal →</button>
-            </div>
-        </div>
         <div style="text-align:center;margin-top:1rem;" id="fj-reveal-start" class="hidden">
             <div style="border:2px solid var(--gold);border-radius:var(--radius);padding:1.25rem;background:rgba(255,215,0,.04);margin-bottom:.75rem;">
                 <div style="font-family:var(--fh);color:var(--gold);font-size:1rem;text-transform:uppercase;margin-bottom:.4rem;">Ready for the Reveal?</div>
-                <div style="font-size:.85rem;color:var(--text-sec);margin-bottom:1rem;">Grade all responses above first. Then start the ceremony — scores will be revealed team-by-team on the projector.</div>
-                <button class="btn btn-gold btn-lg" id="fj-reveal-btn" onclick="startFinalReveal()" title="Begin the team-by-team Final Jeopardy score reveal ceremony on the projector">Start End of Game Reveal →</button>
+                <div style="font-size:.85rem;color:var(--text-sec);margin-bottom:1rem;">Grade all answers above first. Then start the ceremony — scores will be revealed team-by-team on the projector.</div>
+                <button class="btn btn-gold btn-lg" onclick="startFinalReveal()" title="Begin the team-by-team Final Jeopardy score reveal ceremony on the projector">Start End of Game Reveal →</button>
             </div>
         </div>
     </div>
@@ -413,10 +397,7 @@
     <div class="top-bar">
         <span class="room-badge" id="rv-room"></span>
         <h1>Final Reveal</h1>
-        <div class="top-controls">
-            <button class="btn btn-outline btn-sm" onclick="leaveRoom()" title="Leave this room and return to setup">← Back to Setup</button>
-            <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
-        </div>
+        <div></div>
     </div>
     <div class="qc">
         <div class="qcard" style="text-align:center;">
@@ -478,18 +459,17 @@
 <script src="config.js"></script>
 <script>
 let roomCode = null, roomRef = null;
-let GS = { round:1, phase:'board', category:'', value:0, questionText:'', accepting:false, dailyDouble:false, ddTeam:'', questionKey:'', showQR:false, timerEnd:0, timerRunning:false, answerRevealed:false, wageringOpen:false, imageUrl:'', answersWereOpened:false };
-let teams = {}, curAnswers = {}, grading = {}, boardQ = {}, parsedCSV = null, scoresApplied = false, appliedPoints = {};
-let timerInterval = null, timerSec = 30, roundTransTimeout = null, lastQuestionKey = null;
+let GS = { round:1, phase:'board', category:'', value:0, questionText:'', accepting:false, dailyDouble:false, ddTeam:'', questionKey:'', showQR:false, boardProjectorMode:'gameStart', timerEnd:0, timerRunning:false, answerRevealed:false, wageringOpen:false, imageUrl:'' };
+let teams = {}, curAnswers = {}, grading = {}, boardQ = {}, parsedCSV = null, scoresApplied = false;
+let timerInterval = null, timerSec = 30, roundTransTimeout = null;
 const VALS = { 1:[200,400,600,800,1000], 2:[400,800,1200,1600,2000] };
 
 function showView(id) { document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
 // ── CSV ──
-function isQuote(c){return c==='"'||c==='\u201C'||c==='\u201D'||c==='\u201E'||c==='\u201F';}
 function parseCSVLine(line) {
     const r=[]; let cur='', inQ=false;
-    for(let i=0;i<line.length;i++){const c=line[i]; if(inQ){if(isQuote(c)&&isQuote(line[i+1])){cur+='"';i++;}else if(isQuote(c))inQ=false;else cur+=c;}else{if(isQuote(c))inQ=true;else if(c===','){r.push(cur.trim());cur='';}else cur+=c;}}
+    for(let i=0;i<line.length;i++){const c=line[i]; if(inQ){if(c==='"'&&line[i+1]==='"'){cur+='"';i++;}else if(c==='"')inQ=false;else cur+=c;}else{if(c==='"')inQ=true;else if(c===','){r.push(cur.trim());cur='';}else cur+=c;}}
     r.push(cur.trim()); return r;
 }
 function parseCSV(text) {
@@ -509,7 +489,7 @@ function parseCSV(text) {
               qt=(c[cm.qt]||'').trim(), at=(c[cm.at]||'').trim(), ddr=(c[cm.dd]||'').trim().toLowerCase(),
               dd=ddr==='true'||ddr==='1'||ddr==='yes',
               img=(cm.img!==undefined?(c[cm.img]||'').trim():'');
-        if(round&&cat&&qn&&(qt||img))qs.push({round,category:cat,questionNumber:qn,questionText:qt||'',answerText:at,dailyDouble:dd,imageUrl:img});
+        if(round&&cat&&qn&&qt)qs.push({round,category:cat,questionNumber:qn,questionText:qt,answerText:at,dailyDouble:dd,imageUrl:img});
     }
     return qs;
 }
@@ -552,11 +532,11 @@ function handleCSV(file) {
         if(warnings.length>0){
             s.innerHTML=s.textContent+'<br><span style="color:var(--red);font-size:.75rem;">⚠ '+warnings.join('<br>⚠ ')+'</span>';
         }
-    }; reader.readAsText(file,document.getElementById('csv-encoding').value||'utf-8');
+    }; reader.readAsText(file);
 }
 function downloadTemplate() {
-    const csv='\ufeff'+`round,category,question_number,question_text,answer_text,daily_double_flag,image_url\n1,History,1,"Who was the first President?","George Washington",FALSE\n1,History,2,"What year did WWII end?","1945",FALSE\n1,History,3,"Which civilization built Machu Picchu?","The Inca",TRUE\n1,History,4,"What document starts with We the People?","The Constitution",FALSE\n1,History,5,"British monarch during the Revolution?","King George III",FALSE\n1,Science,1,"What planet is the Red Planet?","Mars",FALSE\n1,Science,2,"Chemical symbol for gold?","Au",FALSE\n1,Science,3,"Bones in the adult human body?","206",FALSE\n1,Science,4,"Gas plants absorb from the air?","Carbon Dioxide",FALSE\n1,Science,5,"Speed of light in miles per second?","186000",FALSE\n1,Pop Culture,1,"Fictional school in Harry Potter?","Hogwarts",FALSE\n1,Pop Culture,2,"Who played Iron Man in the MCU?","Robert Downey Jr.",FALSE\n1,Pop Culture,3,"Year the first iPhone released?","2007",FALSE\n1,Pop Culture,4,"Best-selling video game ever?","Minecraft",FALSE\n1,Pop Culture,5,"Author of Game of Thrones books?","George R.R. Martin",FALSE\n1,Sports,1,"Players on a basketball court per team?","5",FALSE\n1,Sports,2,"Country with most FIFA World Cups?","Brazil",FALSE\n1,Sports,3,"Sport with a slam dunk?","Basketball",FALSE\n1,Sports,4,"Holes in a standard golf round?","18",FALSE\n1,Sports,5,"NHL regulation period length?","20 minutes",FALSE\n1,Movies,1,"Movie: Here is looking at you kid?","Casablanca",FALSE\n1,Movies,2,"Who directed Jurassic Park?","Steven Spielberg",FALSE\n1,Movies,3,"Highest-grossing film (unadjusted)?","Avatar",FALSE\n1,Movies,4,"Color pill Neo takes in The Matrix?","Red",FALSE\n1,Movies,5,"1994 film set in Shawshank prison?","The Shawshank Redemption",FALSE\n2,Geography,1,"Smallest country in the world?","Vatican City",FALSE\n2,Geography,2,"River through Egypt?","The Nile",FALSE\n2,Geography,3,"Capital of Australia?","Canberra",TRUE\n2,Geography,4,"Tallest mountain in the world?","Mount Everest",FALSE\n2,Geography,5,"US state with the most coastline?","Alaska",FALSE\n2,Music,1,"Known as the King of Pop?","Michael Jackson",FALSE\n2,Music,2,"Instrument with 88 keys?","Piano",FALSE\n2,Music,3,"Band behind Bohemian Rhapsody?","Queen",FALSE\n2,Music,4,"Genre that originated in New Orleans?","Jazz",FALSE\n2,Music,5,"Strings on a standard guitar?","6",FALSE\n2,Food,1,"Country of origin for sushi?","Japan",FALSE\n2,Food,2,"Nut used to make marzipan?","Almond",FALSE\n2,Food,3,"Spice that makes curry yellow?","Turmeric",FALSE\n2,Food,4,"Most consumed fruit in the world?","Banana",FALSE\n2,Food,5,"Country where french fries originated?","Belgium",FALSE\n2,Technology,1,"What does HTTP stand for?","HyperText Transfer Protocol",FALSE\n2,Technology,2,"Co-founded Apple with Steve Jobs?","Steve Wozniak",FALSE\n2,Technology,3,"Year Google was founded?","1998",TRUE\n2,Technology,4,"What does CPU stand for?","Central Processing Unit",FALSE\n2,Technology,5,"Programming language named after an island?","Java",FALSE\n2,Literature,1,"Who wrote Romeo and Juliet?","Shakespeare",FALSE\n2,Literature,2,"First book of the Bible?","Genesis",FALSE\n2,Literature,3,"Who wrote 1984?","George Orwell",FALSE\n2,Literature,4,"Detective at 221B Baker Street?","Sherlock Holmes",FALSE\n2,Literature,5,"Who wrote The Great Gatsby?","F. Scott Fitzgerald",FALSE\n3,Potpourri,1,"What is the rarest blood type?","AB Negative",FALSE`;
-    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const csv=`round,category,question_number,question_text,answer_text,daily_double_flag,image_url\n1,History,1,"Who was the first President?","George Washington",FALSE\n1,History,2,"What year did WWII end?","1945",FALSE\n1,History,3,"Which civilization built Machu Picchu?","The Inca",TRUE\n1,History,4,"What document starts with We the People?","The Constitution",FALSE\n1,History,5,"British monarch during the Revolution?","King George III",FALSE\n1,Science,1,"What planet is the Red Planet?","Mars",FALSE\n1,Science,2,"Chemical symbol for gold?","Au",FALSE\n1,Science,3,"Bones in the adult human body?","206",FALSE\n1,Science,4,"Gas plants absorb from the air?","Carbon Dioxide",FALSE\n1,Science,5,"Speed of light in miles per second?","186000",FALSE\n1,Pop Culture,1,"Fictional school in Harry Potter?","Hogwarts",FALSE\n1,Pop Culture,2,"Who played Iron Man in the MCU?","Robert Downey Jr.",FALSE\n1,Pop Culture,3,"Year the first iPhone released?","2007",FALSE\n1,Pop Culture,4,"Best-selling video game ever?","Minecraft",FALSE\n1,Pop Culture,5,"Author of Game of Thrones books?","George R.R. Martin",FALSE\n1,Sports,1,"Players on a basketball court per team?","5",FALSE\n1,Sports,2,"Country with most FIFA World Cups?","Brazil",FALSE\n1,Sports,3,"Sport with a slam dunk?","Basketball",FALSE\n1,Sports,4,"Holes in a standard golf round?","18",FALSE\n1,Sports,5,"NHL regulation period length?","20 minutes",FALSE\n1,Movies,1,"Movie: Here is looking at you kid?","Casablanca",FALSE\n1,Movies,2,"Who directed Jurassic Park?","Steven Spielberg",FALSE\n1,Movies,3,"Highest-grossing film (unadjusted)?","Avatar",FALSE\n1,Movies,4,"Color pill Neo takes in The Matrix?","Red",FALSE\n1,Movies,5,"1994 film set in Shawshank prison?","The Shawshank Redemption",FALSE\n2,Geography,1,"Smallest country in the world?","Vatican City",FALSE\n2,Geography,2,"River through Egypt?","The Nile",FALSE\n2,Geography,3,"Capital of Australia?","Canberra",TRUE\n2,Geography,4,"Tallest mountain in the world?","Mount Everest",FALSE\n2,Geography,5,"US state with the most coastline?","Alaska",FALSE\n2,Music,1,"Known as the King of Pop?","Michael Jackson",FALSE\n2,Music,2,"Instrument with 88 keys?","Piano",FALSE\n2,Music,3,"Band behind Bohemian Rhapsody?","Queen",FALSE\n2,Music,4,"Genre that originated in New Orleans?","Jazz",FALSE\n2,Music,5,"Strings on a standard guitar?","6",FALSE\n2,Food,1,"Country of origin for sushi?","Japan",FALSE\n2,Food,2,"Nut used to make marzipan?","Almond",FALSE\n2,Food,3,"Spice that makes curry yellow?","Turmeric",FALSE\n2,Food,4,"Most consumed fruit in the world?","Banana",FALSE\n2,Food,5,"Country where french fries originated?","Belgium",FALSE\n2,Technology,1,"What does HTTP stand for?","HyperText Transfer Protocol",FALSE\n2,Technology,2,"Co-founded Apple with Steve Jobs?","Steve Wozniak",FALSE\n2,Technology,3,"Year Google was founded?","1998",TRUE\n2,Technology,4,"What does CPU stand for?","Central Processing Unit",FALSE\n2,Technology,5,"Programming language named after an island?","Java",FALSE\n2,Literature,1,"Who wrote Romeo and Juliet?","Shakespeare",FALSE\n2,Literature,2,"First book of the Bible?","Genesis",FALSE\n2,Literature,3,"Who wrote 1984?","George Orwell",FALSE\n2,Literature,4,"Detective at 221B Baker Street?","Sherlock Holmes",FALSE\n2,Literature,5,"Who wrote The Great Gatsby?","F. Scott Fitzgerald",FALSE\n3,Potpourri,1,"What is the rarest blood type?","AB Negative",FALSE`;
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
     a.download='trivia_template.csv'; a.click();
 }
 const cz=document.getElementById('csv-zone');
@@ -569,7 +549,7 @@ function createRoom() {
     const code=document.getElementById('inp-room').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
     if(!code){document.getElementById('setup-err').textContent='Enter a room code.';return;}
     roomCode=code; roomRef=db.ref('trivia-rooms/'+roomCode);
-    const init={state:{round:1,phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',showQR:false,timerEnd:0,timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:'',boardControl:'',answersWereOpened:false},teams:{},currentAnswers:{},history:{}};
+    const init={state:{round:1,phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',showQR:false,boardProjectorMode:'gameStart',timerEnd:0,timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:'',boardControl:''},teams:{},currentAnswers:{},history:{}};
     if(parsedCSV){init.board=parsedCSV.questions;init.categories=parsedCSV.categories;if(parsedCSV.final)init.final=parsedCSV.final;}
     roomRef.set(init).then(()=>enterGame()).catch(e=>{document.getElementById('setup-err').textContent='Error: '+e.message;});
 }
@@ -585,15 +565,6 @@ function enterGame() {
     const base=window.location.href.replace(/\/[^\/]*$/,'/');
     document.getElementById('board-url-note').innerHTML=`Open on projector:<br><code>${base}board.html?room=${roomCode}</code>`;
     showView('board-view'); setupListeners();
-    window.history.replaceState({},'',window.location.pathname+'?room='+roomCode);
-}
-function leaveRoom() {
-    window.location.href=window.location.pathname;
-}
-function openBoardInNewTab() {
-    if(!roomCode)return;
-    const base=window.location.href.replace(/\/[^\/]*$/,'/');
-    window.open(base+'board.html?room='+roomCode,'_blank');
 }
 
 // ── Listeners ──
@@ -611,7 +582,11 @@ function syncView() {
     if(GS.round===1){btn.textContent='End Round → Double Jeopardy';btn.classList.remove('hidden');}
     else if(GS.round===2){btn.textContent='End Round → Final Jeopardy';btn.classList.remove('hidden');}
     else{btn.classList.add('hidden');}
-    document.getElementById('qr-toggle').classList.toggle('on',!!GS.showQR);
+    const pm=getBoardProjectorModeAdmin();
+    ['gameStart','qr','main'].forEach(m=>{
+        const el=document.getElementById('pm-'+m);
+        if(el)el.classList.toggle('active',pm===m);
+    });
     const intBtn=document.getElementById('intermission-btn');
     const endIntBtn=document.getElementById('end-intermission-btn');
     if(GS.phase==='intermission'){
@@ -623,11 +598,7 @@ function syncView() {
         endIntBtn.style.display='none';
         stopIntCountdown();
     }
-    if(GS.phase==='dd-reveal'){
-        document.getElementById('rv-room').textContent=roomCode;
-        showView('reveal-view');
-        renderDDRevealAdmin();
-    } else if(GS.phase==='final-reveal'||GS.phase==='final-rankings'||GS.phase==='recap'||GS.phase==='gameover'){
+    if(GS.phase==='final-reveal'||GS.phase==='final-rankings'||GS.phase==='recap'||GS.phase==='gameover'){
         if(!revealData){
             roomRef.child('finalReveal').once('value',s=>{
                 const fr=s.val();if(!fr||!fr.teams)return;
@@ -640,16 +611,7 @@ function syncView() {
             showView('reveal-view');
         }
         document.getElementById('end-game-btn').style.display=(GS.phase==='recap'||GS.phase==='gameover')?'inline-block':'none';
-    } else if(GS.phase==='board'||GS.phase==='round-transition'||GS.phase==='intermission'){
-        const onQ=document.getElementById('question-view').classList.contains('active');
-        if(onQ&&lastQuestionKey){
-            console.warn('syncView blocked unexpected switch from question to board (phase='+GS.phase+')');
-        } else {
-            showView('board-view');document.getElementById('end-game-btn').style.display='none';renderBoard();
-        }
-    } else if(GS.phase==='question'){
-        updateStatus();
-    }
+    } else if(GS.phase==='board'||GS.phase==='round-transition'||GS.phase==='intermission'){showView('board-view');document.getElementById('end-game-btn').style.display='none';renderBoard();}
     renderBoardControl();
 }
 function renderBoardControl(){
@@ -663,8 +625,16 @@ function renderBoardControl(){
     }
 }
 
-// ── QR Toggle ──
-function toggleQR() { roomRef.child('state/showQR').set(!GS.showQR); }
+function getBoardProjectorModeAdmin(){
+    const m=GS.boardProjectorMode;
+    if(m==='gameStart'||m==='qr'||m==='main')return m;
+    if(m==='interim')return'gameStart';
+    return GS.showQR?'qr':'main';
+}
+function setBoardProjectorMode(mode){
+    if(mode!=='gameStart'&&mode!=='qr'&&mode!=='main')return;
+    roomRef.child('state').update({boardProjectorMode:mode,showQR:mode==='qr'});
+}
 
 // ── Round Transition ──
 function promptEndRound() {
@@ -682,9 +652,8 @@ function confirmEndRound() {
     closeRoundModal();
     const nextRound = GS.round + 1;
     if (nextRound > 3) return;
-    roomRef.child('state').update({round:nextRound,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:'',answersWereOpened:false});
-    roomRef.child('currentAnswers').remove(); grading={}; lastQuestionKey=null;
-    resetWagers(Object.keys(teams));
+    roomRef.child('state').update({round:nextRound,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
+    roomRef.child('currentAnswers').remove(); grading={};
     if(roundTransTimeout)clearTimeout(roundTransTimeout);
     roundTransTimeout=setTimeout(()=>{ roundTransTimeout=null; roomRef.child('state/phase').set('board'); }, 8000);
 }
@@ -728,16 +697,12 @@ function selQ(key) {
 let pendingQuestion=null;
 function activateQ(key,q,isDD,ddTk) {
     if(roundTransTimeout){clearTimeout(roundTransTimeout);roundTransTimeout=null;}
-    const isReentry=(key===lastQuestionKey);
     const val=q.value;
     const hideQ=isDD;
     pendingQuestion=hideQ?{questionText:q.questionText,imageUrl:q.imageUrl||''}:null;
-    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isReentry?false:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!hideQ,answersWereOpened:false});
-    if(!isReentry){
-        roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false; appliedPoints={};
-        if(isDD){resetWagers([ddTk]);}
-    }
-    lastQuestionKey=key;
+    roomRef.child('state').update({phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,wageringOpen:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD});
+    roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false;
+    if(isDD){resetWagers([ddTk]);}
     showView('question-view');
     const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
     document.getElementById('qv-rl').textContent=rl[q.round]||'';
@@ -747,8 +712,6 @@ function activateQ(key,q,isDD,ddTk) {
     document.getElementById('ans-txt').textContent=q.answerText;
     document.getElementById('ans-txt').classList.add('hidden');
     document.getElementById('ans-lbl').classList.remove('hidden');
-    const ddRef=document.getElementById('ans-dd-ref');
-    if(ddRef){ddRef.classList.toggle('hidden',!isDD);ddRef.textContent=isDD?'For grading: "'+q.answerText+'"':'';}
     document.getElementById('qv-dd').classList.toggle('hidden',!isDD);
     document.getElementById('dd-team-info').classList.toggle('hidden',!isDD);
     if(isDD) document.getElementById('dd-team-name').textContent=(teams[ddTk]&&teams[ddTk].name)||ddTk;
@@ -761,14 +724,8 @@ function activateQ(key,q,isDD,ddTk) {
 function toggleAccepting() {
     const a=!GS.accepting;
     if(a){
-        const {eligible,locked}=getWagerEligible();
-        if(eligible.length>0&&locked.length<eligible.length){
-            const isDD=GS.dailyDouble;
-            alert((isDD?'The Daily Double team must lock in their wager':'All teams must lock in their wagers')+' before opening for responses.');
-            return;
-        }
         const end=Date.now()+timerSec*1000;
-        roomRef.child('state').update({accepting:true,timerEnd:end,timerRunning:true,wageringOpen:false,acceptedAt:firebase.database.ServerValue.TIMESTAMP,answersWereOpened:true});
+        roomRef.child('state').update({accepting:true,timerEnd:end,timerRunning:true,wageringOpen:false,acceptedAt:firebase.database.ServerValue.TIMESTAMP});
         startLocalTimer();
     } else {
         roomRef.child('state').update({accepting:false,timerRunning:false});
@@ -778,15 +735,6 @@ function toggleAccepting() {
 function toggleWagering() {
     roomRef.child('state/wageringOpen').set(false);
 }
-function reopenWagers() {
-    const isFJ=GS.round===3&&GS.questionKey==='final';
-    const isDD=GS.dailyDouble;
-    if(!isDD&&!isFJ)return;
-    const eligible=isDD&&GS.ddTeam?[GS.ddTeam]:isFJ?Object.keys(teams).filter(tk=>(teams[tk].score||0)>0):[];
-    resetWagers(eligible);
-    roomRef.child('state/wageringOpen').set(true);
-    updateWagerProgress();
-}
 function resetWagers(teamKeys){
     const upd={};
     teamKeys.forEach(tk=>{upd['teams/'+tk+'/wager']=0;});
@@ -795,46 +743,15 @@ function resetWagers(teamKeys){
 function updateStatus() {
     const btn=document.getElementById('toggle-btn'), pill=document.getElementById('status-pill');
     const wBtn=document.getElementById('wager-toggle-btn');
-    const isDD=GS.dailyDouble;
-    const isFJ=GS.round===3&&GS.questionKey==='final';
-    if(GS.accepting){btn.textContent='Stop Clock & Close Responses';btn.className='toggle-accept closed';btn.title='Stop the timer and prevent teams from submitting responses';btn.disabled=false;pill.textContent='ACCEPTING';pill.className='status-pill a';}
-    else{
-        const {eligible,locked}=getWagerEligible();
-        const wagersReady=((!isDD&&!isFJ)||GS.fjQuestionRevealed)&&(eligible.length===0||locked.length===eligible.length);
-        btn.disabled=!wagersReady;
-        btn.textContent='Open for Responses';btn.className='toggle-accept open';
-        btn.title=!wagersReady?(!GS.fjQuestionRevealed?'Reveal the clue first':(isDD?'Lock in the Daily Double wager first':'Lock in all wagers first')):'Start the timer and allow teams to submit responses';
-        const has=Object.keys(curAnswers).length>0;pill.textContent=has?'CLOSED — GRADE':'WAITING';pill.className=has?'status-pill c':'status-pill w';
-    }
-    const ar=document.getElementById('ans-reveal'),albl=document.getElementById('ans-lbl'),atxt=document.getElementById('ans-txt');
-    if(ar&&albl&&!GS.answerRevealed){
-        if(isDD){
-            ar.classList.add('disabled');
-            ar.onclick=null;
-            albl.textContent='Daily Double — grade below, then use Show Daily Double Reveal';
-            if(atxt){atxt.classList.add('hidden');atxt.textContent='';}
-        }else if(isFJ){
-            ar.classList.add('disabled');
-            ar.onclick=null;
-            albl.textContent='Final Jeopardy — grade below, then use Start End of Game Reveal';
-            if(atxt){atxt.classList.add('hidden');atxt.textContent='';}
-            const ddRef=document.getElementById('ans-dd-ref');
-            if(ddRef){ddRef.classList.remove('hidden');ddRef.textContent='For grading: "'+(document.getElementById('ans-txt').textContent||'')+'"';}
-        }else{
-            ar.onclick=revealAnswer;
-            const canReveal=GS.answersWereOpened&&!GS.accepting;
-            ar.classList.toggle('disabled',!canReveal);
-            albl.textContent=canReveal?'Click to reveal correct response':'Open for responses first to reveal';
-            if(atxt)atxt.classList.add('hidden');
-            const ddRef=document.getElementById('ans-dd-ref');
-            if(ddRef)ddRef.classList.add('hidden');
-        }
-    }
+    if(GS.accepting){btn.textContent='Stop Clock & Close Answers';btn.className='toggle-accept closed';btn.title='Stop the timer and prevent teams from submitting answers';pill.textContent='ACCEPTING';pill.className='status-pill a';}
+    else{btn.textContent='Open for Answers';btn.className='toggle-accept open';btn.title='Start the timer and allow teams to submit answers';
+        const has=Object.keys(curAnswers).length>0;pill.textContent=has?'CLOSED — GRADE':'WAITING';pill.className=has?'status-pill c':'status-pill w';}
     wBtn.classList.add('hidden');
+    const isFJ=GS.round===3&&GS.questionKey==='final';
+    const isDD=GS.dailyDouble;
     const fjRevealBar=document.getElementById('fj-reveal-q-bar');
-    fjRevealBar.classList.toggle('hidden',!((isDD||isFJ)&&!GS.fjQuestionRevealed));
+    fjRevealBar.classList.toggle('hidden',!((isFJ||isDD)&&!GS.fjQuestionRevealed));
     updateWagerProgress();
-    showFJRevealButton();
 }
 function updateWagerProgress(){
     const wp=document.getElementById('wager-progress');
@@ -856,14 +773,10 @@ function updateWagerProgress(){
 
 // ── Answer Reveal ──
 function revealAnswer() {
-    if(GS.dailyDouble&&GS.ddTeam){alert('Daily Double: Grade and apply scores, then use Show Daily Double Reveal.');return;}
-    if(GS.round===3&&GS.questionKey==='final'){alert('Final Jeopardy: Grade and apply scores, then use Start End of Game Reveal.');return;}
-    if(GS.accepting){alert('Close responses before revealing the correct response.');return;}
-    if(!GS.answersWereOpened){alert('Open for responses first before revealing.');return;}
+    if(GS.accepting){alert('Close answers before revealing the answer.');return;}
     document.getElementById('ans-txt').classList.remove('hidden');
     document.getElementById('ans-lbl').classList.add('hidden');
-    const answerText=document.getElementById('ans-txt').textContent||'';
-    roomRef.child('state').update({answerRevealed:true,answerText});
+    roomRef.child('state/answerRevealed').set(true);
 }
 
 // ── Answers ──
@@ -889,27 +802,12 @@ function renderAnswers() {
         stopLocalTimer();
     }
 
-    if(!keys.length){list.innerHTML='<div class="no-ans">No responses yet.</div>';updateStatus();return;}
+    if(!keys.length){list.innerHTML='<div class="no-ans">No answers yet.</div>';updateStatus();return;}
     list.innerHTML=keys.map(tk=>{const a=curAnswers[tk],nm=(teams[tk]&&teams[tk].name)||tk,av=teams[tk]&&teams[tk].avatar;
-        if(a.passed){
-            const ptsDisplay=scoresApplied?' <span class="a-pts" style="color:var(--text-muted);font-weight:600;">(Passed)</span>':'';
-            return`<div class="acard passed"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}${ptsDisplay}</span><span class="a-text" style="color:var(--tmut);font-style:italic;">Passed</span></div>`;
-        }
+        if(a.passed){return`<div class="acard passed"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text" style="color:var(--tmut);font-style:italic;">Passed</span></div>`;}
         const gc=grading[tk]===true?'correct':grading[tk]===false?'incorrect':'';
-        const ptsDisplay=scoresApplied&&appliedPoints[tk]!==undefined?
-            ` <span class="a-pts" style="color:${appliedPoints[tk]>0?'var(--green)':'var(--red)'};font-weight:700;font-variant-numeric:tabular-nums;">(${appliedPoints[tk]>=0?'+':''}$${appliedPoints[tk].toLocaleString()})</span>`:
-            '';
-        const gradeBtns=scoresApplied?'':`<button class="gbtn ${grading[tk]===true?'ca':''}" onclick="grade('${tk}',true)" title="Mark as correct">✓</button><button class="gbtn ${grading[tk]===false?'ia':''}" onclick="grade('${tk}',false)" title="Mark as incorrect">✕</button>`;
-        return`<div class="acard ${gc}"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}${ptsDisplay}</span><span class="a-text">${esc(a.answer||'(blank)')}</span>${gradeBtns}</div>`;
-    }).join('');
-    const allGraded=Object.keys(curAnswers).every(tk=>curAnswers[tk].passed||grading[tk]===true||grading[tk]===false);
-    const applyBtn=document.getElementById('apply-btn');
-    if(applyBtn){
-        applyBtn.disabled=scoresApplied||!allGraded;
-        applyBtn.textContent=scoresApplied?'Scores Applied':'Apply Scores';
-        applyBtn.title=scoresApplied?'Scores have been applied':!allGraded?'Mark every response as correct or incorrect first':'Apply all graded scores — correct responses earn points, incorrect responses lose points';
-    }
-    updateStatus();
+        return`<div class="acard ${gc}"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text">${esc(a.answer||'(blank)')}</span><button class="gbtn ${grading[tk]===true?'ca':''}" onclick="grade('${tk}',true)" title="Mark as correct — team earns points">✓</button><button class="gbtn ${grading[tk]===false?'ia':''}" onclick="grade('${tk}',false)" title="Mark as incorrect — team loses points">✕</button></div>`;
+    }).join(''); updateStatus();
 }
 function getEligibleTeams(){
     const all=Object.keys(teams);
@@ -920,18 +818,13 @@ function getEligibleTeams(){
 function grade(tk,c){grading[tk]=grading[tk]===c?undefined:c;renderAnswers();}
 function clearGrading(){grading={};renderAnswers();}
 function applyScores() {
-    if(scoresApplied)return;
-    const allGraded=Object.keys(curAnswers).every(tk=>curAnswers[tk].passed||grading[tk]===true||grading[tk]===false);
-    if(!allGraded){alert('Mark every submitted response as correct or incorrect before applying scores.');return;}
     const upd={}, hist={round:GS.round,category:GS.category,value:GS.value,questionText:GS.questionText||'',acceptedAt:GS.acceptedAt||0,answers:{}};
     const isDD=GS.dailyDouble, isFJ=GS.round===3&&GS.questionKey==='final';
-    appliedPoints={};
     Object.keys(curAnswers).forEach(tk=>{
         const ts=curAnswers[tk].timestamp||0;
         if(curAnswers[tk].passed){
             upd['teams/'+tk+'/streak']=0;
             hist.answers[tk]={answer:null,correct:null,points:0,passed:true,ts};
-            appliedPoints[tk]=0;
             return;
         }
         const c=grading[tk]; if(c===undefined)return;
@@ -942,9 +835,8 @@ function applyScores() {
         } else {
             pts=c?GS.value:-GS.value;
         }
-        appliedPoints[tk]=pts;
         const cur=(teams[tk]&&teams[tk].score)||0;
-        if(!isDD&&!isFJ)upd['teams/'+tk+'/score']=cur+pts;
+        upd['teams/'+tk+'/score']=cur+pts;
         const streak=(teams[tk]&&teams[tk].streak)||0;
         upd['teams/'+tk+'/streak']=c?streak+1:0;
         hist.answers[tk]={answer:curAnswers[tk].answer,correct:c,points:pts,ts};
@@ -956,10 +848,7 @@ function applyScores() {
     });
     const scoreSnap={};
     Object.keys(teams).forEach(tk=>{
-        if(upd['teams/'+tk+'/score']!==undefined)scoreSnap[tk]=upd['teams/'+tk+'/score'];
-        else if(isDD&&tk===GS.ddTeam){const a=curAnswers[tk];const p=a&&a.passed;const c=p?false:(grading[tk]===true);const w=(teams[tk]&&teams[tk].wager)||0;scoreSnap[tk]=(teams[tk].score||0)+((p&&isDD)?-w:(p?0:(c?w:-w)));}
-        else if(isFJ){const c=grading[tk]===true;const w=(teams[tk]&&teams[tk].wager)||0;const cur=teams[tk].score||0;const answered=curAnswers[tk]&&curAnswers[tk].answer;scoreSnap[tk]=answered?(c?cur+w:cur-w):(w>0?cur-w:cur);}
-        else scoreSnap[tk]=teams[tk].score||0;
+        scoreSnap[tk]=(upd['teams/'+tk+'/score']!==undefined)?upd['teams/'+tk+'/score']:(teams[tk].score||0);
     });
     hist.scores=scoreSnap;
     upd['history/q'+Date.now()]=hist;
@@ -969,7 +858,7 @@ function applyScores() {
     if(applyBtn){applyBtn.disabled=true;applyBtn.textContent='Applying...';}
     roomRef.update(upd).then(()=>{
         grading={};scoresApplied=true;renderAnswers();
-        if(applyBtn){applyBtn.disabled=true;applyBtn.textContent='Scores Applied';}
+        if(applyBtn){applyBtn.disabled=false;applyBtn.textContent='Apply Scores';applyBtn.style.boxShadow='0 0 12px var(--green)';setTimeout(()=>{applyBtn.style.boxShadow='';},2000);}
     });
 }
 function determineBoardControl(gradingMap,answers){
@@ -996,7 +885,7 @@ function assignInitialControl(){
 
 // ── Complete ──
 function completeAndReturn(fromKeyboard){
-    if(GS.accepting){alert('Close responses before completing this clue.');return;}
+    if(GS.accepting){alert('Close answers before completing this question.');return;}
     const answered=Object.keys(curAnswers);
     if(answered.length>0&&!scoresApplied){
         const graded=Object.keys(grading).length;
@@ -1008,38 +897,19 @@ function completeAndReturn(fromKeyboard){
     if(fromKeyboard&&answered.length===0&&!scoresApplied){
         if(!confirm('No answers were submitted. Return to the board?'))return;
     }
-    const k=GS.questionKey;if(k&&k!=='final')roomRef.child('board/'+k+'/completed').set(true);
-    roomRef.child('currentAnswers').remove();grading={};scoresApplied=false;appliedPoints={};lastQuestionKey=null;
-    if(GS.dailyDouble&&GS.ddTeam)resetWagers([GS.ddTeam]);
-    else if(GS.round===3&&GS.questionKey==='final')resetWagers(Object.keys(teams));
-    goToBoard();
+    const k=GS.questionKey;if(k&&k!=='final')roomRef.child('board/'+k+'/completed').set(true);returnToBoard();
 }
 function returnToBoard(){
-    const hasUnscored=Object.keys(curAnswers).length>0&&!scoresApplied;
-    if(hasUnscored){
-        if(!confirm('There are unscored responses. Leave this clue?\n\nYou can re-select it from the board to continue.'))return;
-    }
-    goToBoard();
-}
-function goToBoard(){
-    roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:'',answersWereOpened:false});
-    showView('board-view');stopLocalTimer();resetTimerDisp();
+    roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
+    roomRef.child('currentAnswers').remove();grading={};showView('board-view');stopLocalTimer();resetTimerDisp();
 }
 
 // ── Final ──
 function startFinal(){
     roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
-        const isReentry=(lastQuestionKey==='final');
-        if(!isReentry){
-            resetWagers(Object.keys(teams));
-            roomRef.child('currentAnswers').remove();grading={};scoresApplied=false;appliedPoints={};
-            pendingQuestion={questionText:f.questionText,imageUrl:f.imageUrl||''};
-        }
-        lastQuestionKey='final';
-        const wasRevealed=isReentry&&!pendingQuestion;
-        const fjUpd={round:3,phase:'question',category:f.category,value:0,questionText:wasRevealed?f.questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:isReentry?false:true,imageUrl:wasRevealed?(f.imageUrl||''):'',fjQuestionRevealed:wasRevealed};
-        if(!wasRevealed)fjUpd.answersWereOpened=false;
-        roomRef.child('state').update(fjUpd);
+        resetWagers(Object.keys(teams));
+        pendingQuestion={questionText:f.questionText,imageUrl:f.imageUrl||''};
+        roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:true,imageUrl:'',fjQuestionRevealed:false});
         showView('question-view');
         document.getElementById('qv-rl').textContent='Final Jeopardy';
         document.getElementById('qv-cat').textContent=f.category;
@@ -1048,46 +918,19 @@ function startFinal(){
         document.getElementById('ans-txt').textContent=f.answerText;
         document.getElementById('ans-txt').classList.add('hidden');
         document.getElementById('ans-lbl').classList.remove('hidden');
-        const ddRef=document.getElementById('ans-dd-ref');
-        if(ddRef){ddRef.classList.remove('hidden');ddRef.textContent='For grading: "'+f.answerText+'"';}
         document.getElementById('qv-dd').classList.add('hidden');
         document.getElementById('dd-team-info').classList.add('hidden');
         document.getElementById('qv-img').classList.add('hidden');
         resetTimerDisp(); updateStatus(); showFJRevealButton();
     });
 }
-function getWagerEligible(){
-    const isFJ=GS.round===3&&GS.questionKey==='final';
-    const isDD=GS.dailyDouble;
-    if(!isDD&&!isFJ)return {eligible:[],locked:[]};
-    const eligible=isDD&&GS.ddTeam?[GS.ddTeam]:
-        isFJ?Object.keys(teams).filter(tk=>(teams[tk].score||0)>0):
-        Object.keys(teams);
-    const locked=eligible.filter(tk=>teams[tk]&&teams[tk].wager>0);
-    return {eligible,locked};
-}
 function revealFJQuestion(){
-    const {eligible,locked}=getWagerEligible();
-    const allLocked=eligible.length===0||locked.length===eligible.length;
-    if(!allLocked){
-        const waiting=eligible.length-locked.length;
-        const msg=waiting===1
-            ?'1 team has not locked in their wager. Reveal the clue anyway?'
-            :waiting+' teams have not locked in their wagers. Reveal the clue anyway?';
-        if(!confirm(msg))return;
-    }
-    const isFJ=GS.round===3&&GS.questionKey==='final';
-    const isDD=GS.dailyDouble;
-    if(isFJ){
+    if(pendingQuestion){
+        roomRef.child('state').update({questionText:pendingQuestion.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:pendingQuestion.imageUrl||''});
+        pendingQuestion=null;
+    } else {
         roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
             roomRef.child('state').update({questionText:f.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:f.imageUrl||''});
-            pendingQuestion=null;
-        });
-    } else if(isDD&&GS.questionKey&&GS.questionKey!=='final'){
-        roomRef.child('board/'+GS.questionKey).once('value',s=>{
-            const q=s.val();if(!q)return;
-            roomRef.child('state').update({questionText:q.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:q.imageUrl||''});
-            pendingQuestion=null;
         });
     }
 }
@@ -1140,43 +983,11 @@ let revealData = null;
 
 function showFJRevealButton() {
     const isFJ = GS.round === 3 && GS.questionKey === 'final';
-    const isDD = GS.dailyDouble && GS.ddTeam;
     document.getElementById('fj-reveal-start').classList.toggle('hidden', !isFJ);
-    document.getElementById('dd-reveal-start').classList.toggle('hidden', !(isDD && scoresApplied));
-    document.getElementById('q-bottom-btns').classList.toggle('hidden', isFJ || (isDD && scoresApplied));
-    const fjBtn = document.getElementById('fj-reveal-btn');
-    if (fjBtn && isFJ) {
-        const allGraded = Object.keys(curAnswers).every(tk => curAnswers[tk].passed || grading[tk] === true || grading[tk] === false);
-        fjBtn.disabled = !allGraded;
-        fjBtn.title = !allGraded ? 'Grade every response as correct or incorrect first' : 'Begin the team-by-team Final Jeopardy score reveal ceremony on the projector';
-    }
-}
-
-function startDDReveal() {
-    const ddTk = GS.ddTeam;
-    if (!ddTk || !teams[ddTk]) return;
-    const t = teams[ddTk];
-    const wager = t.wager || 0;
-    const passed = curAnswers[ddTk] && curAnswers[ddTk].passed;
-    const correct = passed ? false : (scoresApplied ? (appliedPoints[ddTk] > 0) : (grading[ddTk] === true));
-    const answer = passed ? '(passed)' : ((curAnswers[ddTk] && curAnswers[ddTk].answer) || '(no answer)');
-    const preScore = t.score || 0;
-    const finalScore = passed ? preScore - wager : (correct ? preScore + wager : preScore - wager);
-    const ddRevealData = {
-        team: { key: ddTk, name: t.name || ddTk, avatar: t.avatar || '', preScore, wager, answer, correct, finalScore },
-        questionText: GS.questionText || '', category: GS.category || '', value: GS.value || 0,
-        stage: 1
-    };
-    roomRef.child('ddReveal').set(ddRevealData);
-    roomRef.child('state').update({ phase: 'dd-reveal' });
-    document.getElementById('rv-room').textContent = roomCode;
-    showView('reveal-view');
-    renderDDRevealAdmin();
+    document.getElementById('q-bottom-btns').classList.toggle('hidden', isFJ);
 }
 
 function startFinalReveal() {
-    const allGraded = Object.keys(curAnswers).every(tk => curAnswers[tk].passed || grading[tk] === true || grading[tk] === false);
-    if (!allGraded) { alert('Grade every response as correct or incorrect before starting the reveal.'); return; }
     const sorted = Object.entries(teams).sort((a,b) => (a[1].score||0) - (b[1].score||0));
     const revealTeams = sorted.map(([k,t]) => {
         const currentScore = t.score||0;
@@ -1184,12 +995,11 @@ function startFinalReveal() {
         const correct = grading[k] === true;
         const answered = curAnswers[k] && curAnswers[k].answer;
         const preFJ = scoresApplied && answered ? (correct ? currentScore - wager : currentScore + wager) : currentScore;
-        const finalScore = answered ? (correct ? currentScore + wager : currentScore - wager) : (wager > 0 ? currentScore - wager : currentScore);
         return {
             key: k, name: t.name||k, avatar: t.avatar||'',
             preFinalScore: preFJ, wager: wager,
             answer: (curAnswers[k] && curAnswers[k].answer) || '(no answer)',
-            correct: correct, finalScore
+            correct: correct, finalScore: currentScore
         };
     });
     revealData = { teams: revealTeams, index: 0, stage: 1 };
@@ -1202,67 +1012,7 @@ function startFinalReveal() {
     renderRevealAdmin();
 }
 
-let ddRevealCompleted = false;
-function advanceDDReveal() {
-    roomRef.child('ddReveal').once('value', s => {
-        const d = s.val();
-        if (!d || !d.team) return;
-        let stage = (d.stage || 1) + 1;
-        if (stage > 5) {
-            if (ddRevealCompleted) return;
-            ddRevealCompleted = true;
-            const k = GS.questionKey;
-            if (k && k !== 'final') roomRef.child('board/' + k + '/completed').set(true);
-            if (GS.dailyDouble && GS.ddTeam) resetWagers([GS.ddTeam]);
-            roomRef.child('teams/' + d.team.key + '/score').set(d.team.finalScore);
-            roomRef.child('ddReveal').remove();
-            roomRef.child('currentAnswers').remove();
-            roomRef.child('state').update({ phase: 'board', category: '', value: 0, questionText: '', accepting: false, dailyDouble: false, ddTeam: '', questionKey: '', timerRunning: false, answerRevealed: false, wageringOpen: false, imageUrl: '' });
-            lastQuestionKey = null;
-            grading = {};
-            scoresApplied = false;
-            appliedPoints = {};
-            ddRevealCompleted = false;
-            showView('board-view');
-            renderBoard();
-            return;
-        }
-        roomRef.child('ddReveal/stage').set(stage).then(()=>renderDDRevealAdmin(stage));
-    });
-}
-
-function renderDDRevealAdmin(overrideStage) {
-    roomRef.child('ddReveal').once('value', s => {
-        const d = s.val();
-        if (!d || !d.team) return;
-        const t = d.team, stage = overrideStage !== undefined ? overrideStage : (d.stage || 1);
-        document.getElementById('rv-room').textContent = roomCode;
-        document.querySelector('#reveal-view h1').textContent='Daily Double Reveal';
-        document.getElementById('rv-progress').textContent = `Stage ${stage} of 5`;
-        document.getElementById('rv-team-name').textContent = t.name;
-        document.getElementById('rv-avatar').innerHTML = avatarImg(t.avatar, 36);
-        const stageLabels = { 1: 'Score before question', 2: 'Their wager', 3: 'The question', 4: 'Their answer', 5: 'Final result' };
-        document.getElementById('rv-stage-label').textContent = stageLabels[stage];
-        let detail = '';
-        if (stage === 1) detail = '$' + t.preScore.toLocaleString();
-        if (stage === 2) detail = '$' + t.wager.toLocaleString();
-        if (stage === 3) detail = d.questionText || '(no question text)';
-        if (stage === 4) detail = '"' + t.answer + '" — ' + (t.correct ? '✓ Correct' : '✕ Incorrect');
-        if (stage === 5) {
-            const sign = t.correct ? '+' : '−';
-            detail = '$' + t.preScore.toLocaleString() + ' ' + sign + '$' + t.wager.toLocaleString() + ' = $' + t.finalScore.toLocaleString();
-        }
-        document.getElementById('rv-detail').textContent = detail;
-        document.getElementById('rv-detail').style.color = (stage === 4 && !t.correct) ? 'var(--red)' : (stage === 4 && t.correct) ? 'var(--green)' : 'var(--gold-bright)';
-        document.getElementById('rv-standings').innerHTML = '';
-        const btn = document.querySelector('#reveal-view .btn-gold');
-        btn.textContent = stage >= 5 ? 'Return to Board →' : 'Next →';
-        btn.onclick = stage >= 5 ? () => advanceDDReveal() : advanceDDReveal;
-    });
-}
-
 function advanceReveal() {
-    if (GS.phase === 'dd-reveal') { advanceDDReveal(); return; }
     if (!revealData) return;
     revealData.stage++;
     if (revealData.stage > 4) {
@@ -1288,7 +1038,6 @@ function advanceReveal() {
 
 function renderRevealAdmin() {
     if (!revealData) return;
-    document.querySelector('#reveal-view h1').textContent='Final Reveal';
     const { teams: rt, index, stage } = revealData;
     if (index >= rt.length) {
         document.getElementById('rv-progress').textContent = 'ALL TEAMS REVEALED';
@@ -1403,29 +1152,11 @@ document.addEventListener('keydown',e=>{
     const qv=document.getElementById('question-view');
     if(!qv||!qv.classList.contains('active'))return;
     if(e.code==='Space'){e.preventDefault();toggleAccepting();}
-    else if(e.code==='KeyR'&&!(GS.dailyDouble&&GS.ddTeam)&&!(GS.round===3&&GS.questionKey==='final')){e.preventDefault();revealAnswer();}
+    else if(e.code==='KeyR'){e.preventDefault();revealAnswer();}
     else if(e.code==='Enter'){e.preventDefault();completeAndReturn(true);}
 });
 
 resetTimerDisp();
-
-// ── Init: join room from URL if ?room= present ──
-(function(){
-    const params=new URLSearchParams(window.location.search);
-    const r=params.get('room');
-    if(!r)return;
-    const code=r.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
-    if(!code)return;
-    roomCode=code; roomRef=db.ref('trivia-rooms/'+roomCode);
-    roomRef.child('state').once('value',s=>{
-        if(s.exists())enterGame();
-        else{
-            document.getElementById('setup-err').textContent='Room not found.';
-            document.getElementById('inp-rejoin').value=code;
-            roomCode=null;roomRef=null;
-        }
-    });
-})();
 </script>
 </body>
 </html>

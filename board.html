@@ -204,7 +204,21 @@
         #connect-screen input{width:300px;padding:.8rem 1rem;background:var(--card);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--fh);font-size:1.5rem;text-align:center;text-transform:uppercase;letter-spacing:2px;outline:none;}
         #connect-screen input:focus{border-color:var(--gold);}
         #connect-screen button{padding:.8rem 2rem;background:var(--gold);color:#000;border:none;border-radius:12px;font-family:var(--fh);font-size:1.2rem;font-weight:700;cursor:pointer;}
-        #lobby,#board-display,#question-display,#dd-display,#transition-display,#intermission-display,#reveal-display,#rankings-display,#recap-display,#gameover-display{transition:opacity .25s ease;}
+
+        /* ═══ GAME START / QR PROJECTOR (board idle modes) ═══ */
+        #game-start-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:4vw;gap:1.5vw;text-align:center;}
+        #game-start-display .im-logo{width:18vw;max-width:280px;height:auto;filter:drop-shadow(0 0 30px rgba(255,215,0,.25));}
+        #game-start-display .im-title{font-family:var(--fh);font-size:4.5vw;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;text-shadow:0 0 40px rgba(255,215,0,.35);}
+        #game-start-display .im-sub{font-family:var(--fs);font-size:2.2vw;color:var(--tsec);letter-spacing:.08em;text-transform:uppercase;}
+        #game-start-display .im-soon{font-family:var(--fh);font-size:3vw;color:var(--gold-bright);letter-spacing:.06em;margin-top:1vw;animation:fadeDown .8s ease .2s both;}
+        #qr-projector-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:2vw;padding:3vw;background:var(--bg);}
+        #qr-projector-display h3{font-family:var(--fh);font-size:4vw;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;}
+        #qr-box-projector{background:#fff;padding:24px;border-radius:16px;box-shadow:0 0 60px rgba(255,215,0,.2);line-height:0;}
+        #qr-box-projector canvas,#qr-box-projector img{display:block;border-radius:4px;}
+        #qr-url-projector{font-family:var(--fh);font-size:2vw;color:var(--gold-bright);letter-spacing:.05em;}
+        #qr-room-projector{font-family:var(--fs);font-size:1.5vw;color:var(--tsec);}
+
+        #lobby,#game-start-display,#qr-projector-display,#board-display,#question-display,#dd-display,#transition-display,#intermission-display,#reveal-display,#rankings-display,#recap-display,#gameover-display{transition:opacity .25s ease;}
 
         .score-change{position:absolute;font-family:var(--fh);font-weight:700;font-size:1.3vw;pointer-events:none;animation:scoreFloat 1.5s ease forwards;z-index:10;}
         .score-change.positive{color:var(--green);}
@@ -221,6 +235,23 @@
     <h2>Board Display</h2>
     <input type="text" id="connect-room" placeholder="ROOM CODE" maxlength="12">
     <button onclick="connectRoom()">Connect</button>
+</div>
+
+<!-- gameStart: game starting soon (host-controlled while on board) -->
+<div id="game-start-display" class="hidden">
+    <img src="Logo transparent.png" alt="PDK NINE" class="im-logo">
+    <div class="im-title">Jeopardy Trivia Night</div>
+    <div class="im-sub">PDK NINE</div>
+    <div class="im-soon">Game Starting Soon</div>
+</div>
+
+<!-- Full-screen QR join (host-controlled while on board) -->
+<div id="qr-projector-display" class="hidden">
+    <h3>Join the Game!</h3>
+    <div id="qr-box-projector"></div>
+    <div class="url" id="qr-url-projector"></div>
+    <div class="room-hint">Room Code: <span id="qr-room-projector" style="color:var(--gold);font-family:var(--fh);font-weight:700;font-size:1.8vw;letter-spacing:2px;"></span></div>
+    <div style="font-family:var(--fb);font-size:1.2vw;color:var(--tmut);margin-top:.5vw;">Scan with your phone's camera to join</div>
 </div>
 
 <!-- Lobby (before game starts or idle) -->
@@ -417,11 +448,28 @@ function generateQR(){
     const url=base+'play.html?room='+roomCode;
     document.getElementById('qr-url').textContent=url;
     document.getElementById('qr-room').textContent=roomCode;
-    const box=document.getElementById('qr-box');
-    box.innerHTML='';
-    try{new QRCode(box,{text:url,width:460,height:460,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){console.error('QR init error:',e);}
+    const urlP=document.getElementById('qr-url-projector');
+    const roomP=document.getElementById('qr-room-projector');
+    if(urlP)urlP.textContent=url;
+    if(roomP)roomP.textContent=roomCode;
+    function fillBox(id,w){
+        const box=document.getElementById(id);
+        if(!box)return;
+        box.innerHTML='';
+        try{new QRCode(box,{text:url,width:w,height:w,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){console.error('QR init error:',e);}
+    }
+    fillBox('qr-box',460);
+    fillBox('qr-box-projector',460);
 }
-function updateQR(){document.getElementById('qr-overlay').classList.toggle('show',!!GS.showQR);}
+function getBoardProjectorMode(){
+    const m=GS.boardProjectorMode;
+    if(m==='gameStart'||m==='qr'||m==='main')return m;
+    if(m==='interim')return'gameStart';
+    return GS.showQR?'qr':'main';
+}
+function updateQR(){
+    document.getElementById('qr-overlay').classList.remove('show');
+}
 
 // ═══ STATE MACHINE ═══
 function onStateChange(){
@@ -467,7 +515,7 @@ function onStateChange(){
 
 // ═══ SCREENS ═══
 function showScreen(id){
-    const screens=['lobby','board-display','question-display','dd-display','transition-display','intermission-display','reveal-display','rankings-display','recap-display','gameover-display'];
+    const screens=['lobby','game-start-display','qr-projector-display','board-display','question-display','dd-display','transition-display','intermission-display','reveal-display','rankings-display','recap-display','gameover-display'];
     const target=document.getElementById(id);
     const current=screens.map(s=>document.getElementById(s)).find(el=>el.style.display==='flex');
     if(current&&current.id!==id){
@@ -506,6 +554,16 @@ function updateAnswerCount(){
 }
 
 function showBoard(){
+    const mode=getBoardProjectorMode();
+    generateQR();
+    if(mode==='gameStart'){
+        showScreen('game-start-display');
+        return;
+    }
+    if(mode==='qr'){
+        showScreen('qr-projector-display');
+        return;
+    }
     showScreen('board-display');
     const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
     document.getElementById('bd-round').textContent=rl[GS.round]||'';
