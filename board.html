@@ -211,23 +211,35 @@
         #game-start-display .im-title{font-family:var(--fh);font-size:4.5vw;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;text-shadow:0 0 40px rgba(255,215,0,.35);}
         #game-start-display .im-sub{font-family:var(--fs);font-size:2.2vw;color:var(--tsec);letter-spacing:.08em;text-transform:uppercase;}
         #game-start-display .im-soon{font-family:var(--fh);font-size:3vw;color:var(--gold-bright);letter-spacing:.06em;margin-top:1vw;animation:fadeDown .8s ease .2s both;}
-        #qr-projector-display{flex:1;display:none;flex-direction:column;min-height:0;background:var(--bg);padding:1.2vw 2vw 2vw;overflow:hidden;}
-        .qr-proj-top{text-align:center;flex-shrink:0;margin-bottom:.5vw;}
-        .qr-proj-top h3{font-family:var(--fh);font-size:3.2vw;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35vw;}
-        .qr-team-count-pill{display:inline-flex;align-items:center;gap:.5vw;font-family:var(--fs);font-size:1.5vw;font-weight:700;color:var(--gold-bright);background:rgba(255,215,0,.1);border:2px solid var(--gold-dim);border-radius:999px;padding:.35vw 1.2vw;letter-spacing:.06em;}
-        .qr-team-count-pill .n{font-family:var(--fh);font-size:1.8vw;color:var(--gold);}
-        .qr-radial-stage{flex:1;position:relative;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;}
+        #qr-projector-display{
+            flex:1;display:none;flex-direction:column;min-height:0;background:var(--bg);
+            padding:clamp(.5rem,1.2vw,1rem) clamp(.75rem,2vw,1.5rem) clamp(.75rem,2vw,1.5rem);
+            overflow:hidden;gap:clamp(.35rem,1vw,.75rem);
+        }
+        .qr-proj-top{text-align:center;flex-shrink:0;padding:0 .25rem;max-width:100%;}
+        .qr-proj-top h3{font-family:var(--fh);font-size:clamp(1.1rem,3.2vw,2.5rem);color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:0 0 .25rem;}
+        .qr-team-count-pill{display:inline-flex;align-items:center;gap:.35rem;font-family:var(--fs);font-size:clamp(.75rem,1.35vw,1.1rem);font-weight:700;color:var(--gold-bright);background:rgba(255,215,0,.1);border:2px solid var(--gold-dim);border-radius:999px;padding:.25rem .85rem;letter-spacing:.04em;max-width:100%;flex-wrap:wrap;justify-content:center;}
+        .qr-team-count-pill .n{font-family:var(--fh);font-size:clamp(.85rem,1.6vw,1.25rem);color:var(--gold);}
+        .qr-proj-body{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;}
+        .qr-radial-stage{flex:1;position:relative;min-height:180px;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;}
         .qr-radial-teams{position:absolute;inset:0;pointer-events:none;z-index:1;}
-        .qr-proj-team{position:absolute;width:11vw;min-width:120px;max-width:200px;display:flex;flex-direction:column;align-items:center;gap:.25vw;text-align:center;transform:translate(-50%,-50%);}
-        .qr-proj-team img{width:4.5vw;height:4.5vw;min-width:56px;min-height:56px;max-width:88px;max-height:88px;border-radius:50%;object-fit:cover;border:3px solid var(--gold-dim);box-shadow:0 0 20px rgba(255,215,0,.15);}
-        .qr-proj-team .nm{font-family:var(--fs);font-size:1.05vw;font-weight:700;color:var(--text);line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .qr-proj-team .sc{font-family:var(--fh);font-size:1.25vw;font-weight:800;color:var(--gold);}
-        .qr-radial-center{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1vw;pointer-events:auto;}
-        .qr-radial-center .qr-logo{width:10vw;max-width:160px;height:auto;filter:drop-shadow(0 0 24px rgba(255,215,0,.2));}
-        #qr-box-projector{background:#fff;padding:18px;border-radius:16px;box-shadow:0 0 60px rgba(255,215,0,.2);line-height:0;}
-        #qr-box-projector canvas,#qr-box-projector img{display:block;border-radius:4px;}
-        #qr-url-projector{font-family:var(--fh);font-size:1.65vw;color:var(--gold-bright);letter-spacing:.05em;max-width:90vw;word-break:break-all;}
-        #qr-room-projector{font-family:var(--fs);font-size:1.35vw;color:var(--tsec);}
+        .qr-proj-team{
+            position:absolute;display:flex;flex-direction:column;align-items:center;gap:1px;text-align:center;transform:translate(-50%,-50%);
+            width:var(--qr-slot,96px);max-width:min(var(--qr-slot,96px),28vw);
+        }
+        .qr-proj-team .av-wrap{width:var(--qr-av,44px);height:var(--qr-av,44px);flex-shrink:0;margin:0 auto;}
+        .qr-proj-team .av-wrap img{width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;border-radius:50%;object-fit:cover;border:2px solid var(--gold-dim);box-shadow:0 0 12px rgba(255,215,0,.12);}
+        .qr-proj-team .nm{font-family:var(--fs);font-size:var(--qr-fs-name,.68rem);font-weight:700;color:var(--text);line-height:1.1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .qr-proj-team .sc{font-family:var(--fh);font-size:var(--qr-fs-score,.75rem);font-weight:800;color:var(--gold);line-height:1;}
+        .qr-radial-center{
+            position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(.25rem,.7vw,.5rem);
+            pointer-events:auto;max-width:min(96vw,780px);width:100%;padding:clamp(.15rem,.5vw,.35rem);
+        }
+        .qr-radial-center .qr-logo{width:clamp(48px,6vw,96px);height:auto;filter:drop-shadow(0 0 24px rgba(255,215,0,.2));opacity:.95;}
+        #qr-box-projector{background:#fff;padding:clamp(12px,1.8vmin,22px);border-radius:18px;box-shadow:0 0 72px rgba(255,215,0,.28);line-height:0;max-width:min(88vmin,100%);width:fit-content;}
+        #qr-box-projector canvas,#qr-box-projector img{display:block;border-radius:4px;max-width:min(82vmin,640px);width:auto!important;height:auto!important;}
+        #qr-url-projector{font-family:var(--fh);font-size:clamp(.7rem,1.65vw,1.15rem);color:var(--gold-bright);letter-spacing:.03em;max-width:100%;word-break:break-all;padding:0 .25rem;}
+        #qr-room-projector{font-family:var(--fs);font-size:clamp(.72rem,1.35vw,1.05rem);color:var(--tsec);}
 
         #lobby,#game-start-display,#qr-projector-display,#board-display,#question-display,#dd-display,#transition-display,#intermission-display,#reveal-display,#rankings-display,#recap-display,#gameover-display{transition:opacity .25s ease;}
 
@@ -262,15 +274,17 @@
         <h3>Join the Game!</h3>
         <div class="qr-team-count-pill" id="qr-team-count-wrap"><span id="qr-team-count-num" class="n">0</span><span id="qr-team-count-label"> teams joined</span></div>
     </div>
+    <div class="qr-proj-body">
     <div class="qr-radial-stage" id="qr-radial-stage">
         <div class="qr-radial-teams" id="qr-radial-teams" aria-hidden="true"></div>
-        <div class="qr-radial-center">
+        <div class="qr-radial-center" id="qr-radial-center">
             <img src="Logo transparent.png" alt="" class="qr-logo">
             <div id="qr-box-projector"></div>
             <div class="url" id="qr-url-projector"></div>
             <div class="room-hint">Room Code: <span id="qr-room-projector" style="color:var(--gold);font-family:var(--fh);font-weight:700;font-size:1.65vw;letter-spacing:2px;"></span></div>
-            <div style="font-family:var(--fb);font-size:1.05vw;color:var(--tmut);">Scan with your phone's camera to join</div>
+            <div style="font-family:var(--fb);font-size:clamp(.55rem,1vw,.85rem);color:var(--tmut);text-align:center;">Scan with your phone's camera to join</div>
         </div>
+    </div>
     </div>
 </div>
 
@@ -501,9 +515,19 @@ function startListening(){
 }
 
 // ═══ QR CODE ═══
-function generateQR(){
+function getProjectorJoinUrl(){
     const base=(typeof BASE_URL==='string'&&BASE_URL)?BASE_URL.replace(/\/?$/,'/'):window.location.href.replace(/\/[^\/]*$/,'/');
-    const url=base+'play.html?room='+roomCode;
+    return base+'play.html?room='+roomCode;
+}
+function fillProjectorQRBox(w){
+    const url=getProjectorJoinUrl();
+    const box=document.getElementById('qr-box-projector');
+    if(!box||!roomCode)return;
+    box.innerHTML='';
+    try{new QRCode(box,{text:url,width:w,height:w,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){console.error('QR init error:',e);}
+}
+function generateQR(){
+    const url=getProjectorJoinUrl();
     document.getElementById('qr-url').textContent=url;
     document.getElementById('qr-room').textContent=roomCode;
     const urlP=document.getElementById('qr-url-projector');
@@ -517,7 +541,7 @@ function generateQR(){
         try{new QRCode(box,{text:url,width:w,height:w,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){console.error('QR init error:',e);}
     }
     fillBox('qr-box',460);
-    fillBox('qr-box-projector',460);
+    fillProjectorQRBox(560);
 }
 function getBoardProjectorMode(){
     const m=GS.boardProjectorMode;
@@ -531,40 +555,110 @@ function updateQR(){
 function renderQRProjectorTeams(){
     const wrap=document.getElementById('qr-radial-teams');
     const stage=document.getElementById('qr-radial-stage');
+    const centerEl=document.getElementById('qr-radial-center');
     const numEl=document.getElementById('qr-team-count-num');
     const lblEl=document.getElementById('qr-team-count-label');
-    if(!wrap||!stage)return;
+    if(!wrap||!stage||!centerEl)return;
     const n=Object.keys(teams).length;
     if(numEl)numEl.textContent=String(n);
     if(lblEl)lblEl.textContent=n===1?' team joined':' teams joined';
     const sorted=Object.entries(teams).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||''));
     if(sorted.length===0){wrap.innerHTML='';return;}
     const place=()=>{
-        const rect=stage.getBoundingClientRect();
-        if(rect.width<80||rect.height<80)return;
-        const cx=rect.width/2;
-        const cy=rect.height/2;
-        const rad=Math.min(rect.width,rect.height)*0.36;
+        const sRect=stage.getBoundingClientRect();
+        const cRect=centerEl.getBoundingClientRect();
+        if(sRect.width<80||sRect.height<80)return;
+        const sw=sRect.width;
+        const sh=sRect.height;
+        const cx=cRect.left+cRect.width/2-sRect.left;
+        const cy=cRect.top+cRect.height/2-sRect.top;
+        const halfW=cRect.width/2;
+        const halfH=cRect.height/2;
+        const innerR=Math.sqrt(halfW*halfW+halfH*halfH);
         const m=sorted.length;
+        const pad=14;
+        const margin=10;
+        const gapChord=8;
+        const kIn=0.58;
+        const kOut=0.58;
+        const minEdge=Math.min(cx,cy,sw-cx,sh-cy);
+        function chordNeed(s){return m>=2?(s+gapChord)/(2*Math.sin(Math.PI/m)):0;}
+        function radialNeed(s){return innerR+margin+s*kIn;}
+        function outerMax(s){return Math.max(48,minEdge-pad-s*kOut);}
+        let slot=Math.min(96,Math.min(sw,sh)*0.22);
+        let av,fsName,fsScore;
+        for(let iter=0;iter<64;iter++){
+            av=Math.max(18,Math.min(slot*0.46,slot*0.5));
+            fsName=Math.max(7,Math.min(13,slot*0.115));
+            fsScore=Math.max(8,Math.min(15,slot*0.13));
+            const Rneed=Math.max(chordNeed(slot),radialNeed(slot),52);
+            const Rmax=outerMax(slot);
+            if(Rneed<=Rmax+0.5)break;
+            slot*=0.9;
+            if(slot<18){slot=18;break;}
+        }
+        av=Math.max(18,Math.min(slot*0.46,slot*0.5));
+        fsName=Math.max(7,Math.min(13,slot*0.115));
+        fsScore=Math.max(8,Math.min(15,slot*0.13));
+        let R=Math.max(chordNeed(slot),radialNeed(slot),52);
+        let Rcap=outerMax(slot);
+        R=Math.min(R,Rcap);
+        while(m>=2&&2*R*Math.sin(Math.PI/m)<slot+gapChord-0.5&&slot>18){
+            slot*=0.92;
+            av=Math.max(18,slot*0.46);
+            fsName=Math.max(7,Math.min(13,slot*0.115));
+            fsScore=Math.max(8,Math.min(15,slot*0.13));
+            R=Math.min(Math.max(chordNeed(slot),radialNeed(slot),52),outerMax(slot));
+        }
+        let fitGuard=0;
+        while(slot>18&&Math.max(chordNeed(slot),radialNeed(slot),52)>outerMax(slot)+0.5&&fitGuard++<48){
+            slot*=0.92;
+            av=Math.max(18,slot*0.46);
+            fsName=Math.max(7,Math.min(13,slot*0.115));
+            fsScore=Math.max(8,Math.min(15,slot*0.13));
+            R=Math.min(Math.max(chordNeed(slot),radialNeed(slot),52),outerMax(slot));
+        }
+        wrap.style.setProperty('--qr-slot',slot+'px');
+        wrap.style.setProperty('--qr-av',av+'px');
+        wrap.style.setProperty('--qr-fs-name',fsName+'px');
+        wrap.style.setProperty('--qr-fs-score',fsScore+'px');
+        /* Large QR for distance scanning — team ring shrinks instead of shrinking the code */
+        const targetQr=Math.max(200,Math.min(640,Math.floor(Math.min(sw,sh)*0.62)));
+        const prevQr=typeof window._qrProjLastQrPx==='number'?window._qrProjLastQrPx:0;
+        if(Math.abs(targetQr-prevQr)>8){
+            window._qrProjLastQrPx=targetQr;
+            fillProjectorQRBox(targetQr);
+        }
         wrap.innerHTML=sorted.map(([k,t],i)=>{
             const ang=(2*Math.PI*i)/m-Math.PI/2;
-            const x=cx+rad*Math.cos(ang);
-            const y=cy+rad*Math.sin(ang);
+            const x=cx+R*Math.cos(ang);
+            const y=cy+R*Math.sin(ang);
             const col=avatarColor(t.avatar);
-            return`<div class="qr-proj-team" style="left:${x}px;top:${y}px"><span class="av">${avatarImg(t.avatar,'4.5vw')}</span><span class="nm" style="color:${col}">${esc(t.name||k)}</span><span class="sc">$${(t.score||0).toLocaleString()}</span></div>`;
+            return`<div class="qr-proj-team" style="left:${x}px;top:${y}px"><span class="av-wrap">${avatarImg(t.avatar,'100%')}</span><span class="nm" style="color:${col}">${esc(t.name||k)}</span><span class="sc">$${(t.score||0).toLocaleString()}</span></div>`;
         }).join('');
     };
     place();
-    requestAnimationFrame(place);
+    requestAnimationFrame(()=>{
+        place();
+        requestAnimationFrame(place);
+    });
 }
 let qrResizeDebounce=null;
 function bindQRProjectorResize(){
-    window.addEventListener('resize',()=>{
+    if(window._qrProjROBound)return;
+    window._qrProjROBound=true;
+    const run=()=>{
         clearTimeout(qrResizeDebounce);
         qrResizeDebounce=setTimeout(()=>{
             if(GS.phase==='board'&&getBoardProjectorMode()==='qr')renderQRProjectorTeams();
-        },120);
-    });
+        },100);
+    };
+    window.addEventListener('resize',run);
+    const st=document.getElementById('qr-radial-stage');
+    if(typeof ResizeObserver!=='undefined'&&st){
+        const ro=new ResizeObserver(run);
+        ro.observe(st);
+    }
 }
 
 // ═══ STATE MACHINE ═══

@@ -87,6 +87,14 @@
             padding: .6rem 1.25rem; background: var(--bg-card); border-bottom: 1px solid var(--border);
             flex-wrap: wrap; gap: .5rem;
         }
+        .top-bar-left {
+            display: flex; align-items: center; gap: .65rem;
+            flex-wrap: wrap; min-width: 0;
+        }
+        .btn-return-setup {
+            flex-shrink: 0;
+            font-family: var(--fs); font-weight: 600;
+        }
         .room-badge {
             background: var(--gold); color: #000; font-family: var(--fh); font-weight: 700;
             padding: .35rem .9rem; border-radius: 20px; font-size: .9rem; letter-spacing: 1px;
@@ -288,8 +296,11 @@
 <!-- ═══ BOARD VIEW ═══ -->
 <div class="view" id="board-view">
     <div class="top-bar">
-        <span class="room-badge" id="disp-room"></span>
-        <h1>Trivia Night</h1>
+        <div class="top-bar-left">
+            <button type="button" class="btn btn-outline btn-sm btn-return-setup" id="btn-return-setup" onclick="returnToSetup()" title="Leave this room and return to create / join a room (projector can stay on the old room until you start a new one)">← Return to setup</button>
+            <span class="room-badge" id="disp-room"></span>
+            <h1>Trivia Night</h1>
+        </div>
         <div class="top-controls">
             <div class="projector-mode-wrap" title="What the projector shows while on the board">
                 <button type="button" id="pm-gameStart" onclick="setBoardProjectorMode('gameStart')" title="Logo &amp; &quot;Game starting soon&quot;">Game start</button>
@@ -583,6 +594,30 @@ function enterGame() {
     const base=window.location.href.replace(/\/[^\/]*$/,'/');
     document.getElementById('board-url-note').innerHTML=`Open on projector:<br><code>${base}board.html?room=${roomCode}</code>`;
     showView('board-view'); setupListeners();
+}
+
+/** Leave host session for this room and go back to setup (create / join another game). Does not delete Firebase data. */
+function returnToSetup() {
+    if (!roomRef) {
+        showView('setup-view');
+        return;
+    }
+    if (!confirm('Return to setup?\n\nYou will disconnect this browser from the current room. The game state stays on the server until you create a new room or rejoin.\n\nUse this to start a fresh game from the setup screen.')) return;
+    try { roomRef.off(); } catch (e) {}
+    if (roundTransTimeout) { clearTimeout(roundTransTimeout); roundTransTimeout = null; }
+    stopLocalTimer();
+    stopIntCountdown();
+    revealData = null;
+    roomCode = null;
+    roomRef = null;
+    teams = {};
+    curAnswers = {};
+    grading = {};
+    boardQ = {};
+    scoresApplied = false;
+    GS = { round: 1, phase: 'board', category: '', value: 0, questionText: '', accepting: false, dailyDouble: false, ddTeam: '', questionKey: '', showQR: false, boardProjectorMode: 'gameStart', timerEnd: 0, timerRunning: false, answerRevealed: false, wageringOpen: false, imageUrl: '' };
+    document.getElementById('setup-err').textContent = '';
+    showView('setup-view');
 }
 
 // ── Listeners ──
