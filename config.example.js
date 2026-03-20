@@ -51,7 +51,8 @@ function avatarImg(id, sz) {
     const style = typeof sz === 'string'
         ? 'width:' + sz + ';height:' + sz
         : 'width:' + (sz || 24) + 'px;height:' + (sz || 24) + 'px';
-    return '<img src="avatars/' + id + '.png" style="' + style + ';border-radius:50%;object-fit:cover;vertical-align:middle" alt="">';
+    const src = id.startsWith('data:') ? id : 'avatars/' + id + '.png';
+    return '<img src="' + src + '" style="' + style + ';border-radius:50%;object-fit:cover;vertical-align:middle" alt="">';
 }
 
 function avatarColor(id) {

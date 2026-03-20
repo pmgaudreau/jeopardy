@@ -239,6 +239,25 @@
         .recap-avatar{flex-shrink:0;}
         .recap-avatar img{width:5.5vw;height:5.5vw;border-radius:50%;object-fit:cover;border:3px solid var(--gold-dim);}
 
+        /* ═══ GAME STATS ═══ */
+        #stats-display{flex:1;display:none;flex-direction:column;align-items:center;padding:2vw 2vw;background:var(--bg);overflow:hidden;}
+        .stats-grid-wrap{width:100%;flex:1;overflow:auto;border-radius:12px;border:1px solid var(--border);background:var(--card);}
+        .stats-grid{width:100%;border-collapse:collapse;font-family:var(--fb);}
+        .stats-grid th,.stats-grid td{padding:.7vw .9vw;text-align:center;white-space:nowrap;border-bottom:1px solid var(--border);}
+        .stats-grid thead th{background:var(--elev);position:sticky;top:0;z-index:2;}
+        .st-team-hdr{text-align:left!important;position:sticky;left:0;z-index:3;background:var(--elev)!important;min-width:13vw;}
+        .st-col-hdr .st-icon{display:block;font-size:1.6vw;line-height:1.2;}
+        .st-col-hdr .st-lbl{display:block;font-family:var(--fh);font-size:.75vw;color:var(--tmut);text-transform:uppercase;letter-spacing:.04em;line-height:1.3;}
+        .st-row:nth-child(even) td{background:rgba(255,255,255,.02);}
+        .st-row:nth-child(even) .st-team-cell{background:var(--elev);}
+        .st-team-cell{text-align:left!important;position:sticky;left:0;background:var(--card);z-index:1;}
+        .st-team-inner{display:flex;align-items:center;gap:.5vw;}
+        .st-team-inner img{width:2.5vw;height:2.5vw;}
+        .st-nm{font-family:var(--fs);font-weight:700;font-size:1.1vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:10vw;}
+        .st-cell{position:relative;font-family:var(--fh);font-size:1.2vw;color:var(--tsec);padding-top:1.4vw!important;}
+        .st-best{color:var(--gold);font-weight:700;background:rgba(255,215,0,.06);}
+        .st-crown{position:absolute;top:.15vw;left:50%;transform:translateX(-50%);font-size:.9vw;filter:drop-shadow(0 0 4px rgba(255,215,0,.5));}
+
         /* ═══ QR OVERLAY ═══ */
         #qr-overlay{
             position:fixed;inset:0;background:rgba(0,0,0,.95);
@@ -342,7 +361,7 @@
             padding:2vw 1vw;letter-spacing:.04em;font-weight:600;
         }
 
-        #lobby,#game-start-display,#qr-projector-display,#board-display,#question-display,#dd-display,#transition-display,#intermission-display,#reveal-display,#podium-display,#rankings-display,#recap-display,#gameover-display{transition:opacity .25s ease;}
+        #lobby,#game-start-display,#qr-projector-display,#board-display,#question-display,#dd-display,#transition-display,#intermission-display,#reveal-display,#podium-display,#rankings-display,#recap-display,#stats-display,#gameover-display{transition:opacity .25s ease;}
 
         .score-change{position:absolute;font-family:var(--fh);font-weight:700;font-size:1.3vw;pointer-events:none;animation:scoreFloat 1.5s ease forwards;z-index:10;}
         .score-change.positive{color:var(--green);}
@@ -520,6 +539,14 @@
 <div id="recap-display" class="hidden">
     <div class="recap-title">Game Highlights</div>
     <div class="recap-highlights"><div class="recap-scroll" id="recap-highlights"></div></div>
+</div>
+
+<!-- Game Stats -->
+<div id="stats-display" class="hidden">
+    <div class="recap-title">Game Stats</div>
+    <div class="stats-grid-wrap">
+        <table class="stats-grid" id="stats-grid"></table>
+    </div>
 </div>
 
 <!-- Game Over -->
@@ -834,6 +861,8 @@ function onStateChange(){
         showFinalRankings();
     } else if(phase==='recap'){
         showRecap();
+    } else if(phase==='stats'){
+        showStats();
     } else if(phase==='gameover'){
         showGameOver();
     } else if(phase==='question'&&dailyDouble&&GS.questionKey!==prevQKey){
@@ -860,7 +889,7 @@ function onStateChange(){
 
 // ═══ SCREENS ═══
 function showScreen(id){
-    const screens=['lobby','game-start-display','qr-projector-display','board-display','question-display','dd-display','transition-display','intermission-display','reveal-display','podium-display','rankings-display','recap-display','gameover-display'];
+    const screens=['lobby','game-start-display','qr-projector-display','board-display','question-display','dd-display','transition-display','intermission-display','reveal-display','podium-display','rankings-display','recap-display','stats-display','gameover-display'];
     const target=document.getElementById(id);
     const current=screens.map(s=>document.getElementById(s)).find(el=>el.style.display==='flex');
     if(current&&current.id!==id){
@@ -1593,6 +1622,91 @@ function startRecapScroll(el){
     el.style.animation='none';
     el.offsetHeight;
     el.style.animation='recapScroll '+dur+'s linear infinite';
+}
+
+// ═══ GAME STATS GRID ═══
+function showStats(){
+    showScreen('stats-display');
+    roomRef.child('history').once('value',snap=>{
+        const historyData=snap.val();
+        const el=document.getElementById('stats-grid');
+        if(!historyData){el.innerHTML='<tr><td style="color:var(--tmut);font-size:1.5vw;padding:3vw;">No game history available.</td></tr>';return;}
+        const entries=Object.entries(historyData).sort((a,b)=>parseInt(a[0].slice(1))-parseInt(b[0].slice(1)));
+        renderStatsGrid(entries,el);
+    });
+}
+function renderStatsGrid(entries,el){
+    const teamKeys=Object.keys(teams);if(teamKeys.length===0)return;
+    const getName=tk=>(teams[tk]&&teams[tk].name)||tk;
+    let tc={},ta={},tp={},ms={},cs={},bw={},wl={},tw={},rt={},rc={};
+    teamKeys.forEach(tk=>{tc[tk]=0;ta[tk]=0;tp[tk]=0;ms[tk]=0;cs[tk]=0;bw[tk]=0;wl[tk]=0;tw[tk]=0;rt[tk]=0;rc[tk]=0;});
+    entries.forEach(([,e])=>{
+        if(!e.answers)return;
+        const at=e.acceptedAt||0;
+        Object.entries(e.answers).forEach(([tk,a])=>{
+            if(!tc.hasOwnProperty(tk))return;
+            if(at>0&&a.ts>0&&!a.passed){rt[tk]+=(a.ts-at);rc[tk]++;}
+            if(a.passed){cs[tk]=0;tp[tk]++;return;}
+            ta[tk]++;
+            if(a.correct){tc[tk]++;cs[tk]++;if(cs[tk]>ms[tk])ms[tk]=cs[tk];}else cs[tk]=0;
+            if(a.points>bw[tk])bw[tk]=a.points;
+            if(a.points<wl[tk])wl[tk]=a.points;
+            if(Math.abs(a.points)!==e.value&&Math.abs(a.points)>0)tw[tk]+=Math.abs(a.points);
+        });
+        teamKeys.forEach(tk=>{if(!e.answers[tk])cs[tk]=0;});
+    });
+    let cb={},sh={};
+    teamKeys.forEach(tk=>{
+        let sc=[0];entries.forEach(([,e])=>{if(e.scores&&e.scores[tk]!==undefined)sc.push(e.scores[tk]);});
+        cb[tk]=sc[sc.length-1]-Math.min(...sc);
+    });
+    const hi=Math.floor(entries.length/2);
+    teamKeys.forEach(tk=>{
+        if(hi>0){const h=entries[hi-1],l=entries[entries.length-1];sh[tk]=((l&&l[1].scores&&l[1].scores[tk])||0)-((h&&h[1].scores&&h[1].scores[tk])||0);}
+        else sh[tk]=0;
+    });
+    function fmtT(v){const s=v/1000;return s<60?s.toFixed(1)+'s':Math.floor(s/60)+'m '+Math.round(s%60)+'s';}
+    const cols=[
+        {k:'score',l:'Score',i:'💰',v:tk=>(teams[tk].score||0),f:v=>'$'+v.toLocaleString(),b:'max',q:()=>true},
+        {k:'correct',l:'Correct',i:'👑',v:tk=>tc[tk],f:v=>v,b:'max',q:(_,v)=>v>0},
+        {k:'answered',l:'Answered',i:'✋',v:tk=>ta[tk],f:v=>v,b:'max',q:(_,v)=>v>0},
+        {k:'accuracy',l:'Accuracy',i:'🧠',v:tk=>ta[tk]>0?tc[tk]/ta[tk]:null,f:v=>v!==null?Math.round(v*100)+'%':'–',b:'max',q:tk=>ta[tk]>=3},
+        {k:'streak',l:'Streak',i:'🔥',v:tk=>ms[tk],f:v=>v>0?v:'–',b:'max',q:(_,v)=>v>=2},
+        {k:'bestWin',l:'Best Win',i:'🚀',v:tk=>bw[tk],f:v=>v>0?'+$'+v.toLocaleString():'–',b:'max',q:(_,v)=>v>0},
+        {k:'worstLoss',l:'Worst Loss',i:'💥',v:tk=>wl[tk],f:v=>v<0?'−$'+Math.abs(v).toLocaleString():'–',b:'min',q:(_,v)=>v<0},
+        {k:'comeback',l:'Comeback',i:'📈',v:tk=>cb[tk],f:v=>v>0?'+$'+v.toLocaleString():'–',b:'max',q:(_,v)=>v>0},
+        {k:'wagered',l:'Wagered',i:'🎲',v:tk=>tw[tk],f:v=>v>0?'$'+v.toLocaleString():'–',b:'max',q:(_,v)=>v>0},
+        {k:'passes',l:'Passes',i:'🏳️',v:tk=>tp[tk],f:v=>v>0?v:'–',b:'max',q:(_,v)=>v>0},
+        {k:'avgTime',l:'Avg Time',i:'⚡',v:tk=>rc[tk]>=2?rt[tk]/rc[tk]:null,f:v=>v!==null?fmtT(v):'–',b:'min',q:()=>true},
+        {k:'2ndHalf',l:'2nd Half',i:'🏃',v:tk=>sh[tk],f:v=>v>0?'+$'+v.toLocaleString():v<0?'−$'+Math.abs(v).toLocaleString():'$0',b:'max',q:(_,v)=>v>0}
+    ];
+    const vals={},best={};
+    cols.forEach(c=>{
+        vals[c.k]={};let bTk=null,bV=c.b==='max'?-Infinity:Infinity;
+        teamKeys.forEach(tk=>{
+            const v=c.v(tk);vals[c.k][tk]=v;
+            if(v===null||v===undefined)return;
+            if(!c.q(tk,v))return;
+            if(c.b==='max'&&v>bV){bV=v;bTk=tk;}
+            if(c.b==='min'&&v<bV){bV=v;bTk=tk;}
+        });
+        best[c.k]=bTk;
+    });
+    const sorted=[...teamKeys].sort((a,b)=>(teams[b].score||0)-(teams[a].score||0));
+    let h='<thead><tr><th class="st-team-hdr">Team</th>';
+    cols.forEach(c=>{h+='<th class="st-col-hdr"><span class="st-icon">'+c.i+'</span><span class="st-lbl">'+c.l+'</span></th>';});
+    h+='</tr></thead><tbody>';
+    sorted.forEach(tk=>{
+        const col=avatarColor(teams[tk].avatar);
+        h+='<tr class="st-row"><td class="st-team-cell"><div class="st-team-inner">'+avatarImg(teams[tk].avatar,'2.5vw')+'<span class="st-nm" style="color:'+col+'">'+esc(getName(tk))+'</span></div></td>';
+        cols.forEach(c=>{
+            const v=vals[c.k][tk],ib=best[c.k]===tk;
+            h+='<td class="st-cell'+(ib?' st-best':'')+'">'+(ib?'<span class="st-crown">👑</span>':'')+c.f(v)+'</td>';
+        });
+        h+='</tr>';
+    });
+    h+='</tbody>';
+    el.innerHTML=h;
 }
 
 let gameoverPlayed=false;
