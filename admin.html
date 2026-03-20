@@ -924,7 +924,7 @@ function syncView() {
             roomRef.child('finalReveal').once('value',s=>{
                 const fr=s.val();if(!fr||!fr.teams)return;
                 revealData={teams:fr.teams,index:fr.currentIndex||0,stage:fr.currentStage||1};
-                if(fr.podium){revealData.podium=true;revealData.podiumTeams=fr.podiumTeams||[];revealData.podiumIndex=fr.podiumIndex||0;}
+                if(fr.podium){revealData.podium=true;revealData.podiumTeams=fr.podiumTeams||[];revealData.podiumIndex=fr.podiumIndex!==undefined?fr.podiumIndex:-1;}
                 document.getElementById('rv-room').textContent=roomCode;
                 showView('reveal-view');
                 renderRevealAdmin();
@@ -1595,13 +1595,13 @@ function advanceReveal() {
         const sorted = [...revealData.teams].sort((a,b) => b.finalScore - a.finalScore);
         revealData.podium = true;
         revealData.podiumTeams = sorted.slice(0, Math.min(3, sorted.length));
-        revealData.podiumIndex = 0;
+        revealData.podiumIndex = -1;
         revealData.teams.forEach(t => {
             roomRef.child('teams/' + t.key + '/score').set(t.finalScore);
         });
         roomRef.child('finalReveal').update({
             currentIndex: revealData.index, currentStage: 5,
-            podium: true, podiumIndex: 0, podiumTeams: revealData.podiumTeams
+            podium: true, podiumIndex: -1, podiumTeams: revealData.podiumTeams
         });
         roomRef.child('state/phase').set('podium');
         renderRevealAdmin();
@@ -1631,6 +1631,21 @@ function renderRevealAdmin() {
             updateHostNextHighlight();
             return;
         }
+        const placeNames = { 3:'3rd', 2:'2nd', 1:'1st' };
+        const nextPlace = pt.length - (pi + 1);
+        const nextBtnText = nextPlace > 0 ? 'Reveal ' + (placeNames[nextPlace]||'#'+nextPlace) + ' Place →' : 'Show Full Standings →';
+        if (pi < 0) {
+            document.getElementById('rv-progress').textContent = 'PODIUM REVEAL';
+            document.getElementById('rv-team-name').textContent = '';
+            document.getElementById('rv-avatar').innerHTML = '';
+            document.getElementById('rv-stage-label').textContent = 'Ready to reveal the top finishers';
+            document.getElementById('rv-detail').textContent = '';
+            const pr=document.getElementById('btn-reveal-primary');
+            if(pr){ pr.textContent = nextBtnText; pr.onclick = advanceReveal; }
+            document.getElementById('rv-standings').innerHTML = '';
+            updateHostNextHighlight();
+            return;
+        }
         const t = pt[pt.length - 1 - pi];
         const place = pt.length - pi;
         const placeLabels = { 3:'🥉 Third Place', 2:'🥈 Second Place', 1:'🥇 First Place' };
@@ -1641,7 +1656,7 @@ function renderRevealAdmin() {
         document.getElementById('rv-detail').textContent = '$' + t.finalScore.toLocaleString();
         document.getElementById('rv-detail').style.color = 'var(--gold-bright)';
         const pr=document.getElementById('btn-reveal-primary');
-        if(pr){ pr.textContent = pi === pt.length - 1 ? 'Show Full Standings →' : 'Next →'; pr.onclick = advanceReveal; }
+        if(pr){ pr.textContent = nextBtnText; pr.onclick = advanceReveal; }
         renderRevealStandings();
         updateHostNextHighlight();
         return;

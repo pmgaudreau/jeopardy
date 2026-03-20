@@ -1201,7 +1201,7 @@ function renderFinalReveal(){
 }
 
 // ═══ PODIUM REVEAL ═══
-let _prevPodiumIndex = -1;
+let _prevPodiumIndex = -2;
 function renderPodium(){
     if(!finalReveal||!finalReveal.podiumTeams)return;
     showScreen('podium-display');
@@ -1210,7 +1210,6 @@ function renderPodium(){
     const isNew = pi !== _prevPodiumIndex;
     _prevPodiumIndex = pi;
 
-    // Populate all 3 slots (hide unused ones)
     [1,2,3].forEach(place=>{
         const idx = place - 1;
         const t = pt[idx];
@@ -1223,7 +1222,7 @@ function renderPodium(){
         nmEl.textContent = t.name;
         scEl.textContent = '$'+t.finalScore.toLocaleString();
         const revealOrder = pt.length - place;
-        const isRevealed = revealOrder <= pi;
+        const isRevealed = pi >= 0 && revealOrder <= pi;
         if(isRevealed){
             if(!el.classList.contains('revealed')){
                 el.classList.add('pop');
@@ -1234,7 +1233,7 @@ function renderPodium(){
         }
     });
 
-    if(isNew){
+    if(isNew && pi >= 0){
         const revealedPlace = pt.length - pi;
         if(revealedPlace===1){SFX.winner();winnerPlayed=true;}
         else SFX.revealScore();
