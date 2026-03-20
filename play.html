@@ -188,7 +188,7 @@
 <script src="config.js"></script>
 <script>
 let roomCode=null,roomRef=null,teamKey=null,teamName=null,selectedAvatar=null,playerCount=1;
-let GS={},cachedScore=0,lastQKey=null,hasSubmitted=false,hasPassed=false,wagerLocked=false,answerCardShown=false;
+let GS={},cachedScore=0,lastQKey=null,hasSubmitted=false,hasPassed=false,wagerLocked=false,answerCardShown=false,fjBaseScore=null;
 let phoneTimerInterval=null;
 
 // ── Avatar Grid ──
@@ -362,6 +362,7 @@ function setupListeners(){
         roomRef.child('state').on('value',snap=>{
             const s=snap.val();if(!s)return;GS=s;
             if(s.questionKey!==lastQKey){
+                if(s.questionKey==='final'&&s.round===3){fjBaseScore=cachedScore;}else{fjBaseScore=null;}
                 lastQKey=s.questionKey;hasSubmitted=false;hasPassed=false;wagerLocked=false;answerCardShown=false;resetWagerUI();
                 try{navigator.vibrate(200);}catch(e){}
                 if(s.questionKey&&teamKey){
@@ -379,11 +380,11 @@ function setupListeners(){
                     });
                 }
             }
-            render();startPhoneTimer();
+            updateScoreDisplay();render();startPhoneTimer();
         });
         roomRef.child('teams/'+teamKey).on('value',snap=>{
             const t=snap.val();if(!t)return;cachedScore=t.score||0;
-            document.getElementById('my-score').textContent='$'+cachedScore.toLocaleString();
+            updateScoreDisplay();
             if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
             render();
         });
@@ -396,6 +397,11 @@ function setupListeners(){
         const bar=document.getElementById('offline-bar');
         if(bar)bar.classList.toggle('hidden',snap.val()===true);
     });
+}
+
+function updateScoreDisplay(){
+    const freezeFJ=fjBaseScore!==null&&GS.phase!=='final-rankings'&&GS.phase!=='recap'&&GS.phase!=='gameover';
+    document.getElementById('my-score').textContent='$'+(freezeFJ?fjBaseScore:cachedScore).toLocaleString();
 }
 
 // ── Render ──

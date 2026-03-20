@@ -1047,7 +1047,7 @@ function activateQ(key,q,isDD,ddTk) {
     const statePatch={
         phase:'question',category:q.category,value:val,questionText:hideQ?'':q.questionText,accepting:false,
         dailyDouble:isDD,ddTeam:ddTk,questionKey:key,timerRunning:false,timerEnd:0,answerRevealed:false,
-        wageringOpen:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD
+        wageringOpen:isDD,imageUrl:hideQ?'':(q.imageUrl||''),fjQuestionRevealed:!isDD,acceptedAt:0
     };
     const flat={};
     Object.keys(statePatch).forEach(k=>{flat['state/'+k]=statePatch[k];});
@@ -1196,7 +1196,7 @@ function updateWagerProgress(){
 // ── Answer Reveal ──
 function revealAnswer() {
     if(GS.accepting){alert('Close answers before revealing the answer.');return;}
-    if(!GS.acceptedAt&&Object.keys(curAnswers).length===0){alert('Open for answers first — teams haven\'t had a chance to respond yet.');return;}
+    if(!GS.acceptedAt){alert('Open for answers first — teams haven\'t had a chance to respond yet.');return;}
     document.getElementById('ans-txt').classList.remove('hidden');
     document.getElementById('ans-lbl').classList.add('hidden');
     roomRef.child('state/answerRevealed').set(true);
@@ -1391,10 +1391,11 @@ function returnToBoard(){
 
 // ── Final ──
 function startFinal(){
+    if(roundTransTimeout){clearTimeout(roundTransTimeout);roundTransTimeout=null;}
     roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
         resetWagers(Object.keys(teams));
         pendingQuestion={questionText:f.questionText,imageUrl:f.imageUrl||''};
-        roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:true,imageUrl:'',fjQuestionRevealed:false});
+        roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:true,imageUrl:'',fjQuestionRevealed:false,acceptedAt:0});
         showView('question-view');
         document.getElementById('qv-rl').textContent='Final Jeopardy';
         document.getElementById('qv-cat').textContent=f.category;
