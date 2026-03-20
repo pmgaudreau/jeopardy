@@ -152,6 +152,47 @@
         @keyframes frPop{from{opacity:0;transform:scale(.5);}to{opacity:1;transform:scale(1);}}
         @keyframes frCount{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 
+        /* ═══ PODIUM ═══ */
+        #podium-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:flex-end;padding:2vw 4vw 0;overflow:hidden;background:radial-gradient(ellipse at 50% 110%,rgba(255,215,0,.06) 0%,transparent 60%);}
+        .podium-title{font-family:var(--fh);font-size:3.5vw;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;text-shadow:0 0 40px rgba(255,215,0,.3);margin-bottom:2vw;animation:fadeDown .6s ease;}
+        .podium-stage{display:flex;align-items:flex-end;justify-content:center;width:80vw;max-width:1100px;gap:0;}
+        .podium-spot{display:flex;flex-direction:column;align-items:center;flex:1;max-width:28vw;}
+        .pod-team{min-height:14vw;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:1.5vw;opacity:0;transform:scale(.5) translateY(2vw);transition:opacity .6s ease, transform .6s ease;}
+        .pod-team.revealed{opacity:1;transform:scale(1) translateY(0);}
+        .pod-team .pod-avatar img{border-radius:50%;object-fit:cover;border:3px solid var(--gold-dim);box-shadow:0 0 30px rgba(255,215,0,.15);}
+        .pod-team .pod-name{font-family:var(--fh);font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:22vw;text-align:center;}
+        .pod-team .pod-score{font-family:var(--fh);font-weight:800;text-align:center;}
+        .pod-team .pod-medal{text-align:center;}
+
+        .podium-spot:nth-child(1) .pod-team .pod-avatar img{width:5.5vw;height:5.5vw;}
+        .podium-spot:nth-child(1) .pod-team .pod-name{font-size:1.8vw;color:#c0c0c0;}
+        .podium-spot:nth-child(1) .pod-team .pod-score{font-size:1.6vw;color:#c0c0c0;}
+        .podium-spot:nth-child(1) .pod-team .pod-medal{font-size:3vw;}
+
+        .podium-spot:nth-child(2) .pod-team .pod-avatar img{width:7vw;height:7vw;border-color:var(--gold);box-shadow:0 0 50px rgba(255,215,0,.25);}
+        .podium-spot:nth-child(2) .pod-team .pod-name{font-size:2.2vw;color:var(--gold-bright);}
+        .podium-spot:nth-child(2) .pod-team .pod-score{font-size:2vw;color:var(--gold);}
+        .podium-spot:nth-child(2) .pod-team .pod-medal{font-size:4vw;}
+
+        .podium-spot:nth-child(3) .pod-team .pod-avatar img{width:4.5vw;height:4.5vw;}
+        .podium-spot:nth-child(3) .pod-team .pod-name{font-size:1.5vw;color:#cd7f32;}
+        .podium-spot:nth-child(3) .pod-team .pod-score{font-size:1.3vw;color:#cd7f32;}
+        .podium-spot:nth-child(3) .pod-team .pod-medal{font-size:2.5vw;}
+
+        .pod-block{display:flex;align-items:center;justify-content:center;width:100%;border-radius:1vw 1vw 0 0;position:relative;overflow:hidden;}
+        .pod-block span{font-family:var(--fh);font-weight:800;color:rgba(0,0,0,.3);z-index:1;}
+        .pod-block::before{content:'';position:absolute;inset:0;opacity:.15;background:repeating-linear-gradient(135deg,transparent,transparent 10px,rgba(255,255,255,.1) 10px,rgba(255,255,255,.1) 20px);}
+
+        .pod-block.silver{height:16vw;background:linear-gradient(180deg,#e8e8e8 0%,#a8a8a8 40%,#888 100%);border:2px solid #c0c0c0;border-bottom:none;}
+        .pod-block.silver span{font-size:6vw;}
+        .pod-block.gold{height:22vw;background:linear-gradient(180deg,#ffe44d 0%,#FFD700 30%,#b8960f 100%);border:2px solid #ffe44d;border-bottom:none;box-shadow:0 0 60px rgba(255,215,0,.2);}
+        .pod-block.gold span{font-size:8vw;}
+        .pod-block.bronze{height:11vw;background:linear-gradient(180deg,#e8a060 0%,#cd7f32 40%,#8b5a20 100%);border:2px solid #cd7f32;border-bottom:none;}
+        .pod-block.bronze span{font-size:4.5vw;}
+
+        @keyframes podPop{from{opacity:0;transform:scale(.3) translateY(4vw);}60%{transform:scale(1.1) translateY(-.5vw);}to{opacity:1;transform:scale(1) translateY(0);}}
+        .pod-team.pop{animation:podPop .7s cubic-bezier(.34,1.56,.64,1) forwards;}
+
         /* ═══ FINAL RANKINGS ═══ */
         #rankings-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:3vw;gap:1.5vw;}
         .rk-title{font-family:var(--fh);font-size:4vw;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;text-shadow:0 0 40px rgba(255,215,0,.3);animation:fadeDown .6s ease;}
@@ -301,7 +342,7 @@
             padding:2vw 1vw;letter-spacing:.04em;font-weight:600;
         }
 
-        #lobby,#game-start-display,#qr-projector-display,#board-display,#question-display,#dd-display,#transition-display,#intermission-display,#reveal-display,#rankings-display,#recap-display,#gameover-display{transition:opacity .25s ease;}
+        #lobby,#game-start-display,#qr-projector-display,#board-display,#question-display,#dd-display,#transition-display,#intermission-display,#reveal-display,#podium-display,#rankings-display,#recap-display,#gameover-display{transition:opacity .25s ease;}
 
         .score-change{position:absolute;font-family:var(--fh);font-weight:700;font-size:1.3vw;pointer-events:none;animation:scoreFloat 1.5s ease forwards;z-index:10;}
         .score-change.positive{color:var(--green);}
@@ -432,6 +473,40 @@
         <div class="fr-stage-label" id="fr-stage-label"></div>
         <div class="fr-math" id="fr-math"></div>
         <div class="fr-detail" id="fr-detail"></div>
+    </div>
+</div>
+
+<!-- Podium -->
+<div id="podium-display" class="hidden">
+    <div class="podium-title" id="podium-title">And the winners are...</div>
+    <div class="podium-stage">
+        <div class="podium-spot">
+            <div class="pod-team" id="pod-team-2">
+                <div class="pod-medal">🥈</div>
+                <div class="pod-avatar" id="pod-av-2"></div>
+                <div class="pod-name" id="pod-name-2"></div>
+                <div class="pod-score" id="pod-score-2"></div>
+            </div>
+            <div class="pod-block silver"><span>2</span></div>
+        </div>
+        <div class="podium-spot">
+            <div class="pod-team" id="pod-team-1">
+                <div class="pod-medal">👑</div>
+                <div class="pod-avatar" id="pod-av-1"></div>
+                <div class="pod-name" id="pod-name-1"></div>
+                <div class="pod-score" id="pod-score-1"></div>
+            </div>
+            <div class="pod-block gold"><span>1</span></div>
+        </div>
+        <div class="podium-spot">
+            <div class="pod-team" id="pod-team-3">
+                <div class="pod-medal">🥉</div>
+                <div class="pod-avatar" id="pod-av-3"></div>
+                <div class="pod-name" id="pod-name-3"></div>
+                <div class="pod-score" id="pod-score-3"></div>
+            </div>
+            <div class="pod-block bronze"><span>3</span></div>
+        </div>
     </div>
 </div>
 
@@ -582,7 +657,7 @@ function startListening(){
     roomRef.child('currentAnswers').on('value',s=>{answerCount=s.val()?Object.keys(s.val()).length:0;updateAnswerCount();});
     roomRef.child('board').on('value',s=>{boardQ=s.val()||{};if(GS.phase==='board')renderGrid();else if(GS.phase==='question')updateQuestion();});
     roomRef.child('categories').on('value',s=>{categories=s.val()||{};if(GS.phase==='board')renderGrid();});
-    roomRef.child('finalReveal').on('value',s=>{finalReveal=s.val();if(GS.phase==='final-reveal')renderFinalReveal();if(GS.phase==='final-rankings')showFinalRankings();});
+    roomRef.child('finalReveal').on('value',s=>{finalReveal=s.val();if(GS.phase==='final-reveal')renderFinalReveal();if(GS.phase==='podium')renderPodium();if(GS.phase==='final-rankings')showFinalRankings();});
     roomRef.child('ddReveal').on('value',s=>{ddReveal=s.val();if(GS.phase==='dd-reveal')renderDDReveal();});
     if(!window._qrProjResizeBound){window._qrProjResizeBound=true;bindQRProjectorResize();}
 }
@@ -753,6 +828,8 @@ function onStateChange(){
         renderDDReveal();
     } else if(phase==='final-reveal'){
         renderFinalReveal();
+    } else if(phase==='podium'){
+        renderPodium();
     } else if(phase==='final-rankings'){
         showFinalRankings();
     } else if(phase==='recap'){
@@ -783,7 +860,7 @@ function onStateChange(){
 
 // ═══ SCREENS ═══
 function showScreen(id){
-    const screens=['lobby','game-start-display','qr-projector-display','board-display','question-display','dd-display','transition-display','intermission-display','reveal-display','rankings-display','recap-display','gameover-display'];
+    const screens=['lobby','game-start-display','qr-projector-display','board-display','question-display','dd-display','transition-display','intermission-display','reveal-display','podium-display','rankings-display','recap-display','gameover-display'];
     const target=document.getElementById(id);
     const current=screens.map(s=>document.getElementById(s)).find(el=>el.style.display==='flex');
     if(current&&current.id!==id){
@@ -1121,6 +1198,47 @@ function renderFinalReveal(){
     }
 
     updateRevealLeader(rt, idx, stage);
+}
+
+// ═══ PODIUM REVEAL ═══
+let _prevPodiumIndex = -1;
+function renderPodium(){
+    if(!finalReveal||!finalReveal.podiumTeams)return;
+    showScreen('podium-display');
+    const {podiumTeams:pt, podiumIndex:pi} = finalReveal;
+    if(pi>=pt.length)return;
+    const isNew = pi !== _prevPodiumIndex;
+    _prevPodiumIndex = pi;
+
+    // Populate all 3 slots (hide unused ones)
+    [1,2,3].forEach(place=>{
+        const idx = place - 1;
+        const t = pt[idx];
+        const el = document.getElementById('pod-team-'+place);
+        const avEl = document.getElementById('pod-av-'+place);
+        const nmEl = document.getElementById('pod-name-'+place);
+        const scEl = document.getElementById('pod-score-'+place);
+        if(!t){el.classList.remove('revealed','pop');return;}
+        avEl.innerHTML = avatarImg(t.avatar, place===1?'7vw':place===2?'5.5vw':'4.5vw');
+        nmEl.textContent = t.name;
+        scEl.textContent = '$'+t.finalScore.toLocaleString();
+        const revealOrder = pt.length - place;
+        const isRevealed = revealOrder <= pi;
+        if(isRevealed){
+            if(!el.classList.contains('revealed')){
+                el.classList.add('pop');
+                el.classList.add('revealed');
+            }
+        } else {
+            el.classList.remove('revealed','pop');
+        }
+    });
+
+    if(isNew){
+        const revealedPlace = pt.length - pi;
+        if(revealedPlace===1){SFX.winner();winnerPlayed=true;}
+        else SFX.revealScore();
+    }
 }
 
 // ═══ DAILY DOUBLE REVEAL ═══

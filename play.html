@@ -426,7 +426,7 @@ function render(){
     );
     const isDDSpectator=dailyDouble && ddTeam && ddTeam !== teamKey;
 
-    if(phase==='dd-reveal'||phase==='final-reveal'||phase==='final-rankings'||phase==='recap'||phase==='gameover'){
+    if(phase==='dd-reveal'||phase==='final-reveal'||phase==='podium'||phase==='final-rankings'||phase==='recap'||phase==='gameover'){
         show('wait-card');
         document.getElementById('wait-msg').textContent=phase==='dd-reveal'?'Daily Double result is being revealed — look at the big screen!':phase==='gameover'?'Thanks for playing! See you next time!':phase==='recap'?'Check out the game recap on the big screen!':phase==='final-rankings'?'Final standings are on the big screen!':'Final scores are being revealed — look at the big screen!';
     } else if(phase==='intermission'){
