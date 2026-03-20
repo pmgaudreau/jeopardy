@@ -384,7 +384,8 @@ function setupListeners(){
         roomRef.child('teams/'+teamKey).on('value',snap=>{
             const t=snap.val();if(!t)return;cachedScore=t.score||0;
             document.getElementById('my-score').textContent='$'+cachedScore.toLocaleString();
-            if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}else{wagerLocked=false;resetWagerUI();}
+            if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
+            render();
         });
         roomRef.child('currentAnswers/'+teamKey).on('value',snap=>{
             if(snap.exists()&&snap.val()){const v=snap.val();if(v.passed){hasSubmitted=true;hasPassed=true;}else if(v.answer){hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your response: "'+v.answer+'"';}}
@@ -418,9 +419,8 @@ function render(){
     const cards=['wait-card','answer-card','submitted-card','dd-spec-card','wager-card','phone-timer'];
     cards.forEach(id=>document.getElementById(id).classList.add('hidden'));
 
-    const wageringOpen=GS.wageringOpen||false;
     const isFJ=round===3&&GS.questionKey==='final';
-    const canWager=wageringOpen && !wagerLocked && (
+    const canWager = !wagerLocked && !accepting && !hasSubmitted && phase==='question' && (
         (dailyDouble && ddTeam === teamKey) ||
         (isFJ && cachedScore > 0)
     );

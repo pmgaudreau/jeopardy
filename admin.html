@@ -1288,6 +1288,8 @@ function applyScores() {
     if(scoresApplied){alert('Scores have already been applied for this clue. Use Complete & Return to Board to move on.');return;}
     if(GS.accepting){alert('Close answers before applying scores.');return;}
     if(!GS.acceptedAt&&Object.keys(curAnswers).length===0){alert('Open for answers first — no answers to score yet.');return;}
+    const ung=countUngradedAnswers();
+    if(ung>0){alert(ung+' answer'+(ung>1?'s are':' is')+' not graded yet. Mark each answer correct (✓) or incorrect (✕) before applying.');return;}
     const upd={}, hist={round:GS.round,category:GS.category,value:GS.value,questionText:GS.questionText||'',acceptedAt:GS.acceptedAt||0,answers:{}};
     const isDD=GS.dailyDouble, isFJ=GS.round===3&&GS.questionKey==='final';
     Object.keys(curAnswers).forEach(tk=>{
@@ -1408,6 +1410,14 @@ function startFinal(){
     });
 }
 function revealFJQuestion(){
+    const isFJ=GS.round===3&&GS.questionKey==='final';
+    const eligible=GS.dailyDouble&&GS.ddTeam?[GS.ddTeam]:
+        isFJ?Object.keys(teams).filter(tk=>(teams[tk].score||0)>0):[];
+    const waiting=eligible.filter(tk=>!teams[tk]||!teams[tk].wager);
+    if(waiting.length>0){
+        const names=waiting.map(tk=>(teams[tk]&&teams[tk].name)||tk).join(', ');
+        if(!confirm(waiting.length+' team'+(waiting.length>1?'s haven\'t':' hasn\'t')+' locked in a wager yet:\n'+names+'\n\nReveal the question anyway?'))return;
+    }
     if(pendingQuestion){
         roomRef.child('state').update({questionText:pendingQuestion.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:pendingQuestion.imageUrl||''});
         pendingQuestion=null;
