@@ -269,6 +269,20 @@
         .gbtn.ca { background: var(--green); border-color: var(--green); color: #fff; }
         .gbtn.ia { background: var(--red); border-color: var(--red); color: #fff; }
         .no-ans { color: var(--text-muted); text-align: center; padding: .65rem; font-size: .8rem; }
+        .clue-scored-banner {
+            display: none; align-items: flex-start; gap: .4rem; margin-bottom: .4rem; padding: .35rem .45rem;
+            background: rgba(46,204,113,.1); border: 1px solid rgba(46,204,113,.35); border-radius: 6px;
+            font-size: .72rem; line-height: 1.35; color: var(--text-sec);
+        }
+        .clue-scored-banner.visible { display: flex; }
+        .clue-scored-banner strong { color: var(--green); font-weight: 700; }
+        .scored-pill {
+            flex-shrink: 0; font-family: var(--fs); font-size: .62rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .04em; padding: .12rem .4rem; border-radius: 999px; background: rgba(46,204,113,.2); color: var(--green);
+            border: 1px solid rgba(46,204,113,.4);
+        }
+        .scored-pill.muted { background: rgba(102,102,102,.15); color: var(--text-muted); border-color: var(--border); }
+        .acard.applied-done { opacity: .92; }
         .apply-row { display: flex; gap: .35rem; margin-top: .4rem; flex-shrink: 0; }
         .apply-row .btn { flex: 1; padding: .45rem .6rem; font-size: .82rem; }
         #question-view .btn-lg { padding: .55rem 1rem; font-size: .88rem; }
@@ -314,6 +328,41 @@
         .ans-reveal.host-next-highlight { border-color: var(--gold); background: rgba(255,215,0,.06); }
         #team-answers-card.host-next-highlight { border-color: var(--gold-dim); }
         #csv-zone.host-next-highlight { border-color: var(--gold); }
+
+        .q-wager-lock {
+            text-align: center; padding: 1.5rem 1rem; color: var(--text-muted);
+        }
+        .q-wager-lock-icon { font-size: 2rem; margin-bottom: .5rem; opacity: .6; }
+        .q-wager-lock-text { font-family: var(--fh); font-size: 1rem; color: var(--text-sec); text-transform: uppercase; letter-spacing: .04em; margin-bottom: .35rem; }
+        .q-wager-lock-sub { font-size: .72rem; line-height: 1.4; color: var(--text-muted); }
+        .q-wager-lock-sub strong { color: var(--gold); }
+
+        .step-indicator { display: flex; align-items: center; justify-content: center; gap: .15rem; padding: .3rem .5rem; margin-bottom: .3rem; }
+        .step-indicator .si-step {
+            font-family: var(--fs); font-size: .62rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em;
+            padding: .15rem .4rem; border-radius: 999px; color: var(--text-muted); background: transparent;
+            transition: all .25s; white-space: nowrap;
+        }
+        .step-indicator .si-step.active { color: var(--gold); background: rgba(255,215,0,.12); }
+        .step-indicator .si-step.done { color: var(--green); }
+        .step-indicator .si-arrow { color: var(--text-muted); font-size: .55rem; opacity: .4; }
+
+        .host-hint {
+            text-align: center; font-size: .68rem; color: var(--gold-dim); font-style: italic;
+            padding: .15rem .4rem; min-height: 1.1em; transition: opacity .2s;
+        }
+
+        .kbd-legend { display: inline-flex; align-items: center; gap: .25rem; }
+        .kbd-legend kbd {
+            display: inline-block; padding: .1rem .35rem; border: 1px solid var(--border); border-radius: 4px;
+            background: var(--bg-elevated); font-family: var(--fb); font-size: .65rem; color: var(--text-sec); line-height: 1.3;
+        }
+
+        .board-pick-nudge {
+            text-align: center; padding: .35rem .5rem; font-size: .78rem; color: var(--text-muted);
+            font-family: var(--fs); font-weight: 600; letter-spacing: .03em;
+        }
+        .board-pick-nudge strong { color: var(--gold); }
     </style>
 </head>
 <body>
@@ -408,7 +457,25 @@
         </div>
     </div>
     <div class="qc qc-host">
-        <div class="q-back"><button class="btn btn-outline btn-sm" onclick="returnToBoard()" title="Return to the board without completing this question">← Back to Board</button></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.25rem;">
+            <div class="q-back" style="margin-bottom:0;"><button class="btn btn-outline btn-sm" onclick="guardedBackToBoard()" title="Return to the board without completing this question">← Back to Board</button></div>
+            <div class="step-indicator" id="step-indicator">
+                <span class="si-step" data-step="open">Open</span><span class="si-arrow">›</span>
+                <span class="si-step" data-step="grade">Grade</span><span class="si-arrow">›</span>
+                <span class="si-step" data-step="reveal">Reveal</span><span class="si-arrow">›</span>
+                <span class="si-step" data-step="apply">Apply</span><span class="si-arrow">›</span>
+                <span class="si-step" data-step="complete">Done</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:.65rem;">
+                <div id="host-hint" class="host-hint"></div>
+                <button type="button" class="btn btn-outline btn-sm" id="kbd-toggle" onclick="toggleKbdLegend()" title="Keyboard shortcuts" style="font-size:.7rem;padding:.25rem .45rem;">⌨</button>
+            </div>
+        </div>
+        <div id="kbd-legend" class="hidden" style="text-align:center;padding:.25rem .5rem;margin-bottom:.2rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);font-size:.68rem;color:var(--text-sec);">
+            <span class="kbd-legend"><kbd>Space</kbd> Open / Close answers</span> &nbsp;
+            <span class="kbd-legend"><kbd>R</kbd> Reveal answer</span> &nbsp;
+            <span class="kbd-legend"><kbd>Enter</kbd> Complete &amp; return</span>
+        </div>
         <div class="q-host-grid">
             <div class="q-host-main">
                 <div class="q-header">
@@ -417,8 +484,13 @@
                     <div class="val" id="qv-val"></div>
                     <div id="qv-dd" class="hidden"><span class="dd-badge">★ DAILY DOUBLE ★</span></div>
                 </div>
-                <div class="qcard">
+                <div class="qcard" id="question-card">
                     <h3>Question</h3>
+                    <div id="q-wager-lock" class="q-wager-lock hidden">
+                        <div class="q-wager-lock-icon">🔒</div>
+                        <div class="q-wager-lock-text">Question is hidden until all wagers are locked in</div>
+                        <div class="q-wager-lock-sub">Watch the wager progress on the right — once everyone has locked in, click <strong>Reveal Question to Teams</strong></div>
+                    </div>
                     <div class="q-text" id="qv-qtxt"></div>
                     <img id="qv-img" class="hidden" style="max-width:100%;max-height:min(160px,22vh);border-radius:var(--radius);margin-top:.35rem;display:block;margin-left:auto;margin-right:auto;object-fit:contain;" alt="Question image">
                 </div>
@@ -453,7 +525,7 @@
                         <button class="toggle-accept open" id="toggle-btn" onclick="toggleAccepting()">Open for Answers</button>
                     </div>
                 </div>
-                <div class="qcard">
+                <div class="qcard" id="answer-card">
                     <h3>Answer</h3>
                     <div class="ans-reveal" id="ans-reveal" onclick="revealAnswer()">
                         <div class="lbl" id="ans-lbl">Click to reveal answer</div>
@@ -462,11 +534,12 @@
                 </div>
                 <div class="qcard" id="team-answers-card">
                     <div class="ans-header"><h3>Team Answers</h3><span class="cnt-badge" id="ans-count">0</span><span style="font-size:.7rem;color:var(--text-muted);margin-left:.35rem;" id="ans-of-total"></span></div>
+                    <div id="clue-scored-banner" class="clue-scored-banner" aria-live="polite"></div>
                     <div id="waiting-list" class="hidden" style="margin-bottom:.4rem;padding:.35rem .5rem;background:rgba(255,215,0,.04);border:1px solid var(--border);border-radius:var(--radius);font-size:.72rem;color:var(--text-sec);"><span style="color:var(--text-muted);font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;">Still waiting: </span><span id="waiting-names"></span></div>
                     <div id="answers-list"></div>
                     <div class="apply-row">
-                        <button class="btn btn-green" id="apply-btn" onclick="applyScores()" title="Apply all graded scores — correct answers earn points, incorrect answers lose points">Apply Scores</button>
-                        <button class="btn btn-outline" onclick="clearGrading()" title="Clear all correct/incorrect markings without applying scores">Reset</button>
+                        <button type="button" class="btn btn-green" id="apply-btn" onclick="applyScores()" title="Apply all graded scores — correct answers earn points, incorrect answers lose points">Apply Scores</button>
+                        <button type="button" class="btn btn-outline" id="btn-reset-grading" onclick="clearGrading()" title="Clear all correct/incorrect markings without applying scores">Reset</button>
                     </div>
                 </div>
                 <div style="text-align:center;" id="q-bottom-btns">
@@ -555,6 +628,8 @@
 let roomCode = null, roomRef = null;
 let GS = { round:1, phase:'board', category:'', value:0, questionText:'', accepting:false, dailyDouble:false, ddTeam:'', questionKey:'', showQR:false, boardProjectorMode:'gameStart', timerEnd:0, timerRunning:false, answerRevealed:false, wageringOpen:false, imageUrl:'' };
 let teams = {}, curAnswers = {}, grading = {}, boardQ = {}, parsedCSV = null, scoresApplied = false;
+/** After Apply Scores, per-team snapshot from history for this clue (for host UI). Cleared on new clue. */
+let lastAppliedByTeam = {};
 let timerInterval = null, timerSec = 30, roundTransTimeout = null;
 const VALS = { 1:[200,400,600,800,1000], 2:[400,800,1200,1600,2000] };
 
@@ -796,6 +871,7 @@ function returnToSetup() {
     grading = {};
     boardQ = {};
     scoresApplied = false;
+    lastAppliedByTeam = {};
     GS = { round: 1, phase: 'board', category: '', value: 0, questionText: '', accepting: false, dailyDouble: false, ddTeam: '', questionKey: '', showQR: false, boardProjectorMode: 'gameStart', timerEnd: 0, timerRunning: false, answerRevealed: false, wageringOpen: false, imageUrl: '' };
     document.getElementById('setup-err').textContent = '';
     showView('setup-view');
@@ -804,7 +880,7 @@ function returnToSetup() {
 // ── Listeners ──
 function setupListeners() {
     roomRef.child('state').on('value',s=>{const v=s.val();if(!v)return;GS=v;syncView();});
-    roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScoreboard();updateWagerProgress();assignInitialControl();updateHostNextHighlight();});
+    roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScoreboard();updateWagerProgress();assignInitialControl();renderBoardControl();updateHostNextHighlight();});
     roomRef.child('currentAnswers').on('value',s=>{curAnswers=s.val()||{};renderAnswers();});
     roomRef.child('board').on('value',s=>{boardQ=s.val()||{};renderBoard();});
     roomRef.child('history').on('value',s=>{renderHistory(s.val()||{});});
@@ -846,15 +922,24 @@ function syncView() {
         }
         document.getElementById('end-game-btn').style.display=(GS.phase==='recap'||GS.phase==='gameover')?'inline-block':'none';
     } else if(GS.phase==='board'||GS.phase==='round-transition'||GS.phase==='intermission'){showView('board-view');document.getElementById('end-game-btn').style.display='none';renderBoard();}
+    const qv=document.getElementById('question-view');
+    if(qv&&qv.classList.contains('active')){updateStatus();}
     renderBoardControl();
     updateHostNextHighlight();
 }
 function renderBoardControl(){
     const bar=document.getElementById('board-control-bar');
+    const lbl=bar.querySelector('span:first-child');
+    const name=document.getElementById('board-control-name');
     const tk=GS.boardControl;
     if(tk&&teams[tk]){
         bar.style.display='block';
-        document.getElementById('board-control-name').innerHTML=avatarImg(teams[tk].avatar,18)+' '+esc(teams[tk].name||tk);
+        if(lbl)lbl.textContent='Board Control: ';
+        name.innerHTML=avatarImg(teams[tk].avatar,18)+' '+esc(teams[tk].name||tk);
+    } else if(GS.phase==='board'&&GS.round<3){
+        bar.style.display='block';
+        if(lbl)lbl.textContent='';
+        name.innerHTML='<span class="board-pick-nudge">Select a clue from the board to begin</span>';
     } else {
         bar.style.display='none';
     }
@@ -888,7 +973,7 @@ function confirmEndRound() {
     const nextRound = GS.round + 1;
     if (nextRound > 3) return;
     roomRef.child('state').update({round:nextRound,phase:'round-transition',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
-    roomRef.child('currentAnswers').remove(); grading={};
+    roomRef.child('currentAnswers').remove(); grading={};scoresApplied=false;lastAppliedByTeam={};
     if(roundTransTimeout)clearTimeout(roundTransTimeout);
     roundTransTimeout=setTimeout(()=>{ roundTransTimeout=null; roomRef.child('state/phase').set('board'); }, 8000);
 }
@@ -944,7 +1029,7 @@ function activateQ(key,q,isDD,ddTk) {
     Object.keys(statePatch).forEach(k=>{flat['state/'+k]=statePatch[k];});
     if(isDD&&ddTk){flat['teams/'+ddTk+'/wager']=0;}
     roomRef.update(flat);
-    roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false;
+    roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false; lastAppliedByTeam={};
     showView('question-view');
     const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
     document.getElementById('qv-rl').textContent=rl[q.round]||'';
@@ -964,6 +1049,9 @@ function activateQ(key,q,isDD,ddTk) {
 
 // ── Accepting ──
 function toggleAccepting() {
+    const isFJ=GS.round===3&&GS.questionKey==='final';
+    const isDD=GS.dailyDouble;
+    if((isFJ||isDD)&&!GS.fjQuestionRevealed){alert('Reveal the question to teams first — wagers must be locked in before opening for answers.');return;}
     const a=!GS.accepting;
     if(a){
         const end=Date.now()+timerSec*1000;
@@ -994,7 +1082,71 @@ function updateStatus() {
     const fjRevealBar=document.getElementById('fj-reveal-q-bar');
     fjRevealBar.classList.toggle('hidden',!((isFJ||isDD)&&!GS.fjQuestionRevealed));
     updateWagerProgress();
+    updateQuestionVisibility();
+    updateStepIndicator();
     updateHostNextHighlight();
+}
+function updateQuestionVisibility(){
+    const isFJ=GS.round===3&&GS.questionKey==='final';
+    const isDD=GS.dailyDouble;
+    const needsWager=isFJ||isDD;
+    const locked=GS.fjQuestionRevealed;
+    const hide=needsWager&&!locked;
+    document.getElementById('qv-qtxt').classList.toggle('hidden',hide);
+    document.getElementById('q-wager-lock').classList.toggle('hidden',!hide);
+    const ansCard=document.getElementById('answer-card');
+    if(ansCard)ansCard.classList.toggle('hidden',hide);
+    const imgEl=document.getElementById('qv-img');
+    if(imgEl){
+        if(hide){imgEl.classList.add('hidden');}
+        else if(imgEl.src&&imgEl.src!==window.location.href){imgEl.classList.remove('hidden');}
+    }
+}
+function getClueStep(){
+    const isFJ=GS.round===3&&GS.questionKey==='final';
+    const isDD=GS.dailyDouble;
+    const needsWager=(isFJ||isDD)&&!GS.fjQuestionRevealed;
+    if(needsWager)return 'wager';
+    if(scoresApplied)return 'complete';
+    const keys=Object.keys(curAnswers);
+    if(keys.length===0&&!GS.accepting)return 'open';
+    if(GS.accepting)return 'open';
+    const ung=countUngradedAnswers();
+    if(ung>0)return 'grade';
+    if(!GS.answerRevealed)return 'reveal';
+    return 'apply';
+}
+function updateStepIndicator(){
+    const el=document.getElementById('step-indicator');
+    if(!el)return;
+    const step=getClueStep();
+    const order=['open','grade','reveal','apply','complete'];
+    const stepIdx=order.indexOf(step);
+    el.querySelectorAll('.si-step').forEach(s=>{
+        const ds=s.dataset.step;
+        const i=order.indexOf(ds);
+        s.classList.remove('active','done');
+        if(i===stepIdx)s.classList.add('active');
+        else if(i<stepIdx)s.classList.add('done');
+    });
+    el.classList.toggle('hidden',step==='wager');
+    updateHostHint(step);
+}
+function getHostHintText(step){
+    if(step==='wager')return 'Waiting for wagers to lock in…';
+    if(step==='open')return GS.accepting?'Timer is running — teams are answering…':'Open for answers to start the timer';
+    if(step==='grade')return 'Mark each answer as correct (✓) or incorrect (✕)';
+    if(step==='reveal')return 'Click the answer card to reveal the correct answer';
+    if(step==='apply')return 'Apply scores to update the scoreboard';
+    if(step==='complete')return 'All scored — complete this clue and return to the board';
+    return '';
+}
+function updateHostHint(step){
+    const el=document.getElementById('host-hint');
+    if(el)el.textContent=getHostHintText(step);
+}
+function toggleKbdLegend(){
+    document.getElementById('kbd-legend').classList.toggle('hidden');
 }
 function updateWagerProgress(){
     const wp=document.getElementById('wager-progress');
@@ -1045,12 +1197,22 @@ function renderAnswers() {
         stopLocalTimer();
     }
 
-    if(!keys.length){list.innerHTML='<div class="no-ans">No answers yet.</div>';updateStatus();return;}
+    if(!keys.length){list.innerHTML='<div class="no-ans">No answers yet.</div>';updateStatus();updateClueScoredBanner();updateApplyButtonsState();return;}
     list.innerHTML=keys.map(tk=>{const a=curAnswers[tk],nm=(teams[tk]&&teams[tk].name)||tk,av=teams[tk]&&teams[tk].avatar;
-        if(a.passed){return`<div class="acard passed"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text" style="color:var(--tmut);font-style:italic;">Passed</span></div>`;}
+        const pillOrNone=scoresApplied?(lastAppliedByTeam[tk]
+            ?'<span class="scored-pill" title="Recorded for this clue">'+esc(formatAppliedPillText(lastAppliedByTeam[tk]))+'</span>'
+            :'<span class="scored-pill muted" title="No score line">—</span>'):'';
+        if(scoresApplied){
+            if(a.passed){return`<div class="acard passed applied-done"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text" style="color:var(--text-muted);font-style:italic;">Passed</span>${pillOrNone}</div>`;}
+            const ap=lastAppliedByTeam[tk];
+            const gc=ap&&!ap.passed?(ap.correct===true?'correct':ap.correct===false?'incorrect':''):'';
+            return`<div class="acard ${gc} applied-done"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text">${esc(a.answer||'(blank)')}</span>${pillOrNone}</div>`;
+        }
+        if(a.passed){return`<div class="acard passed"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text" style="color:var(--text-muted);font-style:italic;">Passed</span></div>`;}
         const gc=grading[tk]===true?'correct':grading[tk]===false?'incorrect':'';
-        return`<div class="acard ${gc}"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text">${esc(a.answer||'(blank)')}</span><button class="gbtn ${grading[tk]===true?'ca':''}" onclick="grade('${tk}',true)" title="Mark as correct — team earns points">✓</button><button class="gbtn ${grading[tk]===false?'ia':''}" onclick="grade('${tk}',false)" title="Mark as incorrect — team loses points">✕</button></div>`;
-    }).join(''); updateStatus();
+        return`<div class="acard ${gc}"><span class="a-avatar">${avatarImg(av, 28)}</span><span class="a-team">${esc(nm)}</span><span class="a-text">${esc(a.answer||'(blank)')}</span><button type="button" class="gbtn ${grading[tk]===true?'ca':''}" onclick="grade('${tk}',true)" title="Mark as correct — team earns points">✓</button><button type="button" class="gbtn ${grading[tk]===false?'ia':''}" onclick="grade('${tk}',false)" title="Mark as incorrect — team loses points">✕</button></div>`;
+    }).join('');
+    updateStatus(); updateClueScoredBanner(); updateApplyButtonsState();
 }
 function getEligibleTeams(){
     const all=Object.keys(teams);
@@ -1059,8 +1221,43 @@ function getEligibleTeams(){
     return all;
 }
 function grade(tk,c){grading[tk]=grading[tk]===c?undefined:c;renderAnswers();}
-function clearGrading(){grading={};renderAnswers();}
+function clearGrading(){ if(scoresApplied)return; grading={};renderAnswers();}
+function formatAppliedPillText(a){
+    if(!a)return '—';
+    if(a.passed)return 'Pass';
+    if(a.points===0)return '$0';
+    return (a.points>0?'+':'−')+'$'+Math.abs(a.points).toLocaleString();
+}
+function updateClueScoredBanner(){
+    const el=document.getElementById('clue-scored-banner');
+    if(!el)return;
+    if(!scoresApplied){
+        el.classList.remove('visible');
+        el.innerHTML='';
+        return;
+    }
+    const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'}[GS.round]||'';
+    const cat=GS.category||'';
+    const isFj=GS.round===3&&GS.questionKey==='final';
+    const valStr=isFj?'Final Jeopardy':('$'+Number(GS.value||0).toLocaleString());
+    el.innerHTML='<span style="flex-shrink:0;margin-top:.05rem;">✓</span><span><strong>Scored for this clue</strong> — '+esc(rl)+(cat?(' · '+esc(cat)):'')+' · '+esc(valStr)+'. Points are on the scoreboard — use <strong>Complete &amp; Return to Board</strong> when ready.</span>';
+    el.classList.add('visible');
+}
+function updateApplyButtonsState(){
+    const apply=document.getElementById('apply-btn');
+    const reset=document.getElementById('btn-reset-grading');
+    if(apply){
+        apply.disabled=scoresApplied;
+        apply.textContent=scoresApplied?'Applied ✓':'Apply Scores';
+        apply.style.opacity=scoresApplied?'.55':'';
+    }
+    if(reset){
+        reset.disabled=scoresApplied;
+        reset.style.opacity=scoresApplied?'.45':'';
+    }
+}
 function applyScores() {
+    if(scoresApplied){alert('Scores have already been applied for this clue. Use Complete & Return to Board to move on.');return;}
     const upd={}, hist={round:GS.round,category:GS.category,value:GS.value,questionText:GS.questionText||'',acceptedAt:GS.acceptedAt||0,answers:{}};
     const isDD=GS.dailyDouble, isFJ=GS.round===3&&GS.questionKey==='final';
     Object.keys(curAnswers).forEach(tk=>{
@@ -1102,8 +1299,10 @@ function applyScores() {
     const applyBtn=document.getElementById('apply-btn');
     if(applyBtn){applyBtn.disabled=true;applyBtn.textContent='Applying...';}
     roomRef.update(upd).then(()=>{
+        lastAppliedByTeam={};
+        Object.keys(hist.answers).forEach(tk=>{lastAppliedByTeam[tk]=hist.answers[tk];});
         grading={};scoresApplied=true;renderAnswers();
-        if(applyBtn){applyBtn.disabled=false;applyBtn.textContent='Apply Scores';applyBtn.style.boxShadow='0 0 12px var(--green)';setTimeout(()=>{applyBtn.style.boxShadow='';},2000);}
+        if(applyBtn){applyBtn.style.boxShadow='0 0 12px var(--green)';setTimeout(()=>{applyBtn.style.boxShadow='';},2000);}
     });
 }
 function determineBoardControl(gradingMap,answers){
@@ -1144,9 +1343,16 @@ function completeAndReturn(fromKeyboard){
     }
     const k=GS.questionKey;if(k&&k!=='final')roomRef.child('board/'+k+'/completed').set(true);returnToBoard();
 }
+function guardedBackToBoard(){
+    const answered=Object.keys(curAnswers);
+    if(answered.length>0&&!scoresApplied){
+        if(!confirm('There are '+answered.length+' answer(s) that haven\'t been scored yet.\n\nLeave without scoring?'))return;
+    }
+    returnToBoard();
+}
 function returnToBoard(){
     roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
-    roomRef.child('currentAnswers').remove();grading={};showView('board-view');stopLocalTimer();resetTimerDisp();
+    roomRef.child('currentAnswers').remove();grading={};scoresApplied=false;lastAppliedByTeam={};showView('board-view');stopLocalTimer();resetTimerDisp();
     resetWagers(Object.keys(teams));
 }
 
@@ -1196,7 +1402,7 @@ function renderScoreboard() {
     }).join('');
 }
 function adjScore(tk){const cur=(teams[tk]&&teams[tk].score)||0;const a=prompt(`Adjust ${teams[tk]?.name||tk} ($${cur}):`,0);if(a===null)return;const n=parseInt(a);if(!isNaN(n))roomRef.child('teams/'+tk+'/score').set(cur+n);}
-function removeTeam(tk){const name=(teams[tk]&&teams[tk].name)||tk;if(!confirm('Remove "'+name+'" from the game? This cannot be undone.'))return;roomRef.child('teams/'+tk).remove();}
+function removeTeam(tk){const name=(teams[tk]&&teams[tk].name)||tk;if(!confirm('Remove "'+name+'" from the game? This cannot be undone.'))return;roomRef.child('teams/'+tk).remove();if(GS.boardControl===tk)roomRef.child('state/boardControl').set('');}
 function addTeamManual(){
     const n=document.getElementById('add-team').value.trim();if(!n)return;
     let k=n.toLowerCase().replace(/[^a-z0-9]/g,'_');
@@ -1239,9 +1445,10 @@ function startFinalReveal() {
     const revealTeams = sorted.map(([k,t]) => {
         const currentScore = t.score||0;
         const wager = t.wager||0;
-        const correct = grading[k] === true;
-        const answered = curAnswers[k] && curAnswers[k].answer;
-        const preFJ = scoresApplied && answered ? (correct ? currentScore - wager : currentScore + wager) : currentScore;
+        const ap = lastAppliedByTeam[k];
+        const correct = ap ? ap.correct === true : grading[k] === true;
+        const appliedPts = ap ? (ap.points||0) : 0;
+        const preFJ = scoresApplied && ap ? currentScore - appliedPts : currentScore;
         return {
             key: k, name: t.name||k, avatar: t.avatar||'',
             preFinalScore: preFJ, wager: wager,
@@ -1352,7 +1559,7 @@ function confirmIntermission(){
         dailyDouble:false,ddTeam:'',questionKey:'',
         timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''
     });
-    roomRef.child('currentAnswers').remove();grading={};
+    roomRef.child('currentAnswers').remove();grading={};scoresApplied=false;lastAppliedByTeam={};
 }
 function endIntermission(){
     stopIntCountdown();

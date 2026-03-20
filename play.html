@@ -97,6 +97,21 @@
 
         @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
         .fade-in{animation:fadeIn .25s ease;}
+
+        .room-status{font-size:.7rem;font-weight:600;font-family:var(--fs);margin-left:.5rem;transition:opacity .2s;}
+        .room-status.found{color:var(--green);}
+        .room-status.not-found{color:var(--red);}
+
+        .player-count-tag{font-size:.7rem;color:var(--tmut);font-family:var(--fs);font-weight:600;margin-left:.25rem;}
+
+        .welcome-toast{
+            position:fixed;top:0;left:0;right:0;
+            background:rgba(46,204,113,.15);border-bottom:1px solid var(--green);
+            text-align:center;padding:.6rem 1rem;
+            font-family:var(--fs);font-size:.85rem;font-weight:600;color:var(--green);
+            z-index:100;animation:welcomeSlide .35s ease;
+        }
+        @keyframes welcomeSlide{from{transform:translateY(-100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
     </style>
 </head>
 <body>
@@ -108,7 +123,7 @@
     <h1 style="font-size:1.5rem;margin-top:0;">PDK NINE</h1>
     <div class="sub">Trivia Night — Join the Game</div>
     <div class="fg">
-        <label>Room Code</label>
+        <label>Room Code <span id="room-status" class="room-status"></span></label>
         <input type="text" id="inp-room" placeholder="e.g. TRIVIA" maxlength="12" autocomplete="off" autocorrect="off" autocapitalize="characters"
                style="text-transform:uppercase;text-align:center;font-size:1.3rem;font-weight:700;letter-spacing:2px;font-family:var(--fh);">
     </div>
@@ -130,13 +145,14 @@
         <label>Choose Your Avatar</label>
         <div class="avatar-grid" id="avatar-grid"></div>
     </div>
-    <button class="btn btn-gold" onclick="joinRoom()">Join Game</button>
+    <button class="btn btn-gold" id="btn-join" onclick="joinRoom()">Join Game</button>
     <p class="err" id="join-err"></p>
 </div>
 </div>
 
 <!-- ═══ GAME ═══ -->
 <div id="game">
+    <div id="welcome-toast" class="hidden"></div>
     <div class="offline-bar hidden" id="offline-bar">Reconnecting...</div>
     <div class="game-hdr">
         <span class="team-lbl"><img src="Logo transparent.png" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:.3rem;opacity:.7;"><span class="av" id="my-avatar"></span><span id="my-name"></span></span>
@@ -190,19 +206,29 @@ function getTakenAvatars(){return[];}
 // Build initial grid
 renderAvatarGrid([]);
 
-// Watch room code to update taken avatars
-let roomWatchRef=null;
+// Watch room code to update taken avatars + validate room
+let roomWatchRef=null,roomStateRef=null,watchedTeams={};
 document.getElementById('inp-room').addEventListener('input',function(){
     const code=this.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    const rs=document.getElementById('room-status');
     if(roomWatchRef){roomWatchRef.off();roomWatchRef=null;}
+    if(roomStateRef){roomStateRef.off();roomStateRef=null;}
+    watchedTeams={};
     if(code.length>=2){
+        roomStateRef=db.ref('trivia-rooms/'+code+'/state');
+        roomStateRef.on('value',snap=>{
+            if(snap.exists()){rs.textContent='✓ Room found';rs.className='room-status found';}
+            else{rs.textContent='✕ Not found';rs.className='room-status not-found';}
+        });
         roomWatchRef=db.ref('trivia-rooms/'+code+'/teams');
         roomWatchRef.on('value',snap=>{
-            const ts=snap.val()||{};
-            const taken=Object.values(ts).map(t=>t.avatar).filter(Boolean);
+            watchedTeams=snap.val()||{};
+            const taken=Object.values(watchedTeams).map(t=>t.avatar).filter(Boolean);
             renderAvatarGrid(taken);
             getTakenAvatars=()=>taken;
         });
+    } else {
+        rs.textContent='';rs.className='room-status';
     }
 });
 
@@ -213,72 +239,109 @@ function setPlayerCount(n){
 
 // ── Join ──
 function joinRoom(){
+    const joinBtn=document.getElementById('btn-join');
+    const errEl=document.getElementById('join-err');
     const code=document.getElementById('inp-room').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
     const name=document.getElementById('inp-name').value.trim();
-    if(!code||!name){document.getElementById('join-err').textContent='Enter room code and team name.';return;}
-    if(!selectedAvatar){document.getElementById('join-err').textContent='Choose an avatar.';return;}
+    if(!code||!name){errEl.textContent='Enter room code and team name.';return;}
+    if(!selectedAvatar){errEl.textContent='Choose an avatar.';return;}
+
+    // Duplicate name check against watched teams
+    const dupKey=Object.keys(watchedTeams).find(k=>{
+        const t=watchedTeams[k];
+        return t&&t.name&&t.name.toLowerCase()===name.toLowerCase();
+    });
+    if(dupKey){
+        const proposed=name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+        if(dupKey!==proposed){
+            errEl.textContent='A team named "'+watchedTeams[dupKey].name+'" already exists. Choose a different name.';return;
+        }
+    }
+
+    joinBtn.disabled=true;joinBtn.textContent='Joining...';
+    errEl.textContent='';
 
     roomCode=code;teamName=name;
     teamKey=name.toLowerCase().replace(/[^a-z0-9]/g,'_');
     roomRef=db.ref('trivia-rooms/'+roomCode);
     const av=AVATARS.find(a=>a.id===selectedAvatar);
 
-    roomRef.child('state').once('value',snap=>{
-        if(!snap.exists()){document.getElementById('join-err').textContent='Room not found.';return;}
-        roomRef.child('teams/'+teamKey).once('value',ts=>{
+    function joinFailed(msg){errEl.textContent=msg||'Error joining. Try again.';joinBtn.disabled=false;joinBtn.textContent='Join Game';}
+    roomRef.child('state').once('value').then(snap=>{
+        if(!snap.exists()){joinFailed('Room not found.');return;}
+        return roomRef.child('teams/'+teamKey).once('value').then(ts=>{
+            let writePromise;
             if(ts.exists()){
                 const existingName=ts.val().name;
                 if(existingName&&existingName.toLowerCase()!==teamName.toLowerCase()){
                     teamKey=teamKey+'_'+Math.random().toString(36).slice(2,5);
-                    roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,avatar:av.id,color:av.color,players:playerCount});
+                    writePromise=roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,avatar:av.id,color:av.color,players:playerCount});
                 } else {
-                    roomRef.child('teams/'+teamKey).update({avatar:av.id,color:av.color,players:playerCount});
+                    writePromise=roomRef.child('teams/'+teamKey).update({avatar:av.id,color:av.color,players:playerCount});
                 }
             } else {
-                roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,avatar:av.id,color:av.color,players:playerCount});
+                writePromise=roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,avatar:av.id,color:av.color,players:playerCount});
             }
-            try{sessionStorage.setItem('trivia_session',JSON.stringify({roomCode,teamName,teamKey,avatar:av.id,players:playerCount}));}catch(e){}
-            enterGame(av);
+            return writePromise.then(()=>{
+                try{sessionStorage.setItem('trivia_session',JSON.stringify({roomCode,teamName,teamKey,avatar:av.id,players:playerCount}));}catch(e){}
+                enterGame(av);
+            });
         });
-    });
+    }).catch(()=>{joinFailed();});
 }
 
-function enterGame(av){
+function enterGame(av,isRejoin){
+    if(roomWatchRef){roomWatchRef.off();roomWatchRef=null;}
+    if(roomStateRef){roomStateRef.off();roomStateRef=null;}
     document.getElementById('join-screen').style.display='none';
     document.getElementById('game').style.display='flex';
-    document.getElementById('my-name').textContent=teamName;
+    document.getElementById('my-name').innerHTML=esc(teamName)+(playerCount>1?'<span class="player-count-tag">×'+playerCount+'</span>':'');
     document.getElementById('my-avatar').innerHTML=av?'<img src="avatars/'+av.id+'.png" style="width:24px;height:24px;border-radius:50%;object-fit:cover;vertical-align:middle" alt="">':'';
+    if(isRejoin){
+        const toast=document.getElementById('welcome-toast');
+        toast.textContent='Welcome back, '+teamName+'!';
+        toast.className='welcome-toast';
+        setTimeout(()=>{toast.classList.add('hidden');},3000);
+    }
     setupListeners();
 }
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
 // URL room takes precedence; auto-rejoin only if it matches
 (function(){
     const urlRoom=(new URLSearchParams(window.location.search)).get('room');
     const urlRoomNorm=urlRoom?urlRoom.trim().toUpperCase().replace(/[^A-Z0-9]/g,''):'';
-    if(urlRoom){
-        const inp=document.getElementById('inp-room');
-        inp.value=urlRoomNorm;
-        inp.dispatchEvent(new Event('input',{bubbles:true}));
-    }
+    let willAutoRejoin=false;
     try{
         const saved=JSON.parse(sessionStorage.getItem('trivia_session')||'null');
         if(saved&&saved.roomCode&&saved.teamKey){
             const savedRoom=(saved.roomCode||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
-            if(urlRoomNorm&&savedRoom!==urlRoomNorm){sessionStorage.removeItem('trivia_session');return;}
-            if(!urlRoomNorm||savedRoom===urlRoomNorm){
+            if(urlRoomNorm&&savedRoom!==urlRoomNorm){sessionStorage.removeItem('trivia_session');}
+            else if(!urlRoomNorm||savedRoom===urlRoomNorm){
+                willAutoRejoin=true;
                 roomCode=saved.roomCode;teamName=saved.teamName;teamKey=saved.teamKey;selectedAvatar=saved.avatar;playerCount=saved.players||1;
                 roomRef=db.ref('trivia-rooms/'+roomCode);
                 roomRef.child('state').once('value',snap=>{
-                    if(!snap.exists())return;
+                    if(!snap.exists()){sessionStorage.removeItem('trivia_session');return;}
                     roomRef.child('teams/'+teamKey).once('value',ts=>{
-                        if(!ts.exists())return;
+                        if(!ts.exists()){sessionStorage.removeItem('trivia_session');return;}
                         const av=AVATARS.find(a=>a.id===saved.avatar);
-                        enterGame(av);
+                        enterGame(av,true);
                     });
                 });
             }
         }
     }catch(e){}
+    if(urlRoom){
+        const inp=document.getElementById('inp-room');
+        inp.value=urlRoomNorm;
+        inp.dispatchEvent(new Event('input',{bubbles:true}));
+        if(!willAutoRejoin){
+            setTimeout(()=>{
+                if(document.getElementById('join-screen').style.display!=='none')document.getElementById('inp-name').focus();
+            },300);
+        }
+    }
 })();
 
 // ── Listeners ──

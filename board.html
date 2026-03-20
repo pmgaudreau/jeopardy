@@ -290,6 +290,17 @@
         #qr-url-projector{font-family:var(--fh);font-size:clamp(.7rem,1.65vw,1.15rem);color:var(--gold-bright);letter-spacing:.03em;max-width:100%;word-break:break-all;padding:0 .25rem;}
         #qr-room-projector{font-family:var(--fs);font-size:clamp(.72rem,1.35vw,1.05rem);color:var(--tsec);}
 
+        .qr-proj-team .pc{
+            font-family:var(--fs);font-size:calc(var(--qr-fs-name-row,var(--qr-fs-name,1rem)) * 0.7);
+            color:var(--tmut);font-weight:600;margin-left:.25em;flex-shrink:0;
+        }
+        .qr-proj-team.team-new{animation:teamPop .5s ease;}
+        @keyframes teamPop{0%{opacity:0;transform:scale(.85);}60%{opacity:1;transform:scale(1.06);}100%{transform:scale(1);}}
+        .qr-empty-hint{
+            font-family:var(--fs);font-size:clamp(.7rem,1.2vw,.95rem);color:var(--tmut);text-align:center;
+            padding:2vw 1vw;letter-spacing:.04em;font-weight:600;
+        }
+
         #lobby,#game-start-display,#qr-projector-display,#board-display,#question-display,#dd-display,#transition-display,#intermission-display,#reveal-display,#rankings-display,#recap-display,#gameover-display{transition:opacity .25s ease;}
 
         .score-change{position:absolute;font-family:var(--fh);font-weight:700;font-size:1.3vw;pointer-events:none;animation:scoreFloat 1.5s ease forwards;z-index:10;}
@@ -614,6 +625,7 @@ function getBoardProjectorMode(){
 function updateQR(){
     document.getElementById('qr-overlay').classList.remove('show');
 }
+let _prevQRTeamKeys=new Set();
 function renderQRProjectorTeams(){
     const leftEl=document.getElementById('qr-proj-side-left');
     const rightEl=document.getElementById('qr-proj-side-right');
@@ -627,7 +639,12 @@ function renderQRProjectorTeams(){
     if(numEl)numEl.textContent=String(n);
     if(lblEl)lblEl.textContent=n===1?' team joined':' teams joined';
     const sorted=Object.entries(teams).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||''));
-    if(sorted.length===0){leftEl.innerHTML='';rightEl.innerHTML='';return;}
+    if(sorted.length===0){
+        leftEl.innerHTML='<div class="qr-empty-hint">Scan the QR code<br>to join!</div>';
+        rightEl.innerHTML='';
+        _prevQRTeamKeys=new Set();
+        return;
+    }
     const place=()=>{
         const sRect=stage.getBoundingClientRect();
         if(sRect.width<80||sRect.height<80)return;
@@ -688,7 +705,9 @@ function renderQRProjectorTeams(){
             const col=avatarColor(t.avatar);
             const nm=t.name||k;
             const fPx=qrProjNameFontPx(nm,slot);
-            return`<div class="qr-proj-team" style="--qr-fs-name-row:${fPx}px"><span class="av-wrap">${avatarImg(t.avatar,'100%')}</span><div class="qr-proj-team-text"><span class="nm" style="color:${col}">${esc(nm)}</span></div></div>`;
+            const isNew=!_prevQRTeamKeys.has(k);
+            const pc=t.players&&t.players>1?'<span class="pc">×'+t.players+'</span>':'';
+            return`<div class="qr-proj-team${isNew?' team-new':''}" style="--qr-fs-name-row:${fPx}px"><span class="av-wrap">${avatarImg(t.avatar,'100%')}</span><div class="qr-proj-team-text"><span class="nm" style="color:${col}">${esc(nm)}${pc}</span></div></div>`;
         }
         leftEl.innerHTML=leftTeams.map(teamHtml).join('');
         rightEl.innerHTML=rightTeams.map(teamHtml).join('');
@@ -696,7 +715,10 @@ function renderQRProjectorTeams(){
     place();
     requestAnimationFrame(()=>{
         place();
-        requestAnimationFrame(place);
+        requestAnimationFrame(()=>{
+            place();
+            _prevQRTeamKeys=new Set(sorted.map(([k])=>k));
+        });
     });
 }
 let qrResizeDebounce=null;
@@ -782,7 +804,8 @@ function renderLobbyTeams(){
     const sorted=Object.entries(teams).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||''));
     el.innerHTML=sorted.map(([k,t],i)=>{
         const col=avatarColor(t.avatar);
-        return`<div class="lobby-team" style="animation-delay:${i*.08}s">${avatarImg(t.avatar,'3.5vw')}<span class="lt-name" style="color:${col}">${esc(t.name||k)}</span></div>`;
+        const pc=t.players&&t.players>1?' <span style="font-size:.8vw;color:var(--tmut);">×'+t.players+'</span>':'';
+        return`<div class="lobby-team" style="animation-delay:${i*.08}s">${avatarImg(t.avatar,'3.5vw')}<span class="lt-name" style="color:${col}">${esc(t.name||k)}${pc}</span></div>`;
     }).join('')||(teams&&Object.keys(teams).length?'':'');
     const count=Object.keys(teams).length;
     document.getElementById('lobby-count').textContent=count>0?count+' Team'+(count!==1?'s':'')+' Joined':'';
