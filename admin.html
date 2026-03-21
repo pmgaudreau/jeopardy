@@ -229,6 +229,9 @@
         .ans-reveal .lbl { color: var(--text-muted); font-size: .78rem; }
         .ans-reveal .atxt { font-size: .95rem; color: var(--green); font-weight: 600; }
 
+        .host-ans-ref { margin-top: .5rem; padding: .3rem .5rem; font-size: .65rem; color: var(--text-muted); text-align: right; opacity: .45; transition: opacity .15s; font-family: var(--fb); letter-spacing: .01em; }
+        .host-ans-ref:hover { opacity: .85; }
+
         .timer-section { text-align: center; margin-bottom: .35rem; }
         .timer-display { font-family: var(--fh); font-size: 1.85rem; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; line-height: 1.1; }
         .timer-display.danger { color: var(--red); }
@@ -541,6 +544,7 @@
                         <button type="button" class="btn btn-green" id="apply-btn" onclick="applyScores()" title="Apply all graded scores — correct answers earn points, incorrect answers lose points">Apply Scores</button>
                         <button type="button" class="btn btn-outline" id="btn-reset-grading" onclick="clearGrading()" title="Clear all correct/incorrect markings without applying scores">Reset</button>
                     </div>
+                    <div class="host-ans-ref" id="host-ans-ref"></div>
                 </div>
                 <div style="text-align:center;" id="q-bottom-btns">
                     <button type="button" class="btn btn-gold btn-lg" id="btn-complete-return" onclick="completeAndReturn()" title="Mark this question as completed and return to the board grid">Complete &amp; Return to Board →</button>
@@ -1073,6 +1077,7 @@ function activateQ(key,q,isDD,ddTk) {
     document.getElementById('ans-txt').textContent=q.answerText;
     document.getElementById('ans-txt').classList.add('hidden');
     document.getElementById('ans-lbl').classList.remove('hidden');
+    document.getElementById('host-ans-ref').textContent='A: '+q.answerText;
     document.getElementById('qv-dd').classList.toggle('hidden',!isDD);
     document.getElementById('dd-team-info').classList.toggle('hidden',!isDD);
     if(isDD) document.getElementById('dd-team-name').textContent=(teams[ddTk]&&teams[ddTk].name)||ddTk;
@@ -1414,6 +1419,7 @@ function startFinal(){
         document.getElementById('ans-txt').textContent=f.answerText;
         document.getElementById('ans-txt').classList.add('hidden');
         document.getElementById('ans-lbl').classList.remove('hidden');
+        document.getElementById('host-ans-ref').textContent='A: '+f.answerText;
         document.getElementById('qv-dd').classList.add('hidden');
         document.getElementById('dd-team-info').classList.add('hidden');
         document.getElementById('qv-img').classList.add('hidden');
