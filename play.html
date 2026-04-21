@@ -432,6 +432,26 @@ function setupListeners(){
         const bar=document.getElementById('offline-bar');
         if(bar)bar.classList.toggle('hidden',snap.val()===true);
     });
+    document.addEventListener('visibilitychange',()=>{
+        if(document.visibilityState==='visible'&&roomRef){
+            db.goOnline();
+            roomRef.child('state').once('value',snap=>{
+                const s=snap.val();if(!s)return;
+                GS=s;
+                if(s.questionKey!==lastQKey){
+                    if(s.questionKey==='final'&&s.round===3){fjBaseScore=cachedScore;}else{fjBaseScore=null;}
+                    lastQKey=s.questionKey;hasSubmitted=false;hasPassed=false;wagerLocked=false;answerCardShown=false;resetWagerUI();
+                }
+                roomRef.child('teams/'+teamKey).once('value',ts=>{
+                    const t=ts.val();if(t){cachedScore=t.score||0;if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}}
+                    roomRef.child('currentAnswers/'+teamKey).once('value',as=>{
+                        if(as.exists()&&as.val()){const v=as.val();if(v.passed){hasSubmitted=true;hasPassed=true;}else if(v.answer){hasSubmitted=true;hasPassed=false;}}
+                        updateScoreDisplay();render();startPhoneTimer();
+                    });
+                });
+            });
+        }
+    });
 }
 
 function updateScoreDisplay(){
@@ -550,15 +570,19 @@ function passAnswer(){
 function lockWager(){
     const w=parseInt(document.getElementById('wager-input').value);
     if(isNaN(w)||w<5){alert('Minimum wager is $5.');return;}
+    const btn=document.querySelector('#wager-input-area .btn');
+    if(btn){btn.disabled=true;btn.textContent='Locking...';}
     roomRef.child('teams/'+teamKey).once('value',snap=>{
         const score=(snap.val()&&snap.val().score)||0;
         const round=GS.round||1;
         const isFJ=round===3&&GS.questionKey==='final';
         const boardMax=round===1?1000:2000;
         const max=isFJ?Math.max(score,0):Math.max(score,boardMax);
-        if(w>max){alert('Maximum wager is $'+max.toLocaleString());return;}
-        roomRef.child('teams/'+teamKey+'/wager').set(w).then(()=>{wagerLocked=true;showLockedWager(w);render();});
-    });
+        if(w>max){alert('Maximum wager is $'+max.toLocaleString());if(btn){btn.disabled=false;btn.textContent='Lock In Wager';}return;}
+        roomRef.child('teams/'+teamKey+'/wager').set(w)
+            .then(()=>{wagerLocked=true;showLockedWager(w);render();})
+            .catch(()=>{if(btn){btn.disabled=false;btn.textContent='Lock In Wager';}alert('Wager failed to save. Check your connection and try again.');});
+    },()=>{if(btn){btn.disabled=false;btn.textContent='Lock In Wager';}alert('Connection error. Check your signal and try again.');});
 }
 function showLockedWager(amt){document.getElementById('wager-input-area').classList.add('hidden');document.getElementById('wager-locked').classList.remove('hidden');document.getElementById('wager-locked-amt').textContent='$'+amt.toLocaleString();}
 function resetWagerUI(){document.getElementById('wager-input-area').classList.remove('hidden');document.getElementById('wager-locked').classList.add('hidden');document.getElementById('wager-input').value='';}
