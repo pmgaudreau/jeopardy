@@ -638,9 +638,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="config.js"></script>
+<script src="helpers.js"></script>
 <script>
 let roomCode = null, roomRef = null;
-let GS = { round:1, phase:'board', category:'', value:0, questionText:'', accepting:false, dailyDouble:false, ddTeam:'', questionKey:'', showQR:false, boardProjectorMode:'gameStart', timerEnd:0, timerRunning:false, answerRevealed:false, wageringOpen:false, imageUrl:'' };
+let GS = defaultGameState();
 let teams = {}, curAnswers = {}, grading = {}, boardQ = {}, parsedCSV = null, scoresApplied = false;
 /** After Apply Scores, per-team snapshot from history for this clue (for host UI). Cleared on new clue. */
 let lastAppliedByTeam = {};
@@ -854,7 +855,7 @@ function createRoom() {
     const code=document.getElementById('inp-room').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
     if(!code){document.getElementById('setup-err').textContent='Enter a room code.';return;}
     roomCode=code; roomRef=db.ref('trivia-rooms/'+roomCode);
-    const init={state:{round:1,phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',showQR:false,boardProjectorMode:'gameStart',timerEnd:0,timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:'',boardControl:''},teams:{},currentAnswers:{},history:{}};
+    const init={state:defaultGameState(),teams:{},currentAnswers:{},history:{}};
     if(parsedCSV){init.board=parsedCSV.questions;init.categories=parsedCSV.categories;if(parsedCSV.final)init.final=parsedCSV.final;}
     roomRef.set(init).then(()=>enterGame()).catch(e=>{document.getElementById('setup-err').textContent='Error: '+e.message;});
 }
@@ -892,7 +893,7 @@ function returnToSetup() {
     boardQ = {};
     scoresApplied = false;
     lastAppliedByTeam = {};
-    GS = { round: 1, phase: 'board', category: '', value: 0, questionText: '', accepting: false, dailyDouble: false, ddTeam: '', questionKey: '', showQR: false, boardProjectorMode: 'gameStart', timerEnd: 0, timerRunning: false, answerRevealed: false, wageringOpen: false, imageUrl: '' };
+    GS = defaultGameState();
     document.getElementById('setup-err').textContent = '';
     showView('setup-view');
 }
@@ -1052,6 +1053,24 @@ function selQ(key) {
     activateQ(key,q,false,'');
 }
 let pendingQuestion=null;
+const ROUND_LABELS={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
+function renderQuestionViewDOM({roundLabel,category,valLabel,questionText,answerText,isDD,ddTeamName,imageUrl}){
+    document.getElementById('qv-rl').textContent=roundLabel||'';
+    document.getElementById('qv-cat').textContent=category||'';
+    document.getElementById('qv-val').textContent=valLabel||'';
+    document.getElementById('qv-qtxt').textContent=questionText||'';
+    document.getElementById('ans-txt').textContent=answerText||'';
+    document.getElementById('ans-txt').classList.add('hidden');
+    document.getElementById('ans-lbl').classList.remove('hidden');
+    document.getElementById('host-ans-ref').textContent='A: '+(answerText||'');
+    document.getElementById('qv-dd').classList.toggle('hidden',!isDD);
+    document.getElementById('dd-team-info').classList.toggle('hidden',!isDD);
+    if(isDD&&ddTeamName)document.getElementById('dd-team-name').textContent=ddTeamName;
+    const imgEl=document.getElementById('qv-img');
+    if(imageUrl){imgEl.src=imageUrl;imgEl.classList.remove('hidden');}
+    else{imgEl.classList.add('hidden');imgEl.src='';}
+    resetTimerDisp();updateStatus();showFJRevealButton();
+}
 function activateQ(key,q,isDD,ddTk) {
     if(roundTransTimeout){clearTimeout(roundTransTimeout);roundTransTimeout=null;}
     const val=q.value;
@@ -1065,24 +1084,19 @@ function activateQ(key,q,isDD,ddTk) {
     const flat={};
     Object.keys(statePatch).forEach(k=>{flat['state/'+k]=statePatch[k];});
     if(isDD&&ddTk){flat['teams/'+ddTk+'/wager']=0;}
-    roomRef.update(flat);
+    safeWrite(roomRef.update(flat),'Failed to load the clue. Try again.');
     roomRef.child('currentAnswers').remove(); grading={}; scoresApplied=false; lastAppliedByTeam={};
     showView('question-view');
-    const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
-    document.getElementById('qv-rl').textContent=rl[q.round]||'';
-    document.getElementById('qv-cat').textContent=q.category;
-    document.getElementById('qv-val').textContent='$'+val.toLocaleString();
-    document.getElementById('qv-qtxt').textContent=q.questionText;
-    document.getElementById('ans-txt').textContent=q.answerText;
-    document.getElementById('ans-txt').classList.add('hidden');
-    document.getElementById('ans-lbl').classList.remove('hidden');
-    document.getElementById('host-ans-ref').textContent='A: '+q.answerText;
-    document.getElementById('qv-dd').classList.toggle('hidden',!isDD);
-    document.getElementById('dd-team-info').classList.toggle('hidden',!isDD);
-    if(isDD) document.getElementById('dd-team-name').textContent=(teams[ddTk]&&teams[ddTk].name)||ddTk;
-    const imgEl=document.getElementById('qv-img');
-    if(q.imageUrl){imgEl.src=q.imageUrl;imgEl.classList.remove('hidden');}else{imgEl.classList.add('hidden');imgEl.src='';}
-    resetTimerDisp(); updateStatus(); showFJRevealButton();
+    renderQuestionViewDOM({
+        roundLabel:ROUND_LABELS[q.round],
+        category:q.category,
+        valLabel:'$'+val.toLocaleString(),
+        questionText:q.questionText,
+        answerText:q.answerText,
+        isDD,
+        ddTeamName:isDD?((teams[ddTk]&&teams[ddTk].name)||ddTk):'',
+        imageUrl:q.imageUrl||''
+    });
 }
 
 // ── Accepting ──
@@ -1093,10 +1107,10 @@ function toggleAccepting() {
     const a=!GS.accepting;
     if(a){
         const end=Date.now()+timerSec*1000;
-        roomRef.child('state').update({accepting:true,timerEnd:end,timerRunning:true,wageringOpen:false,acceptedAt:firebase.database.ServerValue.TIMESTAMP});
+        safeWrite(roomRef.child('state').update({accepting:true,timerEnd:end,timerRunning:true,wageringOpen:false,acceptedAt:firebase.database.ServerValue.TIMESTAMP}),'Failed to open answers. Try again.');
         startLocalTimer();
     } else {
-        roomRef.child('state').update({accepting:false,timerRunning:false});
+        safeWrite(roomRef.child('state').update({accepting:false,timerRunning:false}),'Failed to close answers. Try again.');
         stopLocalTimer();
     }
 }
@@ -1344,11 +1358,13 @@ function applyScores() {
     if(newControl)upd['state/boardControl']=newControl;
     const applyBtn=document.getElementById('apply-btn');
     if(applyBtn){applyBtn.disabled=true;applyBtn.textContent='Applying...';}
-    roomRef.update(upd).then(()=>{
+    safeWrite(roomRef.update(upd),'Failed to apply scores. Check your connection and try again.').then(()=>{
         lastAppliedByTeam={};
         Object.keys(hist.answers).forEach(tk=>{lastAppliedByTeam[tk]=hist.answers[tk];});
         grading={};scoresApplied=true;renderAnswers();
         if(applyBtn){applyBtn.style.boxShadow='0 0 12px var(--green)';setTimeout(()=>{applyBtn.style.boxShadow='';},2000);}
+    }).catch(()=>{
+        if(applyBtn){applyBtn.disabled=false;applyBtn.textContent='Apply Scores';}
     });
 }
 function determineBoardControl(gradingMap,answers){
@@ -1398,7 +1414,7 @@ function guardedBackToBoard(){
     returnToBoard();
 }
 function returnToBoard(){
-    roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''});
+    safeWrite(roomRef.child('state').update({phase:'board',category:'',value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'',timerRunning:false,answerRevealed:false,wageringOpen:false,imageUrl:''}),'Failed to return to board. Try again.');
     roomRef.child('currentAnswers').remove();grading={};scoresApplied=false;lastAppliedByTeam={};ddRevealData=null;showView('board-view');stopLocalTimer();resetTimerDisp();
     resetWagers(Object.keys(teams));
 }
@@ -1409,20 +1425,17 @@ function startFinal(){
     roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
         resetWagers(Object.keys(teams));
         pendingQuestion={questionText:f.questionText,imageUrl:f.imageUrl||''};
-        roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:true,imageUrl:'',fjQuestionRevealed:false,acceptedAt:0});
+        safeWrite(roomRef.child('state').update({round:3,phase:'question',category:f.category,value:0,questionText:'',accepting:false,dailyDouble:false,ddTeam:'',questionKey:'final',timerRunning:false,answerRevealed:false,wageringOpen:true,imageUrl:'',fjQuestionRevealed:false,acceptedAt:0}),'Failed to start Final Jeopardy. Try again.');
         showView('question-view');
-        document.getElementById('qv-rl').textContent='Final Jeopardy';
-        document.getElementById('qv-cat').textContent=f.category;
-        document.getElementById('qv-val').textContent='WAGER';
-        document.getElementById('qv-qtxt').textContent=f.questionText;
-        document.getElementById('ans-txt').textContent=f.answerText;
-        document.getElementById('ans-txt').classList.add('hidden');
-        document.getElementById('ans-lbl').classList.remove('hidden');
-        document.getElementById('host-ans-ref').textContent='A: '+f.answerText;
-        document.getElementById('qv-dd').classList.add('hidden');
-        document.getElementById('dd-team-info').classList.add('hidden');
-        document.getElementById('qv-img').classList.add('hidden');
-        resetTimerDisp(); updateStatus(); showFJRevealButton();
+        renderQuestionViewDOM({
+            roundLabel:'Final Jeopardy',
+            category:f.category,
+            valLabel:'WAGER',
+            questionText:f.questionText,
+            answerText:f.answerText,
+            isDD:false,
+            imageUrl:''
+        });
     });
 }
 function revealFJQuestion(){
@@ -1435,11 +1448,11 @@ function revealFJQuestion(){
         if(!confirm(waiting.length+' team'+(waiting.length>1?'s haven\'t':' hasn\'t')+' locked in a wager yet:\n'+names+'\n\nReveal the question anyway?'))return;
     }
     if(pendingQuestion){
-        roomRef.child('state').update({questionText:pendingQuestion.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:pendingQuestion.imageUrl||''});
+        safeWrite(roomRef.child('state').update({questionText:pendingQuestion.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:pendingQuestion.imageUrl||''}),'Failed to reveal question. Try again.');
         pendingQuestion=null;
     } else {
         roomRef.child('final').once('value',s=>{const f=s.val();if(!f)return;
-            roomRef.child('state').update({questionText:f.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:f.imageUrl||''});
+            safeWrite(roomRef.child('state').update({questionText:f.questionText,fjQuestionRevealed:true,wageringOpen:false,imageUrl:f.imageUrl||''}),'Failed to reveal question. Try again.');
         });
     }
 }
@@ -1458,16 +1471,29 @@ function renderScoreboard() {
         return`<div class="score-row"><span class="score-rank">${i+1}</span><span class="score-avatar">${av}</span><span class="score-name" style="color:${col}">${esc(t.name||k)} ${streakBadge}${pcBadge}</span><span class="score-val">$${(t.score||0).toLocaleString()}</span><button class="adj-btn" onclick="adjScore('${k}')" title="Adjust score">±</button><button class="adj-btn" onclick="removeTeam('${k}')" title="Remove team" style="color:var(--red);border-color:var(--red);">✕</button></div>`;
     }).join('');
 }
-function adjScore(tk){const cur=(teams[tk]&&teams[tk].score)||0;const a=prompt(`Adjust ${teams[tk]?.name||tk} ($${cur}):`,0);if(a===null)return;const n=parseInt(a);if(!isNaN(n))roomRef.child('teams/'+tk+'/score').set(cur+n);}
-function removeTeam(tk){const name=(teams[tk]&&teams[tk].name)||tk;if(!confirm('Remove "'+name+'" from the game? This cannot be undone.'))return;roomRef.child('teams/'+tk).remove();if(GS.boardControl===tk)roomRef.child('state/boardControl').set('');}
+function adjScore(tk){
+    const cur=(teams[tk]&&teams[tk].score)||0;
+    const a=prompt(`Adjust ${teams[tk]?.name||tk} ($${cur}):`,0);
+    if(a===null)return;
+    const n=parseInt(a);
+    if(!isNaN(n))safeWrite(roomRef.child('teams/'+tk+'/score').set(cur+n),'Score change failed to save.');
+}
+function removeTeam(tk){
+    const name=(teams[tk]&&teams[tk].name)||tk;
+    if(!confirm('Remove "'+name+'" from the game? This cannot be undone.'))return;
+    const upd={};upd['teams/'+tk]=null;upd['currentAnswers/'+tk]=null;
+    if(GS.boardControl===tk)upd['state/boardControl']='';
+    safeWrite(roomRef.update(upd),'Failed to remove team. Try again.');
+}
 function addTeamManual(){
     const n=document.getElementById('add-team').value.trim();if(!n)return;
     let k=n.toLowerCase().replace(/[^a-z0-9]/g,'_');
+    if(!k)k='team_'+Math.random().toString(36).slice(2,7);
     roomRef.child('teams/'+k).once('value',snap=>{
         if(snap.exists()&&snap.val().name&&snap.val().name.toLowerCase()!==n.toLowerCase()){
             k=k+'_'+Math.random().toString(36).slice(2,5);
         }
-        roomRef.child('teams/'+k).set({name:n,score:0,wager:0,avatar:'',color:''});
+        safeWrite(roomRef.child('teams/'+k).set({name:n,score:0,wager:0,avatar:'',color:''}),'Failed to add team. Try again.');
         document.getElementById('add-team').value='';
     });
 }

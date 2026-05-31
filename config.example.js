@@ -1,20 +1,10 @@
-/* PDK NINE Trivia Night — Shared Configuration
- *
- * Copy this file to config.js and fill in your Firebase credentials.
- * config.js is gitignored and will not be committed.
- *
- * BASE_URL (optional): Set to your deployed URL (e.g. https://yoursite.github.io/trivia/)
- * so the QR code works when scanned by phones. If unset, uses current page location
- * (which fails for file:// or localhost — phones can't reach those).
- */
-
-const BASE_URL = ''; // e.g. 'https://pmgaudreau.github.io/jeopardy/'
+/* PDK NINE Trivia — Firebase config template. Copy to config.js and fill in. */
 
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_PROJECT.firebaseapp.com",
     databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-    projectId: "YOUR_PROJECT",
+    projectId: "YOUR_PROJECT_ID",
     storageBucket: "YOUR_PROJECT.firebasestorage.app",
     messagingSenderId: "YOUR_SENDER_ID",
     appId: "YOUR_APP_ID"
@@ -22,40 +12,3 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-
-const AVATARS = [
-    { id:'dragon',  name:'Dragon',     color:'#e63946' },
-    { id:'wizard',  name:'Wizard',     color:'#7c3aed' },
-    { id:'d20',     name:'Nat 20',     color:'#4a90d9' },
-    { id:'castle',  name:'Castle',     color:'#f59e0b' },
-    { id:'ghost',   name:'Ghastly',    color:'#a78bfa' },
-    { id:'squid',   name:'Squidward',  color:'#f472b6' },
-    { id:'shroom',  name:'Shroom',     color:'#dc2626' },
-    { id:'octopus', name:'Tentacles',  color:'#e879f9' },
-    { id:'fox',     name:'Vulpix',     color:'#f97316' },
-    { id:'turtle',  name:'Squirtle',   color:'#38bdf8' },
-    { id:'flame',   name:'Charizard',  color:'#fb923c' },
-    { id:'crystal', name:'Nat 1',      color:'#8b5cf6' },
-    { id:'shield',  name:'Paladin',    color:'#14b8a6' },
-    { id:'skull',   name:'Necro',      color:'#64748b' },
-    { id:'invader', name:'Invader',    color:'#6366f1' },
-    { id:'jester',  name:'Jester',     color:'#facc15' },
-    { id:'fancylad',name:'Fancy Lad',  color:'#a3e635' },
-    { id:'brain',   name:'Big Brain',  color:'#fb7185' },
-    { id:'cactus',  name:'Pokey',      color:'#4ade80' },
-    { id:'ufo',     name:'X-Files',    color:'#22d3ee' },
-];
-
-function avatarImg(id, sz) {
-    if (!id) return '';
-    const style = typeof sz === 'string'
-        ? 'width:' + sz + ';height:' + sz
-        : 'width:' + (sz || 24) + 'px;height:' + (sz || 24) + 'px';
-    const src = id.startsWith('data:') ? id : 'avatars/' + id + '.png';
-    return '<img src="' + src + '" style="' + style + ';border-radius:50%;object-fit:cover;vertical-align:middle" alt="">';
-}
-
-function avatarColor(id) {
-    const a = AVATARS.find(x => x.id === id);
-    return a ? a.color : '#FFD700';
-}

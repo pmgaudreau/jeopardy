@@ -193,10 +193,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="config.js"></script>
+<script src="helpers.js"></script>
 <script>
 let roomCode=null,roomRef=null,teamKey=null,teamName=null,selectedAvatar=null,playerCount=1;
 let GS={},cachedScore=0,lastQKey=null,hasSubmitted=false,hasPassed=false,wagerLocked=false,answerCardShown=false,fjBaseScore=null;
 let phoneTimerInterval=null;
+const ddTeamNameCache={};
 
 // ── Avatar Grid ──
 let customPhotoData=null;
@@ -217,9 +219,13 @@ function triggerPhoto(){
 }
 document.getElementById('photo-input').addEventListener('change',function(e){
     const file=e.target.files&&e.target.files[0];if(!file)return;
+    if(!file.type.startsWith('image/')){alert('Please choose an image file.');this.value='';return;}
+    if(file.size>10*1024*1024){alert('Image is too large. Please choose a file under 10 MB.');this.value='';return;}
     const reader=new FileReader();
+    reader.onerror=()=>{alert('Could not read the image. Try a different file.');};
     reader.onload=function(ev){
         const img=new Image();
+        img.onerror=()=>{alert('That file is not a supported image format.');};
         img.onload=function(){
             const sz=200,canvas=document.createElement('canvas');
             canvas.width=sz;canvas.height=sz;
@@ -236,7 +242,7 @@ document.getElementById('photo-input').addEventListener('change',function(e){
     reader.readAsDataURL(file);
     this.value='';
 });
-function getTakenAvatars(){return[];}
+let getTakenAvatars=()=>[];
 
 // Build initial grid
 renderAvatarGrid([]);
@@ -298,6 +304,7 @@ function joinRoom(){
 
     roomCode=code;teamName=name;
     teamKey=name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+    if(!teamKey)teamKey='team_'+Math.random().toString(36).slice(2,7);
     roomRef=db.ref('trivia-rooms/'+roomCode);
     const av=AVATARS.find(a=>a.id===selectedAvatar)||{id:selectedAvatar,name:'Custom',color:'#FFD700'};
 
@@ -380,51 +387,68 @@ function esc(s){const d=document.createElement('div');d.textContent=s;return d.i
 })();
 
 // ── Listeners ──
+function applyState(s){
+    if(!s)return;
+    GS=s;
+    if(s.questionKey!==lastQKey){
+        fjBaseScore=(s.questionKey==='final'&&s.round===3)?cachedScore:null;
+        lastQKey=s.questionKey;
+        hasSubmitted=false;hasPassed=false;wagerLocked=false;answerCardShown=false;
+        resetWagerUI();
+    }
+}
+function applyTeam(t){
+    if(!t)return;
+    cachedScore=t.score||0;
+    if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
+}
+function applyAnswer(a){
+    if(!a)return;
+    if(a.passed){hasSubmitted=true;hasPassed=true;}
+    else if(a.answer){hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your response: "'+a.answer+'"';}
+}
+function resyncMyState(){
+    return roomRef.child('state').once('value').then(s=>{
+        applyState(s.val());
+        return Promise.all([
+            roomRef.child('teams/'+teamKey).once('value'),
+            roomRef.child('currentAnswers/'+teamKey).once('value')
+        ]);
+    }).then(([ts,as])=>{
+        applyTeam(ts.val());
+        applyAnswer(as.val());
+        updateScoreDisplay();render();startPhoneTimer();
+    });
+}
 function setupListeners(){
-    Promise.all([
-        roomRef.child('state').once('value'),
-        roomRef.child('teams/'+teamKey).once('value'),
-        roomRef.child('currentAnswers/'+teamKey).once('value')
-    ]).then(([stateSnap, teamSnap, ansSnap])=>{
-        const s=stateSnap.val();
-        if(s){GS=s;lastQKey=s.questionKey||null;}
-        const t=teamSnap.val();
-        if(t){cachedScore=t.score||0;if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}}
-        const a=ansSnap.val();
-        if(a){if(a.passed){hasSubmitted=true;hasPassed=true;}else if(a.answer){hasSubmitted=true;document.getElementById('answer-echo').textContent='Your response: "'+a.answer+'"';}}
-        render();startPhoneTimer();
-
+    resyncMyState().then(()=>{
         roomRef.child('state').on('value',snap=>{
-            const s=snap.val();if(!s)return;GS=s;
-            if(s.questionKey!==lastQKey){
-                if(s.questionKey==='final'&&s.round===3){fjBaseScore=cachedScore;}else{fjBaseScore=null;}
-                lastQKey=s.questionKey;hasSubmitted=false;hasPassed=false;wagerLocked=false;answerCardShown=false;resetWagerUI();
+            const s=snap.val();if(!s)return;
+            const isNewQ=s.questionKey!==lastQKey;
+            applyState(s);
+            if(isNewQ){
                 try{navigator.vibrate(200);}catch(e){}
                 if(s.questionKey&&teamKey){
-                    roomRef.child('currentAnswers/'+teamKey).once('value',as=>{
-                        if(as.exists()&&as.val()){
-                            const v=as.val();
-                            if(v.passed){hasSubmitted=true;hasPassed=true;}
-                            else if(v.answer){hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your response: "'+v.answer+'"';}
-                        }
-                        render();
-                    });
+                    // New clue: refresh team + answer state in case we just woke up
+                    roomRef.child('currentAnswers/'+teamKey).once('value',as=>{applyAnswer(as.val());render();});
                     roomRef.child('teams/'+teamKey).once('value',ts=>{
                         const t=ts.val();
-                        if(t&&t.wager>0){wagerLocked=true;showLockedWager(t.wager);}else{wagerLocked=false;resetWagerUI();}
+                        if(t&&t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
+                        else{wagerLocked=false;resetWagerUI();}
                     });
                 }
             }
             updateScoreDisplay();render();startPhoneTimer();
         });
         roomRef.child('teams/'+teamKey).on('value',snap=>{
-            const t=snap.val();if(!t)return;cachedScore=t.score||0;
+            const t=snap.val();if(!t)return;
+            cachedScore=t.score||0;
             updateScoreDisplay();
             if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
             render();
         });
         roomRef.child('currentAnswers/'+teamKey).on('value',snap=>{
-            if(snap.exists()&&snap.val()){const v=snap.val();if(v.passed){hasSubmitted=true;hasPassed=true;}else if(v.answer){hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your response: "'+v.answer+'"';}}
+            applyAnswer(snap.val());
             render();
         });
     });
@@ -435,21 +459,7 @@ function setupListeners(){
     document.addEventListener('visibilitychange',()=>{
         if(document.visibilityState==='visible'&&roomRef){
             db.goOnline();
-            roomRef.child('state').once('value',snap=>{
-                const s=snap.val();if(!s)return;
-                GS=s;
-                if(s.questionKey!==lastQKey){
-                    if(s.questionKey==='final'&&s.round===3){fjBaseScore=cachedScore;}else{fjBaseScore=null;}
-                    lastQKey=s.questionKey;hasSubmitted=false;hasPassed=false;wagerLocked=false;answerCardShown=false;resetWagerUI();
-                }
-                roomRef.child('teams/'+teamKey).once('value',ts=>{
-                    const t=ts.val();if(t){cachedScore=t.score||0;if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}}
-                    roomRef.child('currentAnswers/'+teamKey).once('value',as=>{
-                        if(as.exists()&&as.val()){const v=as.val();if(v.passed){hasSubmitted=true;hasPassed=true;}else if(v.answer){hasSubmitted=true;hasPassed=false;}}
-                        updateScoreDisplay();render();startPhoneTimer();
-                    });
-                });
-            });
+            resyncMyState();
         }
     });
 }
@@ -509,7 +519,9 @@ function render(){
         document.getElementById('wait-msg').textContent='You don\'t have enough points to wager in Final Jeopardy. Watch the big screen!';
     } else if(isDDSpectator&&!hasSubmitted){
         show('dd-spec-card');
-        roomRef.child('teams/'+ddTeam+'/name').once('value',s=>{document.getElementById('dd-spec-team').textContent=s.val()||ddTeam;});
+        const el=document.getElementById('dd-spec-team');
+        if(ddTeamNameCache[ddTeam]){el.textContent=ddTeamNameCache[ddTeam];}
+        else{roomRef.child('teams/'+ddTeam+'/name').once('value',s=>{const n=s.val()||ddTeam;ddTeamNameCache[ddTeam]=n;el.textContent=n;});}
     } else if(hasSubmitted){
         document.getElementById('submitted-icon').textContent=hasPassed?'⏭':'✓';
         document.getElementById('submitted-label').textContent=hasPassed?'Passed':'Response Submitted!';
