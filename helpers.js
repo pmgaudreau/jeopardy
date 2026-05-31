@@ -54,12 +54,21 @@ function defaultGameState() {
     };
 }
 
+const ROUND_LABELS = { 1: 'Round 1', 2: 'Double Jeopardy', 3: 'Final Jeopardy' };
+
+function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : s;
+    return d.innerHTML;
+}
+
 // Wraps a Firebase write so a failure surfaces to the user instead of
-// silently dropping the action. Use for any host-initiated mutation.
+// silently dropping the action. Resolves to true on success, false on
+// failure (after alerting). Never rejects, so callers don't need .catch().
 function safeWrite(promise, errMsg) {
-    return promise.catch(err => {
+    return promise.then(() => true, err => {
         const detail = err && err.message ? '\n\n' + err.message : '';
         alert((errMsg || 'Action failed. Check your connection and try again.') + detail);
-        throw err;
+        return false;
     });
 }

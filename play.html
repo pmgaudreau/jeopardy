@@ -347,7 +347,6 @@ function enterGame(av,isRejoin){
     }
     setupListeners();
 }
-function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
 // URL room takes precedence; auto-rejoin only if it matches
 (function(){
@@ -387,7 +386,9 @@ function esc(s){const d=document.createElement('div');d.textContent=s;return d.i
 })();
 
 // ── Listeners ──
-function applyState(s){
+// These ingest* helpers mutate module-level state (GS, cachedScore, etc.)
+// based on Firebase snapshots. They aren't pure transforms.
+function ingestState(s){
     if(!s)return;
     GS=s;
     if(s.questionKey!==lastQKey){
@@ -397,45 +398,45 @@ function applyState(s){
         resetWagerUI();
     }
 }
-function applyTeam(t){
+function ingestTeam(t){
     if(!t)return;
     cachedScore=t.score||0;
     if(t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
 }
-function applyAnswer(a){
+function ingestAnswer(a){
     if(!a)return;
     if(a.passed){hasSubmitted=true;hasPassed=true;}
     else if(a.answer){hasSubmitted=true;hasPassed=false;document.getElementById('answer-echo').textContent='Your response: "'+a.answer+'"';}
 }
 function resyncMyState(){
     return roomRef.child('state').once('value').then(s=>{
-        applyState(s.val());
+        ingestState(s.val());
         return Promise.all([
             roomRef.child('teams/'+teamKey).once('value'),
             roomRef.child('currentAnswers/'+teamKey).once('value')
         ]);
     }).then(([ts,as])=>{
-        applyTeam(ts.val());
-        applyAnswer(as.val());
+        ingestTeam(ts.val());
+        ingestAnswer(as.val());
         updateScoreDisplay();render();startPhoneTimer();
-    });
+    }).catch(e=>{console.warn('resync failed',e);});
 }
 function setupListeners(){
     resyncMyState().then(()=>{
         roomRef.child('state').on('value',snap=>{
             const s=snap.val();if(!s)return;
             const isNewQ=s.questionKey!==lastQKey;
-            applyState(s);
+            ingestState(s);
             if(isNewQ){
                 try{navigator.vibrate(200);}catch(e){}
                 if(s.questionKey&&teamKey){
                     // New clue: refresh team + answer state in case we just woke up
-                    roomRef.child('currentAnswers/'+teamKey).once('value',as=>{applyAnswer(as.val());render();});
-                    roomRef.child('teams/'+teamKey).once('value',ts=>{
+                    roomRef.child('currentAnswers/'+teamKey).once('value').then(as=>{ingestAnswer(as.val());render();}).catch(e=>console.warn('answer resync failed',e));
+                    roomRef.child('teams/'+teamKey).once('value').then(ts=>{
                         const t=ts.val();
                         if(t&&t.wager>0){wagerLocked=true;showLockedWager(t.wager);}
                         else{wagerLocked=false;resetWagerUI();}
-                    });
+                    }).catch(e=>console.warn('team resync failed',e));
                 }
             }
             updateScoreDisplay();render();startPhoneTimer();
@@ -448,7 +449,7 @@ function setupListeners(){
             render();
         });
         roomRef.child('currentAnswers/'+teamKey).on('value',snap=>{
-            applyAnswer(snap.val());
+            ingestAnswer(snap.val());
             render();
         });
     });
@@ -472,8 +473,7 @@ function updateScoreDisplay(){
 // ── Render ──
 function render(){
     const{round,phase,category,value,questionText,accepting,dailyDouble,ddTeam}=GS;
-    const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
-    document.getElementById('g-round').textContent=rl[round]||'';
+    document.getElementById('g-round').textContent=ROUND_LABELS[round]||'';
     document.getElementById('g-cat').textContent=category||'Waiting...';
     document.getElementById('g-val').textContent=round===3?'WAGER':(value?'$'+value.toLocaleString():'—');
     document.getElementById('g-dd').classList.toggle('hidden',!dailyDouble);

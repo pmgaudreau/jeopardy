@@ -907,8 +907,7 @@ function setupListeners() {
     roomRef.child('history').on('value',s=>{renderHistory(s.val()||{});});
 }
 function syncView() {
-    const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
-    document.getElementById('current-round-badge').textContent=rl[GS.round]||'';
+    document.getElementById('current-round-badge').textContent=ROUND_LABELS[GS.round]||'';
     const btn=document.getElementById('end-round-btn');
     if(GS.round===1){btn.textContent='End Round → Double Jeopardy';btn.classList.remove('hidden');}
     else if(GS.round===2){btn.textContent='End Round → Final Jeopardy';btn.classList.remove('hidden');}
@@ -1053,7 +1052,6 @@ function selQ(key) {
     activateQ(key,q,false,'');
 }
 let pendingQuestion=null;
-const ROUND_LABELS={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
 function renderQuestionViewDOM({roundLabel,category,valLabel,questionText,answerText,isDD,ddTeamName,imageUrl}){
     document.getElementById('qv-rl').textContent=roundLabel||'';
     document.getElementById('qv-cat').textContent=category||'';
@@ -1065,7 +1063,7 @@ function renderQuestionViewDOM({roundLabel,category,valLabel,questionText,answer
     document.getElementById('host-ans-ref').textContent='A: '+(answerText||'');
     document.getElementById('qv-dd').classList.toggle('hidden',!isDD);
     document.getElementById('dd-team-info').classList.toggle('hidden',!isDD);
-    if(isDD&&ddTeamName)document.getElementById('dd-team-name').textContent=ddTeamName;
+    document.getElementById('dd-team-name').textContent=isDD?(ddTeamName||''):'';
     const imgEl=document.getElementById('qv-img');
     if(imageUrl){imgEl.src=imageUrl;imgEl.classList.remove('hidden');}
     else{imgEl.classList.add('hidden');imgEl.src='';}
@@ -1292,7 +1290,7 @@ function updateClueScoredBanner(){
         el.innerHTML='';
         return;
     }
-    const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'}[GS.round]||'';
+    const rl=ROUND_LABELS[GS.round]||'';
     const cat=GS.category||'';
     const isFj=GS.round===3&&GS.questionKey==='final';
     const valStr=isFj?'Final Jeopardy':('$'+Number(GS.value||0).toLocaleString());
@@ -1358,13 +1356,15 @@ function applyScores() {
     if(newControl)upd['state/boardControl']=newControl;
     const applyBtn=document.getElementById('apply-btn');
     if(applyBtn){applyBtn.disabled=true;applyBtn.textContent='Applying...';}
-    safeWrite(roomRef.update(upd),'Failed to apply scores. Check your connection and try again.').then(()=>{
+    safeWrite(roomRef.update(upd),'Failed to apply scores. Check your connection and try again.').then(ok=>{
+        if(!ok){
+            if(applyBtn){applyBtn.disabled=false;applyBtn.textContent='Apply Scores';}
+            return;
+        }
         lastAppliedByTeam={};
         Object.keys(hist.answers).forEach(tk=>{lastAppliedByTeam[tk]=hist.answers[tk];});
         grading={};scoresApplied=true;renderAnswers();
         if(applyBtn){applyBtn.style.boxShadow='0 0 12px var(--green)';setTimeout(()=>{applyBtn.style.boxShadow='';},2000);}
-    }).catch(()=>{
-        if(applyBtn){applyBtn.disabled=false;applyBtn.textContent='Apply Scores';}
     });
 }
 function determineBoardControl(gradingMap,answers){
@@ -1822,8 +1822,6 @@ function renderRecapStatsAdmin(){
 function endGame(){
     roomRef.child('state/phase').set('gameover');
 }
-
-function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
 document.addEventListener('keydown',e=>{
     if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.isContentEditable)return;

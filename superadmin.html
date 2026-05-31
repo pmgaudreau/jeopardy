@@ -150,8 +150,7 @@ function render() {
         totalPlayers += playerCount;
 
         const state = room.state || {};
-        const roundLabels = {1:'Round 1', 2:'Double Jeopardy', 3:'Final Jeopardy'};
-        const round = roundLabels[state.round] || 'Not started';
+        const round = ROUND_LABELS[state.round] || 'Not started';
         const phase = state.phase || 'idle';
 
         return `<div class="room-card">
@@ -191,7 +190,6 @@ function refresh() {
     });
 }
 
-function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 </script>
 </body>
 </html>

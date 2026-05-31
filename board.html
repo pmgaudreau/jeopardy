@@ -943,8 +943,7 @@ function showBoard(){
         return;
     }
     showScreen('board-display');
-    const rl={1:'Round 1',2:'Double Jeopardy',3:'Final Jeopardy'};
-    document.getElementById('bd-round').textContent=rl[GS.round]||'';
+    document.getElementById('bd-round').textContent=ROUND_LABELS[GS.round]||'';
     renderGrid();
     renderBoardControl();
 }
@@ -1721,7 +1720,6 @@ function showGameOver(){
     if(!gameoverPlayed){SFX.winner();gameoverPlayed=true;}
 }
 
-function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 init();
 </script>
 </body>
