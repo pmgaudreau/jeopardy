@@ -7,47 +7,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="tokens.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --bg: #000; --bg-card: #111; --bg-elevated: #1a1a1a; --bg-input: #0d0d0d;
-            --gold: #FFD700; --gold-dim: #b8960f; --gold-bright: #ffe44d;
-            --red: #e63946; --green: #2ecc71; --blue: #4a90d9;
-            --text: #fff; --text-sec: #b0b0b0; --text-muted: #666;
-            --border: #333; --cell: #0a1640; --cell-hover: #0e2060;
-            --radius: 10px;
-            --fh: 'Oswald', 'Impact', sans-serif;
-            --fs: 'Rajdhani', 'Inter', sans-serif;
-            --fb: 'Inter', system-ui, sans-serif;
-        }
         body { font-family: var(--fb); background: var(--bg); color: var(--text); min-height: 100vh; }
         #question-view.active, #reveal-view.active {
             display: flex; flex-direction: column; height: 100vh; max-height: 100dvh; overflow: hidden;
         }
         #question-view .top-bar, #reveal-view .top-bar { flex-shrink: 0; padding: .45rem 1rem; }
         .view { display: none; } .view.active { display: block; }
-        .hidden { display: none !important; }
 
-        input[type="text"], input[type="number"], select {
-            width: 100%; padding: .7rem .9rem; background: var(--bg-input); border: 1px solid var(--border);
-            border-radius: var(--radius); color: var(--text); font-family: var(--fb); font-size: .95rem; outline: none;
-        }
-        input:focus { border-color: var(--gold); }
-
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
-            padding: .6rem 1.2rem; border: none; border-radius: 999px;
-            font-family: var(--fs); font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .2s;
-        }
-        .btn:active { transform: scale(.97); } .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-gold { background: var(--gold); color: #000; } .btn-gold:hover { background: var(--gold-bright); }
-        .btn-green { background: var(--green); color: #fff; }
-        .btn-red { background: var(--red); color: #fff; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-sec); }
-        .btn-outline:hover { border-color: var(--gold-dim); color: var(--gold); }
-        .btn-lg { padding: .85rem 1.8rem; font-size: 1.05rem; }
-        .btn-sm { padding: .4rem .8rem; font-size: .8rem; }
-        .btn-block { width: 100%; }
+        /* Admin inputs are slightly tighter than the default in tokens.css */
+        input[type="text"], input[type="number"], select { padding: .7rem .9rem; }
 
         /* ═══ SETUP ═══ (only when .active — otherwise #setup-view would override .view { display:none } and stay visible) */
         #setup-view.active {
@@ -64,8 +35,8 @@
             z-index: 60;
         }
         .setup-card {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 16px; padding: 2.5rem 2rem; max-width: 520px; width: 100%; text-align: center;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--r-card); padding: 2.5rem 2rem; max-width: 520px; width: 100%; text-align: center;
         }
         .setup-card h1 { font-family: var(--fh); font-size: 2.4rem; color: var(--gold); text-transform: uppercase; letter-spacing: .08em; }
         .setup-card .sub { font-family: var(--fs); font-size: .95rem; color: var(--text-sec); margin-bottom: 2rem; }
@@ -75,7 +46,7 @@
         .err { color: var(--red); font-size: .85rem; margin-top: .75rem; }
 
         .csv-zone {
-            border: 2px dashed var(--border); border-radius: var(--radius); padding: 1.5rem;
+            border: 2px dashed var(--border); border-radius: var(--r-panel); padding: 1.5rem;
             text-align: center; cursor: pointer; transition: all .2s; margin-bottom: .75rem;
         }
         .csv-zone:hover, .csv-zone.drag-over { border-color: var(--gold); background: rgba(255,215,0,.04); }
@@ -88,7 +59,7 @@
         /* ═══ TOP BAR ═══ */
         .top-bar {
             display: flex; align-items: center; justify-content: space-between;
-            padding: .6rem 1.25rem; background: var(--bg-card); border-bottom: 1px solid var(--border);
+            padding: .6rem 1.25rem; background: var(--surface); border-bottom: 1px solid var(--border);
             flex-wrap: wrap; gap: .5rem;
         }
         .top-bar-left {
@@ -99,25 +70,23 @@
             flex-shrink: 0;
             font-family: var(--fs); font-weight: 600;
         }
-        .room-badge {
+        /* Shared gold-pill badge in the top bar (room code, current round) */
+        .room-badge, .current-round-badge {
             background: var(--gold); color: #000; font-family: var(--fh); font-weight: 700;
-            padding: .35rem .9rem; border-radius: 999px; font-size: .9rem; letter-spacing: 1px;
+            padding: .35rem .9rem; border-radius: var(--r-pill); font-size: .9rem; letter-spacing: 1px;
         }
+        .current-round-badge { font-size: .85rem; letter-spacing: .5px; text-transform: uppercase; }
         .top-bar h1 { font-family: var(--fh); font-size: 1.2rem; color: var(--gold); letter-spacing: .06em; text-transform: uppercase; }
         .top-controls { display: flex; align-items: center; gap: .5rem; }
-        .current-round-badge {
-            background: var(--gold); color: #000; font-family: var(--fh); font-weight: 700;
-            padding: .35rem .9rem; border-radius: 999px; font-size: .85rem; letter-spacing: .5px; text-transform: uppercase;
-        }
         .btn-end-round {
             background: transparent; border: 1px solid var(--red); color: var(--red);
-            border-radius: 999px; font-family: var(--fs); font-weight: 600;
+            border-radius: var(--r-pill); font-family: var(--fs); font-weight: 600;
             padding: .35rem .9rem; font-size: .8rem; cursor: pointer; transition: all .2s;
         }
         .btn-end-round:hover { background: var(--red); color: #fff; }
 
         .projector-mode-wrap {
-            display: flex; align-items: stretch; border: 1px solid var(--border); border-radius: var(--radius);
+            display: flex; align-items: stretch; border: 1px solid var(--border); border-radius: var(--r-panel);
             overflow: hidden; font-family: var(--fs); font-size: .72rem; font-weight: 600;
         }
         .projector-mode-wrap button {
@@ -129,7 +98,7 @@
         .projector-mode-wrap button + button { border-left: 1px solid var(--border); }
 
         .btn-intermission {
-            padding: .35rem .7rem; border: 1px solid var(--border); border-radius: 999px;
+            padding: .35rem .7rem; border: 1px solid var(--border); border-radius: var(--r-pill);
             background: transparent; color: var(--text-muted); font-size: .85rem; cursor: pointer; transition: all .2s;
             font-family: var(--fs); font-weight: 600;
         }
@@ -150,11 +119,11 @@
 
         .jeopardy-board {
             display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px;
-            background: var(--bg-card); border-radius: 10px; padding: 3px; align-self: stretch;
+            background: var(--surface); border-radius: var(--r-panel); padding: 3px; align-self: stretch;
             min-height: 0; overflow: auto;
         }
         .board-cat {
-            background: var(--bg-elevated); padding: .35rem .3rem; text-align: center;
+            background: var(--surface-2); padding: .35rem .3rem; text-align: center;
             font-family: var(--fh); font-size: .72rem; font-weight: 600; color: var(--gold);
             text-transform: uppercase; border-radius: 4px 4px 0 0; min-height: 36px;
             display: flex; align-items: center; justify-content: center; line-height: 1.15;
@@ -173,17 +142,17 @@
 
         /* ═══ SIDEBAR ═══ */
         .sidebar { display: flex; flex-direction: column; gap: .45rem; min-height: 0; overflow: hidden; align-self: stretch; }
-        .side-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: .55rem .6rem; flex: 0 1 auto; min-height: 0; }
+        .side-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-panel); padding: .55rem .6rem; flex: 0 1 auto; min-height: 0; }
         .side-panel h2 { font-family: var(--fh); font-size: .72rem; color: var(--gold); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .45rem; }
-        .score-row { display: flex; align-items: center; gap: .4rem; padding: .35rem .5rem; border-radius: 6px; margin-bottom: .2rem; }
-        .score-row:hover { background: var(--bg-elevated); }
+        .score-row { display: flex; align-items: center; gap: .4rem; padding: .35rem .5rem; border-radius: var(--r-row); margin-bottom: .2rem; }
+        .score-row:hover { background: var(--surface-2); }
         .score-rank { font-weight: 800; color: var(--text-muted); width: 18px; text-align: center; font-size: .8rem; }
         .score-row:first-child .score-rank { color: var(--gold); }
         .score-avatar { display:flex; align-items:center; }
         .score-name { flex: 1; font-weight: 600; font-size: .85rem; }
         .score-val { font-weight: 800; color: var(--gold); font-size: .9rem; font-variant-numeric: tabular-nums; }
         .adj-btn {
-            min-width: 24px; height: 22px; padding: 0 .35rem; border: 1px solid var(--border); border-radius: 999px;
+            min-width: 24px; height: 22px; padding: 0 .35rem; border: 1px solid var(--border); border-radius: var(--r-pill);
             background: transparent; color: var(--text-muted); font-size: .7rem;
             cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
         }
@@ -215,14 +184,14 @@
         .q-header .rl { font-family: var(--fs); font-size: .65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; }
         .q-header .cat { font-family: var(--fh); font-size: 1.25rem; color: var(--gold); text-transform: uppercase; line-height: 1.15; }
         .q-header .val { font-family: var(--fh); font-size: 1.55rem; color: var(--gold-bright); line-height: 1.1; }
-        .dd-badge { display: inline-block; background: var(--red); color: #fff; font-family: var(--fh); font-size: .65rem; padding: .15rem .5rem; border-radius: 999px; margin-top: .2rem; }
+        .dd-badge { display: inline-block; background: var(--red); color: #fff; font-family: var(--fh); font-size: .65rem; padding: .15rem .5rem; border-radius: var(--r-pill); margin-top: .2rem; }
 
-        .qcard { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: .55rem .65rem; margin-bottom: 0; }
+        .qcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-panel); padding: .55rem .65rem; margin-bottom: 0; }
         #question-view .q-host-main > .qcard { flex: 1; min-height: 0; display: flex; flex-direction: column; }
         .qcard h3 { font-family: var(--fs); font-size: .68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .3rem; }
         .q-text { font-size: .95rem; line-height: 1.35; overflow-y: auto; flex: 1; min-height: 0; }
         .ans-reveal {
-            background: var(--bg-elevated); border: 1px dashed var(--border); border-radius: var(--radius);
+            background: var(--surface-2); border: 1px dashed var(--border); border-radius: var(--r-panel);
             padding: .5rem .55rem; text-align: center; cursor: pointer; transition: all .2s; margin-top: 0;
         }
         .ans-reveal:hover { border-color: var(--gold-dim); }
@@ -238,14 +207,14 @@
         .toggle-bar { text-align: center; margin-bottom: .35rem; }
         .toggle-accept {
             width: 100%; padding: .5rem .65rem; font-family: var(--fh); font-size: .92rem; font-weight: 700;
-            border: none; border-radius: 999px; cursor: pointer; transition: all .2s;
+            border: none; border-radius: var(--r-pill); cursor: pointer; transition: all .2s;
         }
         .toggle-accept.open { background: var(--green); color: #fff; }
         .toggle-accept.closed { background: var(--red); color: #fff; }
-        .status-pill { display: inline-block; padding: .2rem .55rem; border-radius: 999px; font-family: var(--fs); font-size: .68rem; font-weight: 600; margin-bottom: .25rem; }
+        .status-pill { display: inline-block; padding: .2rem .55rem; border-radius: var(--r-pill); font-family: var(--fs); font-size: .68rem; font-weight: 600; margin-bottom: .25rem; }
         .status-pill.w { background: rgba(102,102,102,.2); color: var(--text-muted); }
-        .status-pill.a { background: rgba(46,204,113,.15); color: var(--green); }
-        .status-pill.c { background: rgba(230,57,70,.15); color: var(--red); }
+        .status-pill.a { background: var(--green-soft); color: var(--green); }
+        .status-pill.c { background: var(--red-soft); color: var(--red); }
 
         .ans-header { display: flex; align-items: center; gap: .35rem; margin-bottom: .35rem; }
         .ans-header h3 { font-family: var(--fh); font-size: .78rem; color: var(--gold); text-transform: uppercase; }
@@ -256,7 +225,7 @@
         @media (max-width: 960px) { #team-answers-card #answers-list { max-height: 40vh; } }
         .acard {
             display: flex; align-items: center; gap: .45rem; padding: .4rem .5rem;
-            background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 6px;
+            background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-row);
             margin-bottom: .25rem; transition: border-color .2s;
         }
         .acard.correct { border-color: var(--green); } .acard.incorrect { border-color: var(--red); } .acard.passed { opacity: .5; }
@@ -264,7 +233,7 @@
         .a-team { font-weight: 700; min-width: 80px; font-size: .85rem; }
         .a-text { flex: 1; color: var(--gold-bright); font-size: .95rem; }
         .gbtn {
-            width: 32px; height: 32px; border-radius: 999px; border: 2px solid var(--border);
+            width: 32px; height: 32px; border-radius: var(--r-pill); border: 2px solid var(--border);
             background: transparent; color: var(--text-muted); font-size: 1rem;
             cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s;
         }
@@ -273,14 +242,14 @@
         .no-ans { color: var(--text-muted); text-align: center; padding: .65rem; font-size: .8rem; }
         .clue-scored-banner {
             display: none; align-items: flex-start; gap: .4rem; margin-bottom: .4rem; padding: .35rem .45rem;
-            background: rgba(46,204,113,.1); border: 1px solid rgba(46,204,113,.35); border-radius: 6px;
+            background: var(--green-soft); border: 1px solid rgba(46,204,113,.35); border-radius: var(--r-row);
             font-size: .72rem; line-height: 1.35; color: var(--text-sec);
         }
         .clue-scored-banner.visible { display: flex; }
         .clue-scored-banner strong { color: var(--green); font-weight: 700; }
         .scored-pill {
             flex-shrink: 0; font-family: var(--fs); font-size: .62rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .04em; padding: .12rem .4rem; border-radius: 999px; background: rgba(46,204,113,.2); color: var(--green);
+            letter-spacing: .04em; padding: .12rem .4rem; border-radius: var(--r-pill); background: rgba(46,204,113,.2); color: var(--green);
             border: 1px solid rgba(46,204,113,.4);
         }
         .scored-pill.muted { background: rgba(102,102,102,.15); color: var(--text-muted); border-color: var(--border); }
@@ -308,7 +277,7 @@
             display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem;
         }
         .dd-modal {
-            background: var(--bg-card); border: 2px solid var(--gold); border-radius: 16px;
+            background: var(--surface); border: 2px solid var(--gold); border-radius: var(--r-card);
             padding: 2rem; max-width: 400px; width: 100%; text-align: center;
         }
         .dd-modal h2 { font-family: var(--fh); font-size: 1.6rem; color: var(--gold); text-transform: uppercase; margin-bottom: .25rem; }
@@ -323,7 +292,7 @@
             animation: hostNextPulse 1.5s ease-in-out infinite;
         }
         @keyframes hostNextPulse {
-            0%, 100% { box-shadow: 0 0 0 3px var(--gold), 0 0 18px rgba(255,215,0,.25); }
+            0%, 100% { box-shadow: 0 0 0 3px var(--gold), 0 0 18px var(--gold-glow); }
             50% { box-shadow: 0 0 0 4px var(--gold-bright), 0 0 26px rgba(255,215,0,.4); }
         }
         button.host-next-highlight, .projector-mode-wrap.host-next-highlight { border-radius: inherit; }
@@ -342,7 +311,7 @@
         .step-indicator { display: flex; align-items: center; justify-content: center; gap: .15rem; padding: .3rem .5rem; margin-bottom: .3rem; }
         .step-indicator .si-step {
             font-family: var(--fs); font-size: .62rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em;
-            padding: .15rem .4rem; border-radius: 999px; color: var(--text-muted); background: transparent;
+            padding: .15rem .4rem; border-radius: var(--r-pill); color: var(--text-muted); background: transparent;
             transition: all .25s; white-space: nowrap;
         }
         .step-indicator .si-step.active { color: var(--gold); background: rgba(255,215,0,.12); }
@@ -357,7 +326,7 @@
         .kbd-legend { display: inline-flex; align-items: center; gap: .25rem; }
         .kbd-legend kbd {
             display: inline-block; padding: .1rem .35rem; border: 1px solid var(--border); border-radius: 4px;
-            background: var(--bg-elevated); font-family: var(--fb); font-size: .65rem; color: var(--text-sec); line-height: 1.3;
+            background: var(--surface-2); font-family: var(--fb); font-size: .65rem; color: var(--text-sec); line-height: 1.3;
         }
 
         .board-pick-nudge {
@@ -425,7 +394,7 @@
         </div>
     </div>
     <div class="board-layout">
-        <div id="board-control-bar" style="grid-column:1/-1;text-align:center;padding:.28rem .5rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.35rem;font-size:.78rem;color:var(--text-sec);display:none;"><span style="color:var(--text-muted);text-transform:uppercase;font-family:var(--fs);font-size:.62rem;letter-spacing:.05em;">Board Control: </span><span id="board-control-name" style="color:var(--gold);font-weight:700;"></span></div>
+        <div id="board-control-bar" style="grid-column:1/-1;text-align:center;padding:.28rem .5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-panel);margin-bottom:.35rem;font-size:.78rem;color:var(--text-sec);display:none;"><span style="color:var(--text-muted);text-transform:uppercase;font-family:var(--fs);font-size:.62rem;letter-spacing:.05em;">Board Control: </span><span id="board-control-name" style="color:var(--gold);font-weight:700;"></span></div>
         <div class="jeopardy-board" id="jeopardy-board"></div>
         <div class="sidebar">
             <div class="side-panel">
@@ -473,7 +442,7 @@
                 <button type="button" class="btn btn-outline btn-sm" id="kbd-toggle" onclick="toggleKbdLegend()" title="Keyboard shortcuts" style="font-size:.7rem;padding:.25rem .45rem;">⌨</button>
             </div>
         </div>
-        <div id="kbd-legend" class="hidden" style="text-align:center;padding:.25rem .5rem;margin-bottom:.2rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);font-size:.68rem;color:var(--text-sec);">
+        <div id="kbd-legend" class="hidden" style="text-align:center;padding:.25rem .5rem;margin-bottom:.2rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-panel);font-size:.68rem;color:var(--text-sec);">
             <span class="kbd-legend"><kbd>Space</kbd> Open / Close answers</span> &nbsp;
             <span class="kbd-legend"><kbd>R</kbd> Reveal answer</span> &nbsp;
             <span class="kbd-legend"><kbd>Enter</kbd> Complete &amp; return</span>
@@ -494,7 +463,7 @@
                         <div class="q-wager-lock-sub">Watch the wager progress on the right — once everyone has locked in, click <strong>Reveal Question to Teams</strong></div>
                     </div>
                     <div class="q-text" id="qv-qtxt"></div>
-                    <img id="qv-img" class="hidden" style="max-width:100%;max-height:min(160px,22vh);border-radius:var(--radius);margin-top:.35rem;display:block;margin-left:auto;margin-right:auto;object-fit:contain;" alt="Question image">
+                    <img id="qv-img" class="hidden" style="max-width:100%;max-height:min(160px,22vh);border-radius:var(--r-panel);margin-top:.35rem;display:block;margin-left:auto;margin-right:auto;object-fit:contain;" alt="Question image">
                 </div>
             </div>
             <div class="q-host-side">
@@ -537,7 +506,7 @@
                 <div class="qcard" id="team-answers-card">
                     <div class="ans-header"><h3>Team Answers</h3><span class="cnt-badge" id="ans-count">0</span><span style="font-size:.7rem;color:var(--text-muted);margin-left:.35rem;" id="ans-of-total"></span></div>
                     <div id="clue-scored-banner" class="clue-scored-banner" aria-live="polite"></div>
-                    <div id="waiting-list" class="hidden" style="margin-bottom:.4rem;padding:.35rem .5rem;background:rgba(255,215,0,.04);border:1px solid var(--border);border-radius:var(--radius);font-size:.72rem;color:var(--text-sec);"><span style="color:var(--text-muted);font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;">Still waiting: </span><span id="waiting-names"></span></div>
+                    <div id="waiting-list" class="hidden" style="margin-bottom:.4rem;padding:.35rem .5rem;background:rgba(255,215,0,.04);border:1px solid var(--border);border-radius:var(--r-panel);font-size:.72rem;color:var(--text-sec);"><span style="color:var(--text-muted);font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;">Still waiting: </span><span id="waiting-names"></span></div>
                     <div id="answers-list"></div>
                     <div class="apply-row">
                         <button type="button" class="btn btn-green" id="apply-btn" onclick="applyScores()" title="Apply all graded scores — correct answers earn points, incorrect answers lose points">Apply Scores</button>
@@ -549,14 +518,14 @@
                     <button type="button" class="btn btn-gold btn-lg" id="btn-complete-return" onclick="completeAndReturn()" title="Mark this question as completed and return to the board grid">Complete &amp; Return to Board →</button>
                 </div>
                 <div style="text-align:center;" id="fj-reveal-start" class="hidden">
-                    <div style="border:2px solid var(--gold);border-radius:var(--radius);padding:.55rem .65rem;background:rgba(255,215,0,.04);">
+                    <div style="border:2px solid var(--gold);border-radius:var(--r-panel);padding:.55rem .65rem;background:rgba(255,215,0,.04);">
                         <div style="font-family:var(--fh);color:var(--gold);font-size:.78rem;text-transform:uppercase;margin-bottom:.25rem;">Ready for the Reveal?</div>
                         <div style="font-size:.72rem;color:var(--text-sec);margin-bottom:.4rem;line-height:1.3;">Grade all answers above first. Then start the ceremony on the projector.</div>
                         <button type="button" class="btn btn-gold btn-lg" id="btn-start-fj-reveal" onclick="startFinalReveal()" title="Begin the team-by-team Final Jeopardy score reveal ceremony on the projector">Start End of Game Reveal →</button>
                     </div>
                 </div>
                 <div style="text-align:center;" id="dd-reveal-start" class="hidden">
-                    <div style="border:2px solid var(--gold);border-radius:var(--radius);padding:.55rem .65rem;background:rgba(255,215,0,.04);">
+                    <div style="border:2px solid var(--gold);border-radius:var(--r-panel);padding:.55rem .65rem;background:rgba(255,215,0,.04);">
                         <div style="font-family:var(--fh);color:var(--gold);font-size:.78rem;text-transform:uppercase;margin-bottom:.25rem;">Daily Double Scored</div>
                         <div style="font-size:.72rem;color:var(--text-sec);margin-bottom:.4rem;line-height:1.3;">Show the reveal ceremony on the projector before returning to the board.</div>
                         <button type="button" class="btn btn-gold btn-lg" id="btn-start-dd-reveal" onclick="startDDReveal()" title="Start the Daily Double reveal ceremony on the projector">Start DD Reveal →</button>

@@ -1,0 +1,123 @@
+/* PDK NINE Trivia — Design tokens + shared primitives.
+   Loaded before every page's inline <style> so page-specific rules
+   can override these where needed (mobile play, projector board, etc.). */
+
+:root {
+    /* Surfaces */
+    --bg: #000;
+    --surface: #111;
+    --surface-2: #1a1a1a;
+    --surface-input: #0d0d0d;
+    --border: #333;
+
+    /* Text */
+    --text: #fff;
+    --text-sec: #b0b0b0;
+    --text-muted: #666;
+
+    /* Brand + status */
+    --gold: #FFD700;
+    --gold-dim: #b8960f;
+    --gold-bright: #ffe44d;
+    --gold-soft: rgba(255, 215, 0, .08);
+    --gold-glow: rgba(255, 215, 0, .25);
+
+    --red: #e63946;
+    --red-soft: rgba(230, 57, 70, .15);
+
+    --green: #2ecc71;
+    --green-soft: rgba(46, 204, 113, .15);
+
+    --blue: #4a90d9;
+
+    /* Jeopardy grid cells (used by admin + board) */
+    --cell: #0a1640;
+    --cell-hover: #0e2060;
+    --cell-done: #0a0a0a;
+
+    /* Radius scale */
+    --r-card: 16px;
+    --r-panel: 10px;
+    --r-row: 6px;
+    --r-pill: 999px;
+
+    /* Type stack */
+    --fh: 'Oswald', 'Impact', sans-serif;
+    --fs: 'Rajdhani', 'Inter', sans-serif;
+    --fb: 'Inter', system-ui, sans-serif;
+}
+
+/* ── Utilities ── */
+.hidden { display: none !important; }
+
+/* ── Inputs ── */
+input[type="text"], input[type="number"], input[type="password"], textarea, select {
+    width: 100%;
+    padding: .55rem .75rem;
+    background: var(--surface-input);
+    border: 1px solid var(--border);
+    border-radius: var(--r-panel);
+    color: var(--text);
+    font-family: var(--fb);
+    font-size: .95rem;
+    outline: none;
+    -webkit-appearance: none;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+
+/* ── Buttons ──
+   .btn is the default desktop pill button (admin / superadmin).
+   .btn-cta is the chunky full-width primary action used in play.html. */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+    padding: .6rem 1.2rem;
+    border: none; border-radius: var(--r-pill);
+    font-family: var(--fs); font-size: .9rem; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+}
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-cta {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 100%; padding: 1rem;
+    border: none; border-radius: var(--r-pill);
+    font-family: var(--fs); font-size: 1.1rem; font-weight: 700;
+    cursor: pointer; transition: all .2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.btn-cta:active { transform: scale(.97); }
+.btn-cta:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Color modifiers — apply to either .btn or .btn-cta */
+.btn-gold, .btn-cta.btn-gold     { background: var(--gold); color: #000; }
+.btn-gold:hover                  { background: var(--gold-bright); }
+.btn-green, .btn-cta.btn-green   { background: var(--green); color: #fff; }
+.btn-red, .btn-cta.btn-red       { background: var(--red); color: #fff; }
+.btn-red:hover                   { background: #ff4d5a; }
+.btn-blue, .btn-cta.btn-blue     { background: var(--blue); color: #fff; }
+.btn-outline {
+    background: transparent; border: 1px solid var(--border); color: var(--text-sec);
+}
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Size modifiers (work on .btn) */
+.btn-lg    { padding: .85rem 1.8rem; font-size: 1.05rem; }
+.btn-sm    { padding: .4rem .8rem;   font-size: .8rem; }
+.btn-block { width: 100%; }
+
+/* ── Pill primitive ──
+   Reusable shape for status chips, tags, round badges, etc.
+   Existing bespoke pill classes (.status-pill, .dd-badge, …) still work;
+   prefer .pill + modifier for new code. */
+.pill {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .2rem .55rem;
+    border-radius: var(--r-pill);
+    font-family: var(--fs); font-size: .72rem; font-weight: 600;
+    letter-spacing: .04em;
+}
+.pill--gold  { background: var(--gold); color: #000; font-family: var(--fh); }
+.pill--ghost { background: var(--surface-2); color: var(--text-sec); }
+.pill--green { background: var(--green-soft); color: var(--green); }
+.pill--red   { background: var(--red-soft);   color: var(--red); }

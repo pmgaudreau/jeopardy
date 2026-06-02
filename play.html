@@ -7,67 +7,63 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="tokens.css">
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-        :root{--bg:#000;--card:#111;--elev:#1a1a1a;--inp:#0d0d0d;--gold:#FFD700;--gold-dim:#b8960f;--gold-bright:#ffe44d;--red:#e63946;--green:#2ecc71;--blue:#4a90d9;--text:#fff;--tsec:#b0b0b0;--tmut:#666;--border:#333;--radius:12px;--fh:'Oswald','Impact',sans-serif;--fs:'Rajdhani','Inter',sans-serif;--fb:'Inter',system-ui,sans-serif;}
         body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;}
-        .hidden{display:none!important;}
-        input[type="text"],input[type="number"],textarea{width:100%;padding:.85rem 1rem;background:var(--inp);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--fb);font-size:1.05rem;outline:none;-webkit-appearance:none;}
-        input:focus,textarea:focus{border-color:var(--gold);}
-        .btn{display:inline-flex;align-items:center;justify-content:center;width:100%;padding:1rem;border:none;border-radius:999px;font-family:var(--fs);font-size:1.1rem;font-weight:700;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;}
-        .btn:active{transform:scale(.97);}.btn:disabled{opacity:.5;cursor:not-allowed;}
-        .btn-gold{background:var(--gold);color:#000;}.btn-green{background:var(--green);color:#fff;}.btn-blue{background:var(--blue);color:#fff;}
+        /* Mobile inputs need chunkier touch targets + ≥1rem to avoid iOS zoom-on-focus */
+        input[type="text"],input[type="number"],textarea{padding:.85rem 1rem;font-size:1.05rem;}
 
         /* ═══ JOIN ═══ */
         .join{flex:1;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
-        .join-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem 1.5rem;max-width:420px;width:100%;text-align:center;}
+        .join-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:2rem 1.5rem;max-width:420px;width:100%;text-align:center;}
         .join-card h1{font-family:var(--fh);font-size:2.2rem;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.1rem;}
-        .join-card .sub{font-family:var(--fs);font-size:.9rem;color:var(--tsec);margin-bottom:1.5rem;}
+        .join-card .sub{font-family:var(--fs);font-size:.9rem;color:var(--text-sec);margin-bottom:1.5rem;}
         .fg{margin-bottom:1rem;text-align:left;}
-        .fg label{display:block;font-size:.8rem;color:var(--tmut);margin-bottom:.3rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;}
+        .fg label{display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.3rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;}
         .err{color:var(--red);font-size:.85rem;margin-top:.75rem;}
 
         /* Avatar Grid */
         .avatar-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem;margin-bottom:1rem;}
         .avatar-opt{
             display:flex;flex-direction:column;align-items:center;gap:.2rem;
-            padding:.6rem .3rem;border:2px solid var(--border);border-radius:10px;
-            background:var(--elev);cursor:pointer;transition:all .15s;
+            padding:.6rem .3rem;border:2px solid var(--border);border-radius:var(--r-panel);
+            background:var(--surface-2);cursor:pointer;transition:all .15s;
         }
         .avatar-opt:hover{border-color:var(--gold-dim);}
-        .avatar-opt.selected{border-color:var(--gold);background:rgba(255,215,0,.08);box-shadow:0 0 12px rgba(255,215,0,.2);}
+        .avatar-opt.selected{border-color:var(--gold);background:var(--gold-soft);box-shadow:0 0 12px var(--gold-glow);}
         .avatar-opt.taken{opacity:.3;cursor:not-allowed;pointer-events:none;}
         .avatar-img{width:36px;height:36px;border-radius:50%;object-fit:cover;}
-        .avatar-opt .name{font-size:.65rem;color:var(--tsec);font-family:var(--fs);text-transform:uppercase;letter-spacing:.03em;}
+        .avatar-opt .name{font-size:.65rem;color:var(--text-sec);font-family:var(--fs);text-transform:uppercase;letter-spacing:.03em;}
         .avatar-opt.selected .name{color:var(--gold);}
         .avatar-photo{border-style:dashed;position:relative;overflow:hidden;}
-        .avatar-photo .photo-icon{width:36px;height:36px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:1.3rem;line-height:1;}
+        .avatar-photo .photo-icon{width:36px;height:36px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:1.3rem;line-height:1;}
         .avatar-photo.has-photo .photo-icon{display:none;}
         .avatar-photo .photo-preview{width:36px;height:36px;border-radius:50%;object-fit:cover;display:none;}
         .avatar-photo.has-photo .photo-preview{display:block;}
         .avatar-photo.has-photo{border-style:solid;}
-        .pc-btn{width:2.5rem;height:2.5rem;border-radius:999px;border:2px solid var(--border);background:var(--elev);color:var(--text);font-family:var(--fh);font-size:1.1rem;font-weight:700;cursor:pointer;transition:all .2s;}
-        .pc-btn.selected{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,.1);box-shadow:0 0 8px rgba(255,215,0,.2);}
+        .pc-btn{width:2.5rem;height:2.5rem;border-radius:var(--r-pill);border:2px solid var(--border);background:var(--surface-2);color:var(--text);font-family:var(--fh);font-size:1.1rem;font-weight:700;cursor:pointer;transition:all .2s;}
+        .pc-btn.selected{border-color:var(--gold);color:var(--gold);background:var(--gold-soft);box-shadow:0 0 8px var(--gold-glow);}
 
         /* ═══ GAME ═══ */
         #game{flex:1;display:none;flex-direction:column;}
-        .game-hdr{background:var(--card);border-bottom:1px solid var(--border);padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;}
+        .game-hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;}
         .team-lbl{display:flex;align-items:center;gap:.4rem;font-family:var(--fs);font-weight:700;font-size:.95rem;}
         .team-lbl .av{display:flex;align-items:center;}.team-lbl .av img{width:28px;height:28px;border-radius:50%;object-fit:cover;}
-        .score-badge{background:var(--gold);color:#000;font-family:var(--fh);font-weight:800;padding:.3rem .85rem;border-radius:20px;font-size:.9rem;}
+        .score-badge{background:var(--gold);color:#000;font-family:var(--fh);font-weight:800;padding:.3rem .85rem;border-radius:var(--r-pill);font-size:.9rem;}
 
         .game-body{flex:1;display:flex;flex-direction:column;padding:1rem;gap:.75rem;}
 
-        .q-info{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.25rem;text-align:center;}
-        .q-info .round{font-family:var(--fs);font-size:.75rem;color:var(--tmut);text-transform:uppercase;letter-spacing:2px;margin-bottom:.3rem;}
+        .q-info{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.25rem;text-align:center;}
+        .q-info .round{font-family:var(--fs);font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:.3rem;}
         .q-info .cat{font-family:var(--fh);font-size:1.5rem;font-weight:700;color:var(--gold);text-transform:uppercase;line-height:1.2;margin-bottom:.2rem;}
         .q-info .val{font-family:var(--fh);font-size:1.8rem;font-weight:700;color:var(--gold-bright);}
-        .q-info .dd-lbl{display:inline-block;background:var(--red);color:#fff;font-family:var(--fh);font-size:.75rem;padding:.2rem .7rem;border-radius:999px;margin-top:.4rem;}
+        .q-info .dd-lbl{display:inline-block;background:var(--red);color:#fff;font-family:var(--fh);font-size:.75rem;padding:.2rem .7rem;border-radius:var(--r-pill);margin-top:.4rem;}
 
-        .q-txt-card{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:var(--radius);padding:1rem 1.25rem;}
+        .q-txt-card{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:var(--r-panel);padding:1rem 1.25rem;}
         .q-txt-card .question{font-size:1.1rem;line-height:1.5;}
 
-        .state-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;flex:1;display:flex;flex-direction:column;gap:.75rem;}
+        .state-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.5rem;flex:1;display:flex;flex-direction:column;gap:.75rem;}
 
         /* Timer on phone */
         .phone-timer{text-align:center;padding:.5rem 0;}
@@ -76,7 +72,7 @@
 
         .wait{text-align:center;padding:2rem .5rem;}
         .wait .dots{font-size:2rem;color:var(--gold);animation:pulse 1.5s ease-in-out infinite;}
-        .wait .msg{color:var(--tmut);font-size:.95rem;margin-top:.5rem;}
+        .wait .msg{color:var(--text-muted);font-size:.95rem;margin-top:.5rem;}
         @keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
 
         .answer-area textarea{flex:1;min-height:80px;resize:none;font-size:1.1rem;padding:1rem;}
@@ -84,18 +80,18 @@
         .submitted{text-align:center;padding:2rem .5rem;}
         .submitted .check{font-size:3rem;color:var(--green);}
         .submitted .label{font-size:1.1rem;font-weight:600;color:var(--green);}
-        .submitted .echo{color:var(--tmut);font-size:.85rem;margin-top:.5rem;}
+        .submitted .echo{color:var(--text-muted);font-size:.85rem;margin-top:.5rem;}
 
         .dd-spec{text-align:center;padding:2rem .5rem;}
         .dd-spec .star{font-size:2.5rem;}
         .dd-spec .tn{color:var(--gold);font-weight:700;font-size:1.1rem;}
-        .dd-spec .msg{color:var(--tmut);font-size:.9rem;margin-top:.25rem;}
+        .dd-spec .msg{color:var(--text-muted);font-size:.9rem;margin-top:.25rem;}
 
-        .wager-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;text-align:center;}
+        .wager-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:1.5rem;text-align:center;}
         .wager-card h3{font-family:var(--fh);color:var(--gold);font-size:1.1rem;margin-bottom:.5rem;text-transform:uppercase;}
-        .wager-card .note{color:var(--tmut);font-size:.85rem;margin-bottom:1rem;}
+        .wager-card .note{color:var(--text-muted);font-size:.85rem;margin-bottom:1rem;}
         .wager-card input[type="number"]{text-align:center;font-size:1.5rem;font-weight:700;font-family:var(--fh);margin-bottom:.75rem;}
-        .wager-locked{padding:.75rem;background:rgba(46,204,113,.1);border:1px solid var(--green);border-radius:var(--radius);}
+        .wager-locked{padding:.75rem;background:var(--green-soft);border:1px solid var(--green);border-radius:var(--r-panel);}
         .wager-locked .amt{font-family:var(--fh);font-size:1.5rem;font-weight:800;color:var(--gold);}
         .wager-locked .lbl{font-size:.8rem;color:var(--green);margin-top:.15rem;}
 
@@ -108,11 +104,11 @@
         .room-status.found{color:var(--green);}
         .room-status.not-found{color:var(--red);}
 
-        .player-count-tag{font-size:.7rem;color:var(--tmut);font-family:var(--fs);font-weight:600;margin-left:.25rem;}
+        .player-count-tag{font-size:.7rem;color:var(--text-muted);font-family:var(--fs);font-weight:600;margin-left:.25rem;}
 
         .welcome-toast{
             position:fixed;top:0;left:0;right:0;
-            background:rgba(46,204,113,.15);border-bottom:1px solid var(--green);
+            background:var(--green-soft);border-bottom:1px solid var(--green);
             text-align:center;padding:.6rem 1rem;
             font-family:var(--fs);font-size:.85rem;font-weight:600;color:var(--green);
             z-index:100;animation:welcomeSlide .35s ease;
@@ -152,7 +148,7 @@
         <div class="avatar-grid" id="avatar-grid"></div>
     </div>
     <input type="file" id="photo-input" accept="image/*" style="display:none">
-    <button class="btn btn-gold" id="btn-join" onclick="joinRoom()">Join Game</button>
+    <button class="btn-cta btn-gold" id="btn-join" onclick="joinRoom()">Join Game</button>
     <p class="err" id="join-err"></p>
 </div>
 </div>
@@ -172,19 +168,19 @@
             <div class="val" id="g-val">—</div>
             <div id="g-dd" class="hidden"><span class="dd-lbl">★ DAILY DOUBLE ★</span></div>
         </div>
-        <div class="q-txt-card hidden" id="q-txt-card"><div class="question" id="g-qtxt"></div><img id="g-img" class="hidden" style="max-width:100%;max-height:50vh;width:100%;object-fit:contain;border-radius:var(--radius);margin-top:.75rem;" alt=""></div>
+        <div class="q-txt-card hidden" id="q-txt-card"><div class="question" id="g-qtxt"></div><img id="g-img" class="hidden" style="max-width:100%;max-height:50vh;width:100%;object-fit:contain;border-radius:var(--r-panel);margin-top:.75rem;" alt=""></div>
 
         <!-- Phone timer -->
         <div class="phone-timer hidden" id="phone-timer"><div class="time" id="phone-time">0:30</div></div>
 
         <div class="state-card" id="wait-card"><div class="wait"><div class="dots">• • •</div><div class="msg" id="wait-msg">Waiting for the host...</div></div></div>
         <div class="state-card hidden" id="dd-spec-card"><div class="dd-spec"><div class="star">★</div><div class="msg">Daily Double!</div><div class="tn" id="dd-spec-team"></div><div class="msg">is responding to this clue</div></div></div>
-        <div class="state-card hidden" id="answer-card"><div class="answer-area" style="display:flex;flex-direction:column;gap:.75rem;flex:1;"><div class="what-is-prompt" style="font-family:var(--fh);font-size:1.3rem;color:var(--gold);font-weight:700;text-align:center;margin-bottom:.25rem;">What is...</div><textarea id="answer-input" placeholder="Your response in question form" autocomplete="off" autocorrect="off"></textarea><button class="btn btn-green" id="submit-btn" onclick="submitAnswer()">Submit Response</button><button class="btn" id="pass-btn" onclick="passAnswer()" style="background:var(--elev);color:var(--tmut);font-size:.9rem;padding:.7rem;">Pass — I don't know</button></div></div>
+        <div class="state-card hidden" id="answer-card"><div class="answer-area" style="display:flex;flex-direction:column;gap:.75rem;flex:1;"><div class="what-is-prompt" style="font-family:var(--fh);font-size:1.3rem;color:var(--gold);font-weight:700;text-align:center;margin-bottom:.25rem;">What is...</div><textarea id="answer-input" placeholder="Your response in question form" autocomplete="off" autocorrect="off"></textarea><button class="btn-cta btn-green" id="submit-btn" onclick="submitAnswer()">Submit Response</button><button class="btn-cta" id="pass-btn" onclick="passAnswer()" style="background:var(--surface-2);color:var(--text-muted);font-size:.9rem;padding:.7rem;">Pass — I don't know</button></div></div>
         <div class="state-card hidden" id="submitted-card"><div class="submitted"><div class="check" id="submitted-icon">✓</div><div class="label" id="submitted-label">Response Submitted!</div><div class="echo" id="answer-echo"></div></div></div>
         <div class="wager-card hidden" id="wager-card">
             <h3>Set Your Wager</h3>
             <div class="note" id="wager-note">You can wager up to your current score</div>
-            <div id="wager-input-area"><input type="number" id="wager-input" placeholder="$0" min="0" inputmode="numeric"><button class="btn btn-gold" onclick="lockWager()" style="margin-top:.5rem;">Lock In Wager</button></div>
+            <div id="wager-input-area"><input type="number" id="wager-input" placeholder="$0" min="0" inputmode="numeric"><button class="btn-cta btn-gold" onclick="lockWager()" style="margin-top:.5rem;">Lock In Wager</button></div>
             <div class="wager-locked hidden" id="wager-locked"><div class="amt" id="wager-locked-amt">$0</div><div class="lbl">Wager locked in</div></div>
         </div>
     </div>
@@ -205,7 +201,7 @@ let customPhotoData=null;
 function renderAvatarGrid(takenAvatars) {
     const grid=document.getElementById('avatar-grid');
     const isCustom=selectedAvatar&&selectedAvatar.startsWith('data:');
-    const photoOpt=`<div class="avatar-opt avatar-photo${isCustom?' selected has-photo':customPhotoData?' has-photo':''}" onclick="triggerPhoto()" style="${isCustom?'border-color:var(--gold);box-shadow:0 0 12px rgba(255,215,0,.25);':''}"><span class="photo-icon">📷</span><img class="photo-preview" src="${customPhotoData||''}" alt=""><span class="name">${customPhotoData?'Change':'Photo'}</span></div>`;
+    const photoOpt=`<div class="avatar-opt avatar-photo${isCustom?' selected has-photo':customPhotoData?' has-photo':''}" onclick="triggerPhoto()" style="${isCustom?'border-color:var(--gold);box-shadow:0 0 12px var(--gold-glow);':''}"><span class="photo-icon">📷</span><img class="photo-preview" src="${customPhotoData||''}" alt=""><span class="name">${customPhotoData?'Change':'Photo'}</span></div>`;
     grid.innerHTML=photoOpt+AVATARS.map(a=>{
         const taken=takenAvatars.includes(a.id);
         const sel=selectedAvatar===a.id;

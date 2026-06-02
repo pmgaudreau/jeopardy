@@ -7,60 +7,41 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="tokens.css">
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-        :root{
-            --bg:#000;--bg-card:#111;--bg-elevated:#1a1a1a;--bg-input:#0d0d0d;
-            --gold:#FFD700;--gold-dim:#b8960f;--gold-bright:#ffe44d;
-            --red:#e63946;--green:#2ecc71;--blue:#4a90d9;
-            --text:#fff;--text-sec:#b0b0b0;--text-muted:#666;
-            --border:#333;--radius:10px;
-            --fh:'Oswald','Impact',sans-serif;
-            --fs:'Rajdhani','Inter',sans-serif;
-            --fb:'Inter',system-ui,sans-serif;
-        }
         body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;}
 
-        .top-bar{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid var(--border);background:var(--bg-card);}
+        .top-bar{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid var(--border);background:var(--surface);}
         .top-bar h1{font-family:var(--fh);font-size:1.3rem;color:var(--gold);text-transform:uppercase;letter-spacing:.06em;}
         .top-bar .badge{font-family:var(--fs);font-size:.85rem;color:var(--text-muted);}
 
         .container{max-width:900px;margin:0 auto;padding:1.5rem;}
 
-        .login-card{max-width:400px;margin:4rem auto;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;text-align:center;}
+        .login-card{max-width:400px;margin:4rem auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-panel);padding:2rem;text-align:center;}
         .login-card h2{font-family:var(--fh);color:var(--gold);font-size:1.4rem;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.06em;}
         .login-card p{color:var(--text-sec);font-size:.85rem;margin-bottom:1.5rem;}
-        .login-card input{width:100%;padding:.75rem 1rem;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--fh);font-size:1.1rem;text-align:center;letter-spacing:2px;outline:none;margin-bottom:1rem;}
-        .login-card input:focus{border-color:var(--gold);}
+        .login-card input{font-family:var(--fh);font-size:1.1rem;text-align:center;letter-spacing:2px;padding:.75rem 1rem;margin-bottom:1rem;}
         .login-card .err{color:var(--red);font-size:.8rem;margin-bottom:.75rem;min-height:1.2em;}
 
-        .btn{display:inline-flex;align-items:center;justify-content:center;padding:.6rem 1.2rem;border:none;border-radius:999px;font-family:var(--fh);font-weight:600;cursor:pointer;font-size:.9rem;text-transform:uppercase;letter-spacing:.04em;transition:all .15s;}
-        .btn-gold{background:var(--gold);color:#000;}.btn-gold:hover{background:var(--gold-bright);}
-        .btn-red{background:var(--red);color:#fff;}.btn-red:hover{background:#ff4d5a;}
-        .btn-outline{background:transparent;color:var(--text-sec);border:1px solid var(--border);}.btn-outline:hover{border-color:var(--gold);color:var(--gold);}
-        .btn-block{width:100%;}
-        .btn-sm{font-size:.75rem;padding:.4rem .8rem;}
-
         .summary{display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;}
-        .stat-card{flex:1;min-width:140px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;}
+        .stat-card{flex:1;min-width:140px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-panel);padding:1rem;text-align:center;}
         .stat-card .val{font-family:var(--fh);font-size:2rem;color:var(--gold);}
         .stat-card .lbl{font-family:var(--fs);font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem;}
 
         .room-list{display:flex;flex-direction:column;gap:.75rem;}
-        .room-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;transition:border-color .2s;}
+        .room-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-panel);padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;transition:border-color .2s;}
         .room-card:hover{border-color:var(--gold-dim);}
         .room-code{font-family:var(--fh);font-size:1.3rem;color:var(--gold);letter-spacing:2px;min-width:100px;}
         .room-info{flex:1;display:flex;flex-direction:column;gap:.2rem;}
         .room-meta{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;}
-        .room-meta .tag{font-family:var(--fs);font-size:.8rem;padding:.15rem .5rem;border-radius:6px;background:var(--bg-elevated);color:var(--text-sec);}
+        .room-meta .tag{font-family:var(--fs);font-size:.8rem;padding:.15rem .5rem;border-radius:var(--r-row);background:var(--surface-2);color:var(--text-sec);}
         .room-meta .tag.players{color:var(--green);}
         .room-meta .tag.round{color:var(--gold);}
         .room-meta .tag.phase{color:var(--blue);}
         .room-actions{display:flex;gap:.5rem;flex-shrink:0;}
 
         .empty{text-align:center;padding:3rem;color:var(--text-muted);font-family:var(--fs);font-size:1rem;}
-
-        .hidden{display:none!important;}
     </style>
 </head>
 <body>
