@@ -62,6 +62,13 @@ function esc(s) {
     return d.innerHTML;
 }
 
+// Standard ranking comparator: score descending, tiebreak by correctCount
+// descending (a team that answered more clues correctly wins the tie).
+// Pass raw numbers; missing values coerce to 0.
+function compareScoreDesc(scoreA, correctA, scoreB, correctB) {
+    return ((scoreB || 0) - (scoreA || 0)) || ((correctB || 0) - (correctA || 0));
+}
+
 // Wraps a Firebase write so a failure surfaces to the user instead of
 // silently dropping the action. Resolves to true on success, false on
 // failure (after alerting). Never rejects, so callers don't need .catch().

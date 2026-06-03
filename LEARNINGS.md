@@ -69,10 +69,45 @@ When the questionKey becomes `final` and round is 3, `play.html` snapshots the p
 
 ### Reveal ceremonies
 
-- **Final Jeopardy**: scripted via `revealData = { teams, index, stage, podium, podiumTeams, podiumIndex }` in `admin.html`. Stages cycle per team: score → wager → answer → final score. After all teams, the podium reveals 3rd → 2nd → 1st with manual button presses, then the full rankings, then recap or stats.
+- **Final Jeopardy**: scripted via `revealData = { teams, index, stage, podium, podiumTeams, podiumIndex, confirming }` in `admin.html`. Stages cycle per team: score → wager → answer → final score. Each reveal-team object also carries `preCorrect` — the team's `correctCount` snapshotted before FJ — so both the stage-4 and the podium bulk write can recompute `correctCount = preCorrect + (correct ? 1 : 0)` idempotently. After all teams, phase becomes **`fj-confirm`** (admin only): host sees a standings table with FJ win/loss, the live `teams[tk].correctCount`, and can edit final scores before clicking **Confirm Scores & Reveal Podium**. Projector shows “Stand by — host is verifying final scores”; players see a wait message. Then podium reveals 3rd → 2nd → 1st, full rankings, recap or stats.
+
+### Team ranking & tiebreakers
+
+Every site that ranks teams by score uses `compareScoreDesc(scoreA, correctA, scoreB, correctB)` from `helpers.js` — score descending, then `correctCount` descending. The cached `correctCount` lives on `teams/{tk}/correctCount` and is incremented by:
+
+- `applyScores()` (R1/R2 and DD) — bumped for each team whose answer is graded correct (not passed) in the same batched `update`.
+- FJ stage-4 commit and `startPodiumFromReveal()` bulk write — both set `correctCount = preCorrect + (correct ? 1 : 0)` so re-running them is safe.
+
+Reveal-data sort sites read `teams[t.key].correctCount` when available (live) and fall back to `preCorrect + (correct ? 1 : 0)` if the team record is gone. Missing `correctCount` coerces to 0, so games started before this field existed degrade gracefully (ties revert to insertion order for that game only).
 - **Daily Double**: same shape but for one team. Driven by `ddRevealData` and `state.phase === 'dd-reveal'`.
 
 The board reads `state.phase` plus the relevant reveal node and animates accordingly.
+
+### Score-display layouts (full-screen, masked, infinite-scroll)
+
+Every full-screen "everyone's scores" view on the projector uses the same layout pattern so the visual feel is identical across between-round transitions, intermissions, and final rankings:
+
+```
+<div class="X-wrap">              ← masked viewport (overflow:hidden + linear-gradient mask)
+    <div class="X-scroll" id=…>   ← rows container (flex column, will-change:transform)
+        <!-- rowsHtml duplicated: rowsHtml + rowsHtml -->
+    </div>
+</div>
+```
+
+`startInfiniteScroll(el, {styleId, keyframeName, speed, minH})` in `board.html` measures `el.scrollHeight / 2` (because rows are duplicated for a seamless loop), injects a `@keyframes` rule, and applies it as a linear infinite animation. If the doubled content would only need to scroll less than `minH` pixels, the animation is suppressed and the list renders static — so small fields of teams stay readable instead of looping every 2 seconds.
+
+Per-row entry animations (e.g. `slideIn` with a stagger) **must be suppressed** when the row lives inside one of these scroll containers (`.X-scroll .X-row { animation: none; }`), otherwise the duplicated copy re-triggers them visibly mid-scroll.
+
+The in-game sidebar `#bd-scores` deliberately does **not** use this pattern — it's a small persistent live element next to the question grid, and an auto-scrolling pill cluster would compete with the active clue.
+
+### Question display fits the viewport (image absorbs available space)
+
+`#question-display` is a flex column where the image **slot** (`#qd-img-slot`, a `<div>`) is the only flex-grow child (`flex: 1 1 0; min-height: 0`) and every text/timer/answer/status row is `flex-shrink: 0`. The slot absorbs whatever vertical space is left after every other element takes its natural height, so the answer is always visible at the bottom regardless of the image's intrinsic dimensions.
+
+**Why a wrapper, not `flex:1 1 0` on the `<img>` directly?** `<img>` elements use their intrinsic aspect ratio to declare a height to the flex algorithm — a portrait clue at `max-width: 80vw` declares a height of `80vw / aspect-ratio`, which can exceed the viewport. The flex algorithm doesn't reliably override that "preferred" height on `<img>` elements (cross-browser quirk), so the image overflows and pushes the answer off-screen. The wrapper `<div>` has no intrinsic size, takes the flex sizing cleanly, and the image inside is bounded by `max-width: 100%; max-height: 100%; object-fit: contain`.
+
+When the slot is hidden (text-only clue), `tokens.css`'s `.hidden { display: none }` removes it from the flex flow and `justify-content: center` centers the remaining items as before. **All three JS callsites that toggle image visibility must toggle the `hidden` class on `#qd-img-slot`, not on `#qd-img`** — hiding the image without hiding its wrapper would leave the wrapper greedily consuming vertical space.
 
 ### Recap vs stats
 
@@ -112,13 +147,17 @@ Written to `state.boardControl`.
 ## Common gotchas when editing
 
 1. **Adding a helper?** Put it in `helpers.js` and use it everywhere. Don't redefine inline. The dedupe of `esc()` and `ROUND_LABELS` had to be done after they'd already drifted across 4 files. Same rule applies to CSS: tokens and base primitives go in `tokens.css`, not inline.
-2. **Adding a new field to `state`?** Add it to `defaultGameState()` in `helpers.js` so every reset path (admin init, `createRoom`, `returnToSetup`, superadmin `clearRoom`) picks it up.
-3. **Don't edit `build.sh` to duplicate helper logic.** `build.sh` generates **only** the Firebase config block on Netlify. The previous bug where production avatars broke was caused by `build.sh` overwriting `config.js` with a stale `avatarImg()`. `helpers.js` is the only place these live now.
-4. **Player listeners**: when adding new player-side state, extend `ingestState`/`ingestTeam`/`ingestAnswer` and `resyncMyState` together. Wake-up resync depends on those being in sync with the `.on('value')` listeners.
-5. **Host-side writes**: wrap with `safeWrite` so a dropped connection produces an alert instead of a silent no-op. Check the boolean return if the UI advanced optimistically and needs to roll back.
-6. **Firebase keys**: team names are slugified to `teamKey` (alphanumeric + underscore). Non-alphanumeric-only names produce an empty key, which corrupts Firebase. Both `play.html joinRoom()` and `admin.html addTeamManual()` fall back to a random `team_{ts}` key when the slug is empty — preserve that.
-7. **Inline timers**: `setTimeout` IDs for round transitions live in `roundTransTimeout`. Anything that short-circuits a transition (e.g. manually starting FJ before the auto-advance fires) needs `clearTimeout(roundTransTimeout)` first.
-8. **CSV quote normalization**: smart quotes break CSV parsing. `normalizeQuotes(s)` in `helpers.js` converts curly to straight; use it for every user-supplied string field.
+2. **Ranking teams by score?** Use `compareScoreDesc` from `helpers.js`. Don't write `(b.score - a.score)` inline — ties will become non-deterministic again. Any new write path that affects a correct/incorrect outcome must also keep `teams/{tk}/correctCount` in sync.
+3. **Adding a new field to `state`?** Add it to `defaultGameState()` in `helpers.js` so every reset path (admin init, `createRoom`, `returnToSetup`, superadmin `clearRoom`) picks it up.
+4. **Don't edit `build.sh` to duplicate helper logic.** `build.sh` generates **only** the Firebase config block on Netlify. The previous bug where production avatars broke was caused by `build.sh` overwriting `config.js` with a stale `avatarImg()`. `helpers.js` is the only place these live now.
+5. **Player listeners**: when adding new player-side state, extend `ingestState`/`ingestTeam`/`ingestAnswer` and `resyncMyState` together. Wake-up resync depends on those being in sync with the `.on('value')` listeners.
+6. **Host-side writes**: wrap with `safeWrite` so a dropped connection produces an alert instead of a silent no-op. Check the boolean return if the UI advanced optimistically and needs to roll back.
+7. **Firebase keys**: team names are slugified to `teamKey` (alphanumeric + underscore). Non-alphanumeric-only names produce an empty key, which corrupts Firebase. Both `play.html joinRoom()` and `admin.html addTeamManual()` fall back to a random `team_{ts}` key when the slug is empty — preserve that.
+8. **Inline timers**: `setTimeout` IDs for round transitions live in `roundTransTimeout`. Anything that short-circuits a transition (e.g. manually starting FJ before the auto-advance fires) needs `clearTimeout(roundTransTimeout)` first.
+9. **CSV quote normalization**: smart quotes break CSV parsing. `normalizeQuotes(s)` in `helpers.js` converts curly to straight; use it for every user-supplied string field.
+10. **Adding a new full-screen "scores" view on the projector?** Use the `X-wrap` + `X-scroll` + `startInfiniteScroll(...)` pattern (see "Score-display layouts"). Don't reach for plain `overflow-y:auto` — it breaks the visual continuity with the rest of the game. Remember to suppress per-row entry animations inside the scroll container.
+11. **Don't put fixed `max-height: Xvh` on a child of `#question-display`.** That was the cause of answers being pushed off-screen by tall images. The layout relies on `#qd-img-slot` being the only flex-grow child — every other element must keep `flex-shrink: 0` (covered by the universal `#question-display > *` rule, but easy to break with an inline `style="height: …"`).
+12. **Don't put `flex:1 1 0` on an `<img>` directly.** The intrinsic aspect ratio fights the flex algorithm and the image won't reliably shrink in a column flex container. Wrap it in a `<div>` slot and put the flex sizing on the slot. Toggle `.hidden` on the slot, not on the image.
 
 ---
 
@@ -140,6 +179,9 @@ These are issues that have been fixed already — don't re-introduce them.
 | `currentAnswers` left orphaned when removing a team | `removeTeam` only deleted `teams/{tk}` | Now batches `teams/{tk}: null` and `currentAnswers/{tk}: null` |
 | Design tokens defined four times with two naming conventions (`--bg-card` vs `--card`, `--text-sec` vs `--tsec`, …) | Each HTML file declared its own `:root`; same colors, divergent names | Extracted to `tokens.css`; all pages link it before their inline styles |
 | Three different `.btn` definitions for the same name | Each page redefined the base button (padding, font, text-transform drifted) | `tokens.css` owns `.btn` (desktop pill) and `.btn-cta` (mobile chunky); play.html markup uses `.btn-cta` |
+| Tied teams ranked in non-deterministic insertion order | Every sort site wrote `(b.score - a.score)` inline; JS's stable sort fell back to discovery order on ties | `compareScoreDesc(scoreA, correctA, scoreB, correctB)` in `helpers.js`, applied to all 11 sort sites; `teams/{tk}/correctCount` cached and bumped in `applyScores` + FJ stage-4/podium writes |
+| Intermission and final-rankings score lists felt inconsistent with between-round transitions | The transition view had its own bespoke infinite-scroll JS; the other two used plain `overflow:auto` | Generalised `startInfiniteScroll(el, opts)` helper in `board.html`; transition, recap, intermission, and rankings all call it with their own keyframe name + style id |
+| Tall clue images pushed the revealed answer off the bottom of the projector | `#qd-img` had a fixed `max-height: 50vh` and competed with stacked text/timer/answer rows for the column height. A first-pass fix put `flex: 1 1 0` on the `<img>` directly, but the image's intrinsic aspect ratio (portrait clues at `max-width: 80vw` declare a height > viewport) fought the flex-shrink algorithm and the image still overflowed. | Wrapped image in `#qd-img-slot`; the slot owns `flex: 1 1 0; min-height: 0`; image inside is `max-width: 100%; max-height: 100%; object-fit: contain`. JS toggles `.hidden` on the slot, not the image. |
 
 ---
 

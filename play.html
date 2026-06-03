@@ -313,12 +313,12 @@ function joinRoom(){
                 const existingName=ts.val().name;
                 if(existingName&&existingName.toLowerCase()!==teamName.toLowerCase()){
                     teamKey=teamKey+'_'+Math.random().toString(36).slice(2,5);
-                    writePromise=roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,avatar:av.id,color:av.color,players:playerCount});
+                    writePromise=roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,correctCount:0,avatar:av.id,color:av.color,players:playerCount});
                 } else {
                     writePromise=roomRef.child('teams/'+teamKey).update({avatar:av.id,color:av.color,players:playerCount});
                 }
             } else {
-                writePromise=roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,avatar:av.id,color:av.color,players:playerCount});
+                writePromise=roomRef.child('teams/'+teamKey).set({name:teamName,score:0,wager:0,correctCount:0,avatar:av.id,color:av.color,players:playerCount});
             }
             return writePromise.then(()=>{
                 try{sessionStorage.setItem('trivia_session',JSON.stringify({roomCode,teamName,teamKey,avatar:av.id,players:playerCount}));}catch(e){}
@@ -475,7 +475,7 @@ function render(){
     document.getElementById('g-dd').classList.toggle('hidden',!dailyDouble);
 
     const qtc=document.getElementById('q-txt-card');
-    if((questionText||GS.imageUrl)&&phase!=='board'&&phase!=='round-transition'&&phase!=='intermission'&&phase!=='dd-reveal'&&phase!=='final-reveal'&&phase!=='final-rankings'&&phase!=='recap'&&phase!=='stats'&&phase!=='gameover'){
+    if((questionText||GS.imageUrl)&&phase!=='board'&&phase!=='round-transition'&&phase!=='intermission'&&phase!=='dd-reveal'&&phase!=='final-reveal'&&phase!=='fj-confirm'&&phase!=='final-rankings'&&phase!=='recap'&&phase!=='stats'&&phase!=='gameover'){
         qtc.classList.remove('hidden');
         document.getElementById('g-qtxt').textContent=questionText||'';
         const gImg=document.getElementById('g-img');
@@ -493,9 +493,9 @@ function render(){
     );
     const isDDSpectator=dailyDouble && ddTeam && ddTeam !== teamKey;
 
-    if(phase==='dd-reveal'||phase==='final-reveal'||phase==='podium'||phase==='final-rankings'||phase==='recap'||phase==='stats'||phase==='gameover'){
+    if(phase==='dd-reveal'||phase==='final-reveal'||phase==='fj-confirm'||phase==='podium'||phase==='final-rankings'||phase==='recap'||phase==='stats'||phase==='gameover'){
         show('wait-card');
-        document.getElementById('wait-msg').textContent=phase==='dd-reveal'?'Daily Double result is being revealed — look at the big screen!':phase==='gameover'?'Thanks for playing! See you next time!':(phase==='recap'||phase==='stats')?'Check out the game recap on the big screen!':phase==='final-rankings'?'Final standings are on the big screen!':'Final scores are being revealed — look at the big screen!';
+        document.getElementById('wait-msg').textContent=phase==='dd-reveal'?'Daily Double result is being revealed — look at the big screen!':phase==='gameover'?'Thanks for playing! See you next time!':(phase==='recap'||phase==='stats')?'Check out the game recap on the big screen!':phase==='final-rankings'?'Final standings are on the big screen!':phase==='fj-confirm'?'Almost there — look at the big screen for the winner reveal!':'Final scores are being revealed — look at the big screen!';
     } else if(phase==='intermission'){
         show('wait-card');
         document.getElementById('wait-msg').textContent='Intermission — grab a snack and stretch your legs!';

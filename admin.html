@@ -157,6 +157,25 @@
             cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
         }
         .adj-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+        /* Final Jeopardy — host-only score confirmation before podium */
+        #rv-ceremony.hidden { display: none !important; }
+        .fj-confirm-intro { font-size: .85rem; color: var(--text-sec); line-height: 1.4; margin-bottom: .75rem; }
+        .fj-confirm-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+        .fj-confirm-table th, .fj-confirm-table td { padding: .45rem .5rem; border-bottom: 1px solid var(--border); text-align: left; }
+        .fj-confirm-table th { font-family: var(--fs); font-size: .68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; background: var(--surface-2); }
+        .fj-confirm-table tr:hover td { background: rgba(255,255,255,.02); }
+        .fj-confirm-table .fj-team { display: flex; align-items: center; gap: .4rem; min-width: 0; }
+        .fj-confirm-table .fj-team .nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+        .fj-confirm-table input.fj-score-inp {
+            width: 6.5rem; padding: .35rem .45rem; font-family: var(--fh); font-size: .9rem;
+            text-align: right; background: var(--surface-input); border: 1px solid var(--border);
+            border-radius: var(--r-row); color: var(--gold);
+        }
+        .fj-confirm-table input.fj-score-inp:focus { border-color: var(--gold); outline: none; }
+        .fj-result-win { color: var(--green); font-weight: 600; }
+        .fj-result-loss { color: var(--red); font-weight: 600; }
+        .fj-result-none { color: var(--text-muted); }
         .add-row { display: flex; gap: .4rem; margin-top: .5rem; }
         .add-row input { flex: 1; font-size: .8rem; padding: .4rem .6rem; }
         .board-url-note { font-size: .75rem; color: var(--text-muted); margin-top: .5rem; word-break: break-all; }
@@ -546,25 +565,33 @@
         </div>
     </div>
     <div class="qc">
-        <div class="qcard" style="text-align:center;">
-            <div style="font-family:var(--fs);font-size:.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;" id="rv-progress">Team 1 of 8</div>
-            <div style="display:flex;align-items:center;justify-content:center;gap:.6rem;margin-bottom:.5rem;">
-                <span id="rv-avatar"></span>
-                <span style="font-family:var(--fh);font-size:1.4rem;color:var(--gold);" id="rv-team-name"></span>
+        <div id="rv-ceremony">
+            <div class="qcard" style="text-align:center;">
+                <div style="font-family:var(--fs);font-size:.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;" id="rv-progress">Team 1 of 8</div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:.6rem;margin-bottom:.5rem;">
+                    <span id="rv-avatar"></span>
+                    <span style="font-family:var(--fh);font-size:1.4rem;color:var(--gold);" id="rv-team-name"></span>
+                </div>
+                <div id="rv-stage-label" style="font-size:1rem;color:var(--text-sec);margin-bottom:.75rem;"></div>
+                <div id="rv-detail" style="font-family:var(--fh);font-size:2rem;color:var(--gold-bright);margin-bottom:1rem;"></div>
+                <div style="display:flex;gap:.5rem;justify-content:center;">
+                    <button type="button" class="btn btn-gold btn-lg" id="btn-reveal-primary" style="width:auto;padding:.85rem 3rem;" onclick="advanceReveal()" title="Advance to the next reveal stage on the projector">Next →</button>
+                </div>
+                <div id="recap-toggle" style="display:none;gap:.5rem;justify-content:center;margin-top:.75rem;">
+                    <button type="button" class="btn btn-outline" id="btn-highlights" onclick="showRecap()" style="flex:1;padding:.7rem;">📋 Highlights</button>
+                    <button type="button" class="btn btn-outline" id="btn-stats" onclick="showStats()" style="flex:1;padding:.7rem;">📊 Stats</button>
+                </div>
             </div>
-            <div id="rv-stage-label" style="font-size:1rem;color:var(--text-sec);margin-bottom:.75rem;"></div>
-            <div id="rv-detail" style="font-family:var(--fh);font-size:2rem;color:var(--gold-bright);margin-bottom:1rem;"></div>
-            <div style="display:flex;gap:.5rem;justify-content:center;">
-                <button type="button" class="btn btn-gold btn-lg" id="btn-reveal-primary" style="width:auto;padding:.85rem 3rem;" onclick="advanceReveal()" title="Advance to the next reveal stage on the projector">Next →</button>
-            </div>
-            <div id="recap-toggle" style="display:none;gap:.5rem;justify-content:center;margin-top:.75rem;">
-                <button type="button" class="btn btn-outline" id="btn-highlights" onclick="showRecap()" style="flex:1;padding:.7rem;">📋 Highlights</button>
-                <button type="button" class="btn btn-outline" id="btn-stats" onclick="showStats()" style="flex:1;padding:.7rem;">📊 Stats</button>
+            <div class="qcard" style="margin-top:1rem;">
+                <h3 style="font-family:var(--fh);font-size:.8rem;color:var(--gold);text-transform:uppercase;margin-bottom:.5rem;">Running Standings</h3>
+                <div id="rv-standings"></div>
             </div>
         </div>
-        <div class="qcard" style="margin-top:1rem;">
-            <h3 style="font-family:var(--fh);font-size:.8rem;color:var(--gold);text-transform:uppercase;margin-bottom:.5rem;">Running Standings</h3>
-            <div id="rv-standings"></div>
+        <div id="fj-confirm-panel" class="qcard hidden">
+            <h3 style="font-family:var(--fh);font-size:1rem;color:var(--gold);text-transform:uppercase;margin-bottom:.35rem;">Confirm Final Scores</h3>
+            <p class="fj-confirm-intro">All team reveals are done. Review totals below (only visible on this host screen). Adjust final scores if needed, then continue to the podium reveal on the projector.</p>
+            <div style="overflow-x:auto;margin-bottom:1rem;" id="fj-confirm-table-wrap"></div>
+            <button type="button" class="btn btn-gold btn-lg btn-block" id="btn-fj-confirm-podium" onclick="confirmFinalScoresAndPodium()" title="Lock in scores and start the top-three podium reveal on the projector">Confirm Scores &amp; Reveal Podium →</button>
         </div>
         <button class="btn btn-outline" id="end-game-btn" onclick="endGame()" style="margin-top:1rem;display:none;" title="Show a 'Thanks for Playing' screen on the projector">End Game</button>
     </div>
@@ -708,6 +735,7 @@ function getRevealHighlightTarget(){
         const eg=document.getElementById('end-game-btn');
         if(eg && eg.style.display!=='none')return eg;
     }
+    if(GS.phase==='fj-confirm')return document.getElementById('btn-fj-confirm-podium');
     const toggle=document.getElementById('recap-toggle');
     if(toggle&&toggle.style.display==='flex')return toggle;
     return document.getElementById('btn-reveal-primary');
@@ -870,7 +898,15 @@ function returnToSetup() {
 // ── Listeners ──
 function setupListeners() {
     roomRef.child('state').on('value',s=>{const v=s.val();if(!v)return;GS=v;syncView();});
-    roomRef.child('teams').on('value',s=>{teams=s.val()||{};renderScoreboard();updateWagerProgress();assignInitialControl();renderBoardControl();updateHostNextHighlight();});
+    roomRef.child('teams').on('value',s=>{
+        teams=s.val()||{};
+        renderScoreboard();
+        updateWagerProgress();
+        assignInitialControl();
+        renderBoardControl();
+        if(GS.phase==='fj-confirm'&&revealData)renderFjConfirmAdmin();
+        updateHostNextHighlight();
+    });
     roomRef.child('currentAnswers').on('value',s=>{curAnswers=s.val()||{};renderAnswers();});
     roomRef.child('board').on('value',s=>{boardQ=s.val()||{};renderBoard();});
     roomRef.child('history').on('value',s=>{renderHistory(s.val()||{});});
@@ -901,18 +937,21 @@ function syncView() {
         showView('reveal-view');
         document.getElementById('rv-room').textContent=roomCode;
         renderRecapStatsAdmin();
-    } else if(GS.phase==='final-reveal'||GS.phase==='final-rankings'||GS.phase==='gameover'||GS.phase==='podium'){
+    } else if(GS.phase==='final-reveal'||GS.phase==='fj-confirm'||GS.phase==='final-rankings'||GS.phase==='gameover'||GS.phase==='podium'){
         if(!revealData){
             roomRef.child('finalReveal').once('value',s=>{
                 const fr=s.val();if(!fr||!fr.teams)return;
                 revealData={teams:fr.teams,index:fr.currentIndex||0,stage:fr.currentStage||1};
+                if(fr.confirming)revealData.confirming=true;
                 if(fr.podium){revealData.podium=true;revealData.podiumTeams=fr.podiumTeams||[];revealData.podiumIndex=fr.podiumIndex!==undefined?fr.podiumIndex:-1;}
                 document.getElementById('rv-room').textContent=roomCode;
                 showView('reveal-view');
-                renderRevealAdmin();
+                if(GS.phase==='fj-confirm')renderFjConfirmAdmin();
+                else renderRevealAdmin();
             });
         } else {
             showView('reveal-view');
+            if(GS.phase==='fj-confirm')renderFjConfirmAdmin();
         }
         document.getElementById('end-game-btn').style.display=(GS.phase==='gameover')?'inline-block':'none';
     } else if(GS.phase==='dd-reveal'){
@@ -1306,6 +1345,10 @@ function applyScores() {
         upd['teams/'+tk+'/score']=cur+pts;
         const streak=(teams[tk]&&teams[tk].streak)||0;
         upd['teams/'+tk+'/streak']=c?streak+1:0;
+        if(c){
+            const cc=(teams[tk]&&teams[tk].correctCount)||0;
+            upd['teams/'+tk+'/correctCount']=cc+1;
+        }
         hist.answers[tk]={answer:curAnswers[tk].answer,correct:c,points:pts,ts};
     });
     Object.keys(teams).forEach(tk=>{
@@ -1429,7 +1472,7 @@ function revealFJQuestion(){
 // ── Scoreboard ──
 function renderScoreboard() {
     const el=document.getElementById('scoreboard');
-    const sorted=Object.entries(teams).sort((a,b)=>(b[1].score||0)-(a[1].score||0));
+    const sorted=Object.entries(teams).sort((a,b)=>compareScoreDesc(a[1].score,a[1].correctCount,b[1].score,b[1].correctCount));
     if(!sorted.length){el.innerHTML='<div class="no-ans" style="font-size:.8rem;">No teams yet.</div>';return;}
     el.innerHTML=sorted.map(([k,t],i)=>{
         const av=avatarImg(t.avatar), col=avatarColor(t.avatar);
@@ -1462,7 +1505,7 @@ function addTeamManual(){
         if(snap.exists()&&snap.val().name&&snap.val().name.toLowerCase()!==n.toLowerCase()){
             k=k+'_'+Math.random().toString(36).slice(2,5);
         }
-        safeWrite(roomRef.child('teams/'+k).set({name:n,score:0,wager:0,avatar:'',color:''}),'Failed to add team. Try again.');
+        safeWrite(roomRef.child('teams/'+k).set({name:n,score:0,wager:0,correctCount:0,avatar:'',color:''}),'Failed to add team. Try again.');
         document.getElementById('add-team').value='';
     });
 }
@@ -1557,7 +1600,7 @@ function renderDDRevealAdmin() {
 }
 
 function startFinalReveal() {
-    const sorted = Object.entries(teams).sort((a,b) => (a[1].score||0) - (b[1].score||0));
+    const sorted = Object.entries(teams).sort((a,b) => compareScoreDesc(b[1].score, b[1].correctCount, a[1].score, a[1].correctCount));
     const revealTeams = sorted.map(([k,t]) => {
         const currentScore = t.score||0;
         const ap = lastAppliedByTeam[k];
@@ -1569,7 +1612,8 @@ function startFinalReveal() {
             key: k, name: t.name||k, avatar: t.avatar||'',
             preFinalScore: preFJ, wager: wager,
             answer: (curAnswers[k] && curAnswers[k].answer) || '(no answer)',
-            correct: correct, finalScore: currentScore
+            correct: correct, finalScore: currentScore,
+            preCorrect: (t.correctCount||0)
         };
     });
     revealData = { teams: revealTeams, index: 0, stage: 1 };
@@ -1602,31 +1646,130 @@ function advanceReveal() {
         revealData.stage = 1;
     }
     if (revealData.index >= revealData.teams.length) {
-        const sorted = [...revealData.teams].sort((a,b) => b.finalScore - a.finalScore);
-        revealData.podium = true;
-        revealData.podiumTeams = sorted.slice(0, Math.min(3, sorted.length));
-        revealData.podiumIndex = -1;
-        revealData.teams.forEach(t => {
-            roomRef.child('teams/' + t.key + '/score').set(t.finalScore);
-        });
-        roomRef.child('finalReveal').update({
-            currentIndex: revealData.index, currentStage: 5,
-            podium: true, podiumIndex: -1, podiumTeams: revealData.podiumTeams
-        });
-        roomRef.child('state/phase').set('podium');
-        renderRevealAdmin();
+        enterFjConfirm();
         return;
     }
     if (revealData.stage === 4) {
         const t = revealData.teams[revealData.index];
-        roomRef.child('teams/' + t.key + '/score').set(t.finalScore);
+        const upd = {};
+        upd['teams/' + t.key + '/score'] = t.finalScore;
+        upd['teams/' + t.key + '/correctCount'] = (t.preCorrect || 0) + (t.correct ? 1 : 0);
+        safeWrite(roomRef.update(upd), 'Failed to save final score. Try again.');
     }
     roomRef.child('finalReveal').update({ currentIndex: revealData.index, currentStage: revealData.stage });
     renderRevealAdmin();
 }
 
+function syncRevealTeamsFromFirebase() {
+    if (!revealData || !revealData.teams) return;
+    revealData.teams.forEach(t => {
+        const live = teams[t.key];
+        if (live) t.finalScore = live.score || 0;
+    });
+}
+
+function formatFjResult(t) {
+    if (!t.wager) return '<span class="fj-result-none">—</span>';
+    const sign = t.correct ? '+' : '−';
+    const cls = t.correct ? 'fj-result-win' : 'fj-result-loss';
+    return '<span class="' + cls + '">' + sign + '$' + t.wager.toLocaleString() + '</span>';
+}
+
+function enterFjConfirm() {
+    if (!revealData) return;
+    syncRevealTeamsFromFirebase();
+    revealData.confirming = true;
+    revealData.index = revealData.teams.length;
+    roomRef.child('finalReveal').update({
+        teams: revealData.teams,
+        currentIndex: revealData.index,
+        currentStage: 5,
+        confirming: true
+    });
+    safeWrite(roomRef.child('state/phase').set('fj-confirm'), 'Failed to enter score confirmation.');
+    renderFjConfirmAdmin();
+}
+
+function renderFjConfirmAdmin() {
+    if (!revealData) return;
+    document.getElementById('rv-ceremony').classList.add('hidden');
+    document.getElementById('fj-confirm-panel').classList.remove('hidden');
+    document.getElementById('recap-toggle').style.display = 'none';
+    syncRevealTeamsFromFirebase();
+    const wrap = document.getElementById('fj-confirm-table-wrap');
+    const correctOf = tk => (teams[tk] && teams[tk].correctCount) || 0;
+    const sorted = [...revealData.teams].sort((a, b) => compareScoreDesc(a.finalScore, correctOf(a.key), b.finalScore, correctOf(b.key)));
+    let html = '<table class="fj-confirm-table"><thead><tr>'
+        + '<th>#</th><th>Team</th><th>Final score</th><th>FJ result</th><th>Correct (game)</th><th></th>'
+        + '</tr></thead><tbody>';
+    sorted.forEach((t, i) => {
+        const col = avatarColor(t.avatar);
+        html += '<tr>'
+            + '<td>' + (i + 1) + '</td>'
+            + '<td><div class="fj-team">' + avatarImg(t.avatar, 22)
+            + '<span class="nm" style="color:' + col + '">' + esc(t.name) + '</span></div></td>'
+            + '<td><input type="number" class="fj-score-inp" data-tk="' + esc(t.key) + '" value="' + (t.finalScore || 0) + '" title="Final score"></td>'
+            + '<td>' + formatFjResult(t) + '</td>'
+            + '<td>' + correctOf(t.key) + '</td>'
+            + '<td><button type="button" class="adj-btn" onclick="adjScore(\'' + esc(t.key) + '\')" title="Adjust by a dollar amount">±</button></td>'
+            + '</tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('.fj-score-inp').forEach(inp => {
+        inp.addEventListener('change', () => setFjRevealScore(inp.dataset.tk, inp.value));
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+    });
+    updateHostNextHighlight();
+}
+
+function setFjRevealScore(tk, raw) {
+    const n = parseInt(String(raw).replace(/[^0-9-]/g, ''), 10);
+    if (isNaN(n)) return;
+    safeWrite(roomRef.child('teams/' + tk + '/score').set(n), 'Score change failed to save.').then(ok => {
+        if (!ok) return;
+        const rt = revealData && revealData.teams && revealData.teams.find(x => x.key === tk);
+        if (rt) rt.finalScore = n;
+        if (GS.phase === 'fj-confirm') renderFjConfirmAdmin();
+    });
+}
+
+function startPodiumFromReveal() {
+    syncRevealTeamsFromFirebase();
+    const correctOf = t => (teams[t.key] && teams[t.key].correctCount) || ((t.preCorrect || 0) + (t.correct ? 1 : 0));
+    const sorted = [...revealData.teams].sort((a, b) => compareScoreDesc(a.finalScore, correctOf(a), b.finalScore, correctOf(b)));
+    revealData.podium = true;
+    revealData.podiumTeams = sorted.slice(0, Math.min(3, sorted.length));
+    revealData.podiumIndex = -1;
+    revealData.confirming = false;
+    const upd = {};
+    revealData.teams.forEach(t => {
+        upd['teams/' + t.key + '/score'] = t.finalScore;
+        upd['teams/' + t.key + '/correctCount'] = (t.preCorrect || 0) + (t.correct ? 1 : 0);
+    });
+    safeWrite(roomRef.update(upd), 'Failed to save final scores.');
+    roomRef.child('finalReveal').update({
+        teams: revealData.teams,
+        currentIndex: revealData.index,
+        currentStage: 5,
+        confirming: false,
+        podium: true,
+        podiumIndex: -1,
+        podiumTeams: revealData.podiumTeams
+    });
+    roomRef.child('state/phase').set('podium');
+    renderRevealAdmin();
+}
+
+function confirmFinalScoresAndPodium() {
+    if (!revealData || GS.phase !== 'fj-confirm') return;
+    startPodiumFromReveal();
+}
+
 function renderRevealAdmin() {
     if (!revealData) return;
+    document.getElementById('fj-confirm-panel').classList.add('hidden');
+    document.getElementById('rv-ceremony').classList.remove('hidden');
     document.getElementById('recap-toggle').style.display='none';
     document.getElementById('btn-reveal-primary').style.display='';
     if (revealData.podium) {
@@ -1704,7 +1847,8 @@ function renderRevealAdmin() {
 function renderRevealStandings() {
     if (!revealData) return;
     const revealed = revealData.teams.slice(0, revealData.index + (revealData.stage >= 4 ? 1 : 0));
-    const sorted = [...revealed].filter(t => revealData.teams.indexOf(t) < revealData.index || revealData.stage >= 4).sort((a,b) => b.finalScore - a.finalScore);
+    const correctOf = t => (teams[t.key] && teams[t.key].correctCount) || ((t.preCorrect || 0) + (t.correct ? 1 : 0));
+    const sorted = [...revealed].filter(t => revealData.teams.indexOf(t) < revealData.index || revealData.stage >= 4).sort((a,b) => compareScoreDesc(a.finalScore, correctOf(a), b.finalScore, correctOf(b)));
     const el = document.getElementById('rv-standings');
     if (!sorted.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:.85rem;text-align:center;padding:.5rem;">No scores revealed yet.</div>'; return; }
     el.innerHTML = sorted.map((t,i) => {
