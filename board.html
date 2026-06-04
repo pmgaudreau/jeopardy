@@ -396,6 +396,20 @@
         @keyframes scoreFloat{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-2vw);}}
 
         #gameover-display{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:3vw;}
+
+        /* ═══ AUDIO UNLOCK HINT ═══ */
+        /* Shown until any user input primes the AudioContext + media
+           element autoplay gate. See unlockAudio() and LEARNINGS. */
+        .audio-unlock-hint{
+            position:fixed;top:1.2vw;right:1.2vw;z-index:300;
+            padding:.55vw 1.1vw;
+            font-family:var(--fs);font-size:1vw;font-weight:600;letter-spacing:.04em;
+            color:var(--gold-bright);background:var(--surface-2);
+            border:1px solid var(--gold-dim);border-radius:var(--r-pill);
+            box-shadow:0 0 18px rgba(255,215,0,.18);
+            cursor:pointer;animation:audioHintPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes audioHintPulse{0%,100%{box-shadow:0 0 18px rgba(255,215,0,.18);}50%{box-shadow:0 0 28px rgba(255,215,0,.35);}}
     </style>
 </head>
 <body>
@@ -576,6 +590,9 @@
     </div>
 </div>
 
+<!-- Audio unlock hint: shown briefly if no user input has primed audio yet -->
+<div id="audio-unlock-hint" class="audio-unlock-hint hidden" title="Click anywhere on this window to enable sound">🔈 Click for sound</div>
+
 <!-- Game Over -->
 <div id="gameover-display" class="hidden">
     <img src="Logo transparent.png" alt="PDK NINE" style="width:15vw;height:auto;margin-bottom:2vw;">
@@ -659,22 +676,74 @@ const SFX=(()=>{
         },
         thinkMusic:{
             _audio:null,
-            start(){
-                this.stop();
-                this._audio=new Audio('jeopardy-final-jeopardy-thinking-music.mp3');
+            _src:'jeopardy-final-jeopardy-thinking-music.mp3',
+            _init(){
+                if(this._audio)return;
+                this._audio=new Audio(this._src);
                 this._audio.loop=true;
+                this._audio.preload='auto';
+            },
+            // Play+pause at volume 0 to satisfy autoplay-gating browsers
+            // (Safari especially). Must be invoked from inside a user
+            // gesture handler.
+            prime(){
+                this._init();
+                try{
+                    this._audio.volume=0;
+                    this._audio.play().then(()=>{
+                        this._audio.pause();
+                        this._audio.currentTime=0;
+                        this._audio.volume=1.0;
+                    }).catch(()=>{ this._audio.volume=1.0; });
+                }catch(e){}
+            },
+            start(){
+                this._init();
                 this._audio.volume=1.0;
-                this._audio.play().catch(()=>{});
+                try{this._audio.currentTime=0;}catch(e){}
+                this._audio.play().catch(err=>console.warn('[SFX] thinkMusic.play() blocked:',err.name));
             },
             stop(){
-                if(this._audio){this._audio.pause();this._audio.currentTime=0;this._audio=null;}
+                if(this._audio){
+                    try{this._audio.pause();this._audio.currentTime=0;}catch(e){}
+                }
             }
+        },
+        // Resume the SFX module's AudioContext. Must be called from a
+        // user-gesture handler the first time, otherwise the context
+        // stays suspended and every tone() silently scheduled audio
+        // that never plays.
+        unlock(){
+            try{
+                const c=getCtx();
+                if(c.state==='suspended')c.resume().catch(()=>{});
+            }catch(e){}
         }
     };
 })();
 
-// Resume AudioContext on any click (autoplay policy)
-document.addEventListener('click',()=>{try{const c=new(window.AudioContext||window.webkitAudioContext)();c.resume();c.close();}catch(e){}},{once:true});
+// Audio unlock: browsers create AudioContexts in `suspended` state
+// unless construction happens inside a user gesture. They also gate
+// HTMLMediaElement.play() until the user interacts with the document.
+// Both restrictions are per-document, so the host clicking on the
+// admin window doesn't help the board — they must click on the
+// board window itself. We listen on every pointer/keyboard input
+// until one succeeds, then prime both gates. A small visual hint
+// appears after a delay if audio is still locked.
+let audioUnlocked=false;
+function unlockAudio(){
+    if(audioUnlocked)return;
+    audioUnlocked=true;
+    SFX.unlock();
+    SFX.thinkMusic.prime();
+    document.getElementById('audio-unlock-hint')?.classList.add('hidden');
+}
+['pointerdown','touchstart','keydown','click'].forEach(ev=>{
+    document.addEventListener(ev,unlockAudio,{capture:true,passive:true});
+});
+setTimeout(()=>{
+    if(!audioUnlocked)document.getElementById('audio-unlock-hint')?.classList.remove('hidden');
+},1200);
 
 // ═══ CONNECT ═══
 function init(){

@@ -109,6 +109,19 @@ The in-game sidebar `#bd-scores` deliberately does **not** use this pattern — 
 
 When the slot is hidden (text-only clue), `tokens.css`'s `.hidden { display: none }` removes it from the flex flow and `justify-content: center` centers the remaining items as before. **All three JS callsites that toggle image visibility must toggle the `hidden` class on `#qd-img-slot`, not on `#qd-img`** — hiding the image without hiding its wrapper would leave the wrapper greedily consuming vertical space.
 
+### Board audio (SFX + Final Jeopardy music)
+
+`board.html` owns all audio. `SFX` is a closure with a private `AudioContext` used for procedurally generated tones (correct, wrong, tick, reveal, etc.) plus an HTMLAudio element for the looping Final Jeopardy thinking-music MP3.
+
+Browsers gate audio on **two** independent rails:
+
+1. **AudioContext** — constructed outside a user gesture, the context starts `suspended`. Every `tone()` call silently schedules audio that never plays.
+2. **HTMLMediaElement** — `.play()` is rejected for elements created/triggered outside a user gesture.
+
+Both gates are **per-document**. The host clicking on the admin window does *nothing* for the board. The user must interact with the board window itself. Because the board is often projected and never clicked, the `unlockAudio()` handler watches for any `pointerdown`/`touchstart`/`keydown`/`click` and, on first fire, calls `SFX.unlock()` (resumes the context) and `SFX.thinkMusic.prime()` (plays the MP3 at volume 0 then pauses, satisfying the media autoplay gate). After ~1.2 s without input, the `🔈 Click for sound` pill in the top-right appears to nudge the host.
+
+**Don't** revert to the old `new AudioContext(); c.resume(); c.close();` pattern — that creates a *separate* context and does nothing for the SFX module's internal one. **Don't** make `thinkMusic.start()` construct a fresh `Audio` element each time — the priming was done on a specific element; replacing it loses the autoplay-unlocked status.
+
 ### Recap vs stats
 
 End-of-game has two views the host can toggle between:
@@ -141,6 +154,7 @@ Written to `state.boardControl`.
 - **Removed teams aren't ejected**: removing a team from admin nulls their `teams/{tk}` and `currentAnswers/{tk}` records but their `play.html` session continues to render stale state until the next questionKey change.
 - **Custom photos live in Firebase**: each is ~30 – 60 KB of base64. Fine for ~20 teams; not designed for hundreds.
 - **`currentAnswers/{tk}` being nulled doesn't reset `hasSubmitted` on the player** — only a `questionKey` change does. This is intentional (avoids flicker when the host clears an answer), but means an admin who manually clears a single answer mid-clue won't see that team's UI reset.
+- **Player vibrations are platform-gated.** iOS Safari doesn't implement `navigator.vibrate` at all (no plan to). Android Chrome supports it but requires sticky user activation (typically granted automatically once the player has joined). The three `try{navigator.vibrate(...)}catch(e){}` calls in `play.html` are correct — they silently no-op on platforms that don't support it.
 
 ---
 
@@ -182,6 +196,7 @@ These are issues that have been fixed already — don't re-introduce them.
 | Tied teams ranked in non-deterministic insertion order | Every sort site wrote `(b.score - a.score)` inline; JS's stable sort fell back to discovery order on ties | `compareScoreDesc(scoreA, correctA, scoreB, correctB)` in `helpers.js`, applied to all 11 sort sites; `teams/{tk}/correctCount` cached and bumped in `applyScores` + FJ stage-4/podium writes |
 | Intermission and final-rankings score lists felt inconsistent with between-round transitions | The transition view had its own bespoke infinite-scroll JS; the other two used plain `overflow:auto` | Generalised `startInfiniteScroll(el, opts)` helper in `board.html`; transition, recap, intermission, and rankings all call it with their own keyframe name + style id |
 | Tall clue images pushed the revealed answer off the bottom of the projector | `#qd-img` had a fixed `max-height: 50vh` and competed with stacked text/timer/answer rows for the column height. A first-pass fix put `flex: 1 1 0` on the `<img>` directly, but the image's intrinsic aspect ratio (portrait clues at `max-width: 80vw` declare a height > viewport) fought the flex-shrink algorithm and the image still overflowed. | Wrapped image in `#qd-img-slot`; the slot owns `flex: 1 1 0; min-height: 0`; image inside is `max-width: 100%; max-height: 100%; object-fit: contain`. JS toggles `.hidden` on the slot, not the image. |
+| All board SFX silently failed; Final Jeopardy music never autoplayed | The audio-unlock click handler created a *throwaway* `AudioContext`, resumed it, and closed it — never touching the SFX module's actual context. `thinkMusic.start()` also rebuilt the `Audio` element on every play, so the autoplay-unlock applied to one element didn't carry over. | `SFX.unlock()` resumes the module's own context; `SFX.thinkMusic.prime()` plays the looping MP3 at volume 0 once during the first user gesture so subsequent `start()` calls bypass the media-autoplay gate. A `🔈 Click for sound` pill appears after ~1.2 s if no gesture has primed audio yet. |
 
 ---
 
