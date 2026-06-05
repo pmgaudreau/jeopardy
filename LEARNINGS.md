@@ -172,6 +172,7 @@ Written to `state.boardControl`.
 10. **Adding a new full-screen "scores" view on the projector?** Use the `X-wrap` + `X-scroll` + `startInfiniteScroll(...)` pattern (see "Score-display layouts"). Don't reach for plain `overflow-y:auto` — it breaks the visual continuity with the rest of the game. Remember to suppress per-row entry animations inside the scroll container.
 11. **Don't put fixed `max-height: Xvh` on a child of `#question-display`.** That was the cause of answers being pushed off-screen by tall images. The layout relies on `#qd-img-slot` being the only flex-grow child — every other element must keep `flex-shrink: 0` (covered by the universal `#question-display > *` rule, but easy to break with an inline `style="height: …"`).
 12. **Don't put `flex:1 1 0` on an `<img>` directly.** The intrinsic aspect ratio fights the flex algorithm and the image won't reliably shrink in a column flex container. Wrap it in a `<div>` slot and put the flex sizing on the slot. Toggle `.hidden` on the slot, not on the image.
+13. **`renderAnswers()` sorts by `curAnswers[tk].timestamp` ascending — preserve that.** Don't "tidy" it back to `Object.keys()` order. The host grades top-to-bottom; sorting by submission time guarantees late submissions append at the bottom instead of inserting into the middle and shifting which row is next-to-grade. Server timestamp comes from `firebase.database.ServerValue.TIMESTAMP` set in `play.html`'s `submitAnswer()`/`passAnswer()`.
 
 ---
 

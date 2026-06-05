@@ -1238,7 +1238,12 @@ function revealAnswer() {
 
 // ── Answers ──
 function renderAnswers() {
-    const list=document.getElementById('answers-list'), keys=Object.keys(curAnswers);
+    const list=document.getElementById('answers-list');
+    // Order by submission time (oldest at top, newest at bottom) so the
+    // host can grade top-to-bottom while late submissions append below
+    // instead of inserting into the middle of the list and shifting
+    // where the next-to-grade row lives.
+    const keys=Object.keys(curAnswers).sort((a,b)=>((curAnswers[a]&&curAnswers[a].timestamp)||0)-((curAnswers[b]&&curAnswers[b].timestamp)||0));
     const eligible=getEligibleTeams();
     const total=eligible.length;
     const answered=keys.length;
