@@ -239,6 +239,10 @@
         .ans-header h3 { font-family: var(--fh); font-size: .78rem; color: var(--gold); text-transform: uppercase; }
         .cnt-badge { background: var(--blue); color: #fff; padding: .1rem .5rem; border-radius: 10px; font-size: .75rem; font-weight: 700; }
 
+        /* Sound toggle button — visually distinct when muted so the host
+           can see at a glance whether the projector audio is silenced. */
+        .btn-sound.muted { color: var(--red); border-color: var(--red); }
+        .btn-sound.muted:hover { background: var(--red-soft); }
         #team-answers-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
         #team-answers-card #answers-list { flex: 1; min-height: 0; overflow-y: auto; max-height: 28vh; }
         @media (max-width: 960px) { #team-answers-card #answers-list { max-height: 40vh; } }
@@ -409,6 +413,7 @@
             <button class="btn-intermission end" id="end-intermission-btn" onclick="endIntermission()" title="End the intermission immediately and return to the board" style="display:none;">■ End Break <span id="intermission-countdown"></span></button>
             <span class="current-round-badge" id="current-round-badge">Round 1</span>
             <button class="btn btn-sm btn-end-round" id="end-round-btn" onclick="promptEndRound()" title="End the current round, show the scoreboard, and advance to the next round">End Round →</button>
+            <button type="button" class="btn btn-outline btn-sm btn-sound" id="sound-toggle-bv" onclick="toggleSound()" title="Mute or unmute all sounds and music on the projector">🔊 Sound: On</button>
             <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
         </div>
     </div>
@@ -443,6 +448,7 @@
         <span class="room-badge" id="qv-room"></span>
         <h1>Trivia Night</h1>
         <div class="top-controls">
+            <button type="button" class="btn btn-outline btn-sm btn-sound" id="sound-toggle-qv" onclick="toggleSound()" title="Mute or unmute all sounds and music on the projector">🔊 Sound: On</button>
             <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
         </div>
     </div>
@@ -561,6 +567,7 @@
         <span class="room-badge" id="rv-room"></span>
         <h1>Final Reveal</h1>
         <div class="top-controls">
+            <button type="button" class="btn btn-outline btn-sm btn-sound" id="sound-toggle-rv" onclick="toggleSound()" title="Mute or unmute all sounds and music on the projector">🔊 Sound: On</button>
             <a href="superadmin.html" class="btn btn-outline btn-sm" title="Manage all game rooms">Super Admin</a>
         </div>
     </div>
@@ -912,6 +919,7 @@ function setupListeners() {
     roomRef.child('history').on('value',s=>{renderHistory(s.val()||{});});
 }
 function syncView() {
+    syncSoundButtons();
     document.getElementById('current-round-badge').textContent=ROUND_LABELS[GS.round]||'';
     const btn=document.getElementById('end-round-btn');
     if(GS.round===1){btn.textContent='End Round → Double Jeopardy';btn.classList.remove('hidden');}
@@ -1864,6 +1872,33 @@ function renderRevealStandings() {
 
 // ── Intermission ──
 let intCountdownInterval=null;
+// ── Sound toggle (controls board SFX + music via state.soundMuted) ──
+function toggleSound(){
+    if(!roomRef){
+        // Pre-game or disconnected — flip local GS so the buttons update
+        // even before there's a room to write to.
+        GS.soundMuted=!GS.soundMuted;
+        syncSoundButtons();
+        return;
+    }
+    const next=!GS.soundMuted;
+    safeWrite(roomRef.child('state/soundMuted').set(next),'Failed to toggle sound.');
+    GS.soundMuted=next; // optimistic so UI updates immediately
+    syncSoundButtons();
+}
+function syncSoundButtons(){
+    const muted=!!GS.soundMuted;
+    const lbl=muted?'🔇 Sound: Off':'🔊 Sound: On';
+    const title=muted?'Sound is muted — click to unmute the projector':'Sound is on — click to mute the projector';
+    ['sound-toggle-bv','sound-toggle-qv','sound-toggle-rv'].forEach(id=>{
+        const b=document.getElementById(id);
+        if(!b)return;
+        b.textContent=lbl;
+        b.title=title;
+        b.classList.toggle('muted',muted);
+    });
+}
+
 function promptIntermission(){ document.getElementById('intermission-modal').classList.remove('hidden'); setIntDur(5); }
 function closeIntModal(){ document.getElementById('intermission-modal').classList.add('hidden'); }
 function setIntDur(m){

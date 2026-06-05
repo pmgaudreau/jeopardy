@@ -50,7 +50,8 @@ function defaultGameState() {
         accepting: false, dailyDouble: false, ddTeam: '', questionKey: '',
         showQR: false, boardProjectorMode: 'gameStart',
         timerEnd: 0, timerRunning: false, answerRevealed: false,
-        wageringOpen: false, imageUrl: '', boardControl: '', intermissionEnd: 0
+        wageringOpen: false, imageUrl: '', boardControl: '', intermissionEnd: 0,
+        soundMuted: false
     };
 }
 

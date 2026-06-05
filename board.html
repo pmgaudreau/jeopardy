@@ -658,8 +658,10 @@ let qrTeamsListenerFiredOnce=false;
 // ═══ SOUND EFFECTS ═══
 const SFX=(()=>{
     let ctx=null;
+    let muted=false;
     function getCtx(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();return ctx;}
     function tone(freq,dur,type='sine',vol=0.25,delay=0){
+        if(muted)return;
         const c=getCtx(),o=c.createOscillator(),g=c.createGain();
         o.type=type;o.frequency.value=freq;g.gain.value=0;
         g.gain.setValueAtTime(0,c.currentTime+delay);
@@ -681,6 +683,7 @@ const SFX=(()=>{
         winner(){[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,.2,'sine',.3,i*.1));},
         wrongBuzz(){tone(150,.5,'sawtooth',.2);},
         squishyJoin(){
+            if(muted)return;
             const c=getCtx(),t0=c.currentTime;
             const o1=c.createOscillator();
             o1.type='sine';
@@ -727,6 +730,7 @@ const SFX=(()=>{
                 }catch(e){}
             },
             start(){
+                if(muted)return;
                 this._init();
                 this._audio.volume=1.0;
                 try{this._audio.currentTime=0;}catch(e){}
@@ -747,7 +751,17 @@ const SFX=(()=>{
                 const c=getCtx();
                 if(c.state==='suspended')c.resume().catch(()=>{});
             }catch(e){}
-        }
+        },
+        // Toggle the global mute. When muted, tone(), squishyJoin(), and
+        // thinkMusic.start() bail out, and any currently-playing music
+        // is stopped. Driven by `state.soundMuted` from admin so the
+        // host can mute the room without walking to the projector.
+        setMuted(m){
+            const wasMuted=muted;
+            muted=!!m;
+            if(muted&&!wasMuted)this.thinkMusic.stop();
+        },
+        isMuted(){return muted;}
     };
 })();
 
@@ -976,6 +990,7 @@ function bindQRProjectorResize(){
 // ═══ STATE MACHINE ═══
 function onStateChange(){
     updateQR();
+    SFX.setMuted(!!GS.soundMuted);
     const{phase,dailyDouble,ddTeam,round}=GS;
 
     if(phase==='intermission'){
